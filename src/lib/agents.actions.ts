@@ -80,34 +80,59 @@ export async function reviewSinglePost(supabase: DB, postId: string) {
   const started = Date.now();
   const post = await getPostWithIdea(supabase, postId);
   const kb = await loadKnowledge(supabase);
+  const platform = (post["platform"] as Platform) ?? "linkedin";
+  const idea = post["content_ideas"] ?? {};
+  const sku = idea?.products?.sku ?? null;
+  const product = (kb.products as Array<Record<string, unknown>>).find((p) => p["sku"] === sku) ?? null;
+
+  const accuracy = await genObject({
+    schema: accuracySchema,
+    system: [
+      "You are the Accuracy Validator. You are adversarial and literal.",
+      "Any technical statement not directly supported by the supplied product data is an unverified claim; anything contradicting it is a wrong fact.",
+      "Aesthetic opinions are not claims. passed = true only when both lists are empty.",
+    ].join("\n"),
+    prompt: `PRODUCT DATA:\n${JSON.stringify(product)}\n\nCOPY:\nEN: ${post["body_en"] ?? ""}\nAR: ${post["body_ar"] ?? ""}`,
+  });
 
   const review = await genObject({
     schema: reviewSchema,
-    system: `${brandSystemPrompt(kb.brand)}\nYou are the Reviewer agent.`,
-    prompt: `Review this ${post["platform"]} post.\nEnglish:\n${post["body_en"] ?? ""}\n\nArabic:\n${post["body_ar"] ?? ""}\n\nProduct data:\n${JSON.stringify(kb.products)}\n\nScore 0-100 and give short actionable notes on tone, factual accuracy and Arabic quality.`,
+    system: [
+      brandSystemPrompt(kb.brand),
+      "You are the BRAND GATEKEEPER. The question is whether this deserves to be published on the brand's channels, not whether it is 'good'.",
+      "Be strict: most drafts deserve 70-85.",
+      "SCORE MODEL (sum to 100): brand_alignment /15, product_accuracy /20, platform_fit /15, strategic_value /15, audience_relevance /10, originality /10, cta_quality /5, language_quality /5, visual_potential /5.",
+      "HARD FAIL (hard_fail=true regardless of score): unverified product claim, wrong SKU, platform mismatch, invented technical feature, generic content any competitor could publish, brand positioning inconsistency.",
+      PLATFORM_RULES[platform] ?? "",
+    ].join("\n"),
+    prompt: `Platform: ${platform}\nAccuracy report: ${JSON.stringify(accuracy)}\n\nEN:\n${post["body_en"] ?? ""}\n\nAR:\n${post["body_ar"] ?? ""}\n\nProduct data:\n${JSON.stringify(product)}\n\nScore every component, sum into score, set hard_fail with reasons, assess whether this reads native to ${platform} in platform_differentiation, and give per-platform notes (fill only ${platform}, leave others empty).`,
   });
 
   const { error } = await supabase
     .from("posts")
     .update({
       review_score: Math.round(review.score),
-      review_notes: review.notes,
-      status: "reviewed",
+      review_notes: `${review.notes}\n\n${platform}: ${review.per_platform_notes[platform]}`,
+      hard_fail: review.hard_fail,
+      review_breakdown: review as never,
+      accuracy_report: accuracy as never,
+      status: review.hard_fail ? "needs_revision" : "reviewed",
     })
     .eq("id", postId);
   if (error) throw new Error(error.message);
 
   await supabase.from("agent_runs").insert({
-    agent: "reviewer",
+    agent: "brand_reviewer",
     status: "success",
     input: { postId } as never,
-    output: review as never,
+    output: { review, accuracy } as never,
     duration_ms: Date.now() - started,
     idea_id: post["idea_id"] ?? null,
   });
 
   return review;
 }
+
 
 export async function generateImageForPost(supabase: DB, postId: string) {
   const started = Date.now();
