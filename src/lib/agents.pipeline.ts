@@ -3,10 +3,13 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   FACT_DISCIPLINE,
   PLATFORM_RULES,
+  audienceBlock,
   brandSystemPrompt,
+  claimsBlock,
   genObject,
   knowledgeBlock,
   productFactsBlock,
+  referenceImagesBlock,
 } from "./agents.server";
 import {
   CONTENT_TYPES,
@@ -52,17 +55,45 @@ async function logRun(
   });
 }
 
+export type ClaimRow = {
+  id: string;
+  claim_text: string;
+  claim_type: string;
+  entity_type: string;
+  entity_label: string | null;
+  source_tier: number;
+  approved_for: string[];
+};
+
 export async function loadKnowledge(supabase: DB) {
-  const [brand, products, audiences, projects, recent] = await Promise.all([
+  const [brand, products, images, audiences, projects, claims, recent] = await Promise.all([
     supabase.from("brand_profile").select("*").limit(1).maybeSingle(),
     supabase
       .from("products")
       .select(
-        "name, official_name, name_ar, sku, description, materials, finishes, features, dimensions, installation_type, technical_specs, approved_claims, forbidden_claims, verification_status, source_url, product_url",
+        "id, name, official_name, name_ar, sku, description, materials, finishes, features, dimensions, installation_type, technical_specs, approved_claims, forbidden_claims, verification_status, source_url, product_url, price_egp",
       )
       .eq("is_active", true),
-    supabase.from("audiences").select("name, name_ar, description, pain_points, motivations, channels"),
-    supabase.from("projects").select("name, location, country, description"),
+    supabase
+      .from("product_images")
+      .select("product_id, image_url, alt_text, image_type, angle, finish, background, visual_notes, is_primary")
+      .eq("approved_for_ai", true)
+      .eq("verified", true),
+    supabase
+      .from("audiences")
+      .select(
+        "name, name_ar, role, description, business_context, pain_points, motivations, goals, buying_criteria, objections, decision_authority, preferred_content, cta_preference, channels, language",
+      ),
+    supabase
+      .from("projects")
+      .select(
+        "name, location, country, project_type, description, collections, finishes, verified_facts, approved_claims, verification_status",
+      ),
+    supabase
+      .from("claims")
+      .select("id, claim_text, claim_type, entity_type, entity_label, source_tier, approved_for")
+      .eq("verified", true)
+      .lte("source_tier", 2),
     supabase
       .from("content_ideas")
       .select("topic, content_type")
@@ -75,8 +106,10 @@ export async function loadKnowledge(supabase: DB) {
   return {
     brand: brand.data ?? null,
     products: products.data ?? [],
+    images: (images.data ?? []) as Array<Record<string, unknown>>,
     audiences: audiences.data ?? [],
     projects: projects.data ?? [],
+    claims: (claims.data ?? []) as ClaimRow[],
     recentTopics: recentRows.map((r) => r.topic),
     recentTypes: recentRows.map((r) => r.content_type).filter(Boolean) as string[],
   };
@@ -89,6 +122,27 @@ export function findProduct(kb: Knowledge, sku: string | null) {
   return (
     (kb.products as Array<Record<string, unknown>>).find((p) => p["sku"] === sku) ?? null
   );
+}
+
+export function findAudience(kb: Knowledge, name: string | null) {
+  if (!name) return null;
+  return (
+    (kb.audiences as Array<Record<string, unknown>>).find(
+      (a) => String(a["name"]).toLowerCase() === name.toLowerCase(),
+    ) ?? null
+  );
+}
+
+/** Claims scoped to the featured product (or SKU-agnostic brand/project claims). */
+export function relevantClaims(kb: Knowledge, sku: string | null): ClaimRow[] {
+  return kb.claims.filter(
+    (c) => c.entity_type !== "product" || (sku != null && c.entity_label === sku),
+  );
+}
+
+export function productImages(kb: Knowledge, product: Record<string, unknown> | null) {
+  if (!product) return [];
+  return kb.images.filter((i) => i["product_id"] === product["id"]);
 }
 
 /* ------------------------------------------------------------------ CEO / Strategist */
@@ -141,6 +195,8 @@ export async function runResearch(
       `Angle: ${strategy.angle}`,
       `Big idea: ${strategy.big_idea}`,
       productFactsBlock(product),
+      audienceBlock(findAudience(kb, strategy.audience_name)),
+      claimsBlock(relevantClaims(kb, strategy.product_sku)),
       knowledgeBlock(kb),
       "",
       "Return: a short summary brief, a list of claims each with source_type, source_id (e.g. product SKU or project name, or null), source_confidence and verified, the single strongest objection to answer, and the recommended CTA.",
@@ -235,6 +291,8 @@ export async function runPlatformWriter(
       `Recommended CTA: ${research.recommended_cta}`,
       "VERIFIED FACTS YOU MAY USE (nothing else):",
       verifiedFacts(research),
+      claimsBlock(relevantClaims(kb, strategy.product_sku), platform),
+      audienceBlock(findAudience(kb, strategy.audience_name)),
       productFactsBlock(product),
       feedback ? `\nREVIEWER FEEDBACK — must be fixed:\n${feedback}` : "",
       "",
@@ -267,6 +325,7 @@ export async function runImageAgent(
     prompt: [
       `Scene should support: ${strategy.big_idea}`,
       productFactsBlock(product),
+      referenceImagesBlock(productImages(kb, product)),
       "",
       "Return a photorealistic image prompt (interior architecture scene, materials, light, composition, camera angle, no text/logos/watermarks), plus the exact product_geometry, finish, mounting_configuration, and a list of forbidden_modifications the generator must not apply.",
     ].join("\n"),
@@ -298,6 +357,7 @@ export async function runAccuracyValidator(
     ].join("\n"),
     prompt: [
       productFactsBlock(product),
+      claimsBlock(relevantClaims(kb, strategy.product_sku)),
       "VERIFIED CLAIMS:",
       verifiedFacts(research),
       "COPY TO VALIDATE:",
