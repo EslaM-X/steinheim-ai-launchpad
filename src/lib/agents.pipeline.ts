@@ -121,8 +121,22 @@ export async function generateTodayPipeline(supabase: DB, userId: string) {
     : null;
 
   const research = await runResearch(supabase, kb, strategy);
-  const copy = await runCopywriter(supabase, kb, strategy, research);
-  const review = await runReviewer(supabase, kb, copy);
+  let copy = await runCopywriter(supabase, kb, strategy, research);
+  let review = await runReviewer(supabase, kb, copy);
+  let revisions = 0;
+
+  // FAIL -> Revision loop: rewrite with the reviewer's notes, then re-review.
+  while (review.score < PASS_SCORE && revisions < MAX_REVISIONS) {
+    revisions += 1;
+    copy = await runCopywriter(
+      supabase,
+      kb,
+      strategy,
+      `${research}\n\nREVIEWER FEEDBACK (must be fixed, score was ${Math.round(review.score)}/100):\n${review.notes}`,
+    );
+    review = await runReviewer(supabase, kb, copy);
+  }
+  const passed = review.score >= PASS_SCORE;
 
   const { data: idea, error: ideaError } = await supabase
     .from("content_ideas")
