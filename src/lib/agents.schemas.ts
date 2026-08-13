@@ -5,8 +5,8 @@ export const strategySchema = z.object({
   topic_ar: z.string(),
   goal: z.enum(["sales", "awareness", "brand"]),
   angle: z.string(),
-  product_sku: z.string().nullable(),
-  audience_name: z.string().nullable(),
+  product_sku: z.string().nullish().transform((v) => v ?? null),
+  audience_name: z.string().nullish().transform((v) => v ?? null),
 });
 
 export const copySchema = z.object({

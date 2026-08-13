@@ -12,7 +12,7 @@ export function getApiKey() {
 }
 
 export function getModel() {
-  const gateway = createLovableAiGatewayProvider(getApiKey());
+  const gateway = createLovableAiGatewayProvider(getApiKey(), undefined, { structuredOutputs: true });
   return gateway(MODEL);
 }
 
