@@ -1,7 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { generateGatewayImage } from "./ai-gateway.server";
-import { brandSystemPrompt, genObject, genText, getApiKey, knowledgeBlock } from "./agents.server";
+import { PLATFORM_RULES, brandSystemPrompt, genObject, genText, getApiKey, knowledgeBlock } from "./agents.server";
 import { accuracySchema, reviewSchema, type Platform, type PlatformCopy } from "./agents.schemas";
 import { loadKnowledge, runPlatformWriter, type Knowledge } from "./agents.pipeline";
 
