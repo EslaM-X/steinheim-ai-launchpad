@@ -10,6 +10,7 @@ import { lovable } from "@/integrations/lovable/index";
 import { useI18n } from "@/lib/i18n";
 
 export const Route = createFileRoute("/auth")({
+  ssr: false,
   head: () => ({
     meta: [
       { title: "Sign in — Steinheim AI Marketing System" },
