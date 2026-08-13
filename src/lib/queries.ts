@@ -129,3 +129,53 @@ export const postQuery = (id: string) =>
       return data as PostRow;
     },
   });
+
+export type ScenarioRow = {
+  id: string;
+  key: string;
+  suite: string;
+  name: string;
+  description: string | null;
+  brief: Record<string, string>;
+  expected: Record<string, unknown>;
+  sort_order: number;
+};
+
+export type TestRunRow = {
+  id: string;
+  scenario_key: string;
+  suite: string;
+  batch_id: string | null;
+  idea_id: string | null;
+  final_score: number | null;
+  raw_score: number | null;
+  band: string | null;
+  penalties: Array<{ code: string; reason?: string }>;
+  hard_fail: boolean;
+  hard_fail_reasons: string[];
+  accuracy_passed: boolean | null;
+  unverified_count: number;
+  similarity_score: number | null;
+  revisions: number;
+  checks: Array<{ name: string; passed: boolean; detail: string }>;
+  passed: boolean;
+  error: string | null;
+  duration_ms: number | null;
+  created_at: string;
+};
+
+export const scenariosQuery = queryOptions({
+  queryKey: ["test_scenarios"],
+  queryFn: () =>
+    unwrap<ScenarioRow[]>(
+      supabase.from("test_scenarios").select("*").eq("is_active", true).order("sort_order"),
+    ),
+});
+
+export const testRunsQuery = queryOptions({
+  queryKey: ["test_runs"],
+  queryFn: () =>
+    unwrap<TestRunRow[]>(
+      supabase.from("test_runs").select("*").order("created_at", { ascending: false }).limit(200),
+    ),
+});
