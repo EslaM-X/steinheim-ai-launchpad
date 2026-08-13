@@ -357,6 +357,7 @@ export async function runAccuracyValidator(
     ].join("\n"),
     prompt: [
       productFactsBlock(product),
+      claimsBlock(relevantClaims(kb, strategy.product_sku)),
       "VERIFIED CLAIMS:",
       verifiedFacts(research),
       "COPY TO VALIDATE:",
