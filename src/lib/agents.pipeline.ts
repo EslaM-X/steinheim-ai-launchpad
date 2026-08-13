@@ -3,10 +3,13 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   FACT_DISCIPLINE,
   PLATFORM_RULES,
+  audienceBlock,
   brandSystemPrompt,
+  claimsBlock,
   genObject,
   knowledgeBlock,
   productFactsBlock,
+  referenceImagesBlock,
 } from "./agents.server";
 import {
   CONTENT_TYPES,
