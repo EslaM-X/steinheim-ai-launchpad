@@ -195,6 +195,8 @@ export async function runResearch(
       `Angle: ${strategy.angle}`,
       `Big idea: ${strategy.big_idea}`,
       productFactsBlock(product),
+      audienceBlock(findAudience(kb, strategy.audience_name)),
+      claimsBlock(relevantClaims(kb, strategy.product_sku)),
       knowledgeBlock(kb),
       "",
       "Return: a short summary brief, a list of claims each with source_type, source_id (e.g. product SKU or project name, or null), source_confidence and verified, the single strongest objection to answer, and the recommended CTA.",
