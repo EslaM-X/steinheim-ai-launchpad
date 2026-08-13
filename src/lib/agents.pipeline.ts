@@ -191,6 +191,20 @@ const verifiedFacts = (research: Research) =>
     .map((c) => `- ${c.claim} (source: ${c.source_type}${c.source_id ? `:${c.source_id}` : ""})`)
     .join("\n") || "- none: write about the design idea only, with no technical claims";
 
+/** Models occasionally glue hashtags together with stray glyphs — split and clean them. */
+export function sanitizeHashtags(tags: string[]): string[] {
+  const out: string[] = [];
+  for (const raw of tags) {
+    for (const part of String(raw).split(/[^\p{L}\p{N}#_]+/u)) {
+      for (const tag of part.split("#")) {
+        const t = tag.trim();
+        if (t) out.push(`#${t}`);
+      }
+    }
+  }
+  return Array.from(new Set(out)).slice(0, 10);
+}
+
 export async function runPlatformWriter(
   supabase: DB,
   kb: Knowledge,
@@ -227,8 +241,9 @@ export async function runPlatformWriter(
       `Write the ${platform} post in English (body_en) and Arabic (body_ar), plus 5-8 hashtags suited to ${platform}.`,
     ].join("\n"),
   });
-  await logRun(supabase, `writer_${platform}`, { platform, direction }, copy, started, ideaId);
-  return copy;
+  const clean: PlatformCopy = { ...copy, hashtags: sanitizeHashtags(copy.hashtags) };
+  await logRun(supabase, `writer_${platform}`, { platform, direction }, clean, started, ideaId);
+  return clean;
 }
 
 /* ------------------------------------------------------------------ Image agent */
