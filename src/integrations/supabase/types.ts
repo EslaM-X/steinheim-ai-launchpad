@@ -179,8 +179,11 @@ export type Database = {
         Row: {
           angle: string | null
           audience_id: string | null
+          content_format: string | null
+          content_type: string | null
           created_at: string
           created_by: string | null
+          funnel_stage: string | null
           goal: string
           id: string
           planned_date: string
@@ -194,8 +197,11 @@ export type Database = {
         Insert: {
           angle?: string | null
           audience_id?: string | null
+          content_format?: string | null
+          content_type?: string | null
           created_at?: string
           created_by?: string | null
+          funnel_stage?: string | null
           goal?: string
           id?: string
           planned_date?: string
@@ -209,8 +215,11 @@ export type Database = {
         Update: {
           angle?: string | null
           audience_id?: string | null
+          content_format?: string | null
+          content_type?: string | null
           created_at?: string
           created_by?: string | null
+          funnel_stage?: string | null
           goal?: string
           id?: string
           planned_date?: string
@@ -281,9 +290,11 @@ export type Database = {
       }
       posts: {
         Row: {
+          accuracy_report: Json | null
           body_ar: string | null
           body_en: string | null
           created_at: string
+          hard_fail: boolean
           hashtags: string[]
           id: string
           idea_id: string | null
@@ -292,6 +303,7 @@ export type Database = {
           platform: string
           published_at: string | null
           published_url: string | null
+          review_breakdown: Json | null
           review_notes: string | null
           review_score: number | null
           scheduled_at: string | null
@@ -299,9 +311,11 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          accuracy_report?: Json | null
           body_ar?: string | null
           body_en?: string | null
           created_at?: string
+          hard_fail?: boolean
           hashtags?: string[]
           id?: string
           idea_id?: string | null
@@ -310,6 +324,7 @@ export type Database = {
           platform: string
           published_at?: string | null
           published_url?: string | null
+          review_breakdown?: Json | null
           review_notes?: string | null
           review_score?: number | null
           scheduled_at?: string | null
@@ -317,9 +332,11 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          accuracy_report?: Json | null
           body_ar?: string | null
           body_en?: string | null
           created_at?: string
+          hard_fail?: boolean
           hashtags?: string[]
           id?: string
           idea_id?: string | null
@@ -328,6 +345,7 @@ export type Database = {
           platform?: string
           published_at?: string | null
           published_url?: string | null
+          review_breakdown?: Json | null
           review_notes?: string | null
           review_score?: number | null
           scheduled_at?: string | null
@@ -381,55 +399,82 @@ export type Database = {
       }
       products: {
         Row: {
+          approved_claims: string[]
           category_id: string | null
           created_at: string
           description: string | null
           description_ar: string | null
+          dimensions: string | null
           features: string[]
           finishes: string[]
+          forbidden_claims: string[]
           id: string
+          installation_type: string | null
           is_active: boolean
+          last_verified_at: string | null
           materials: string | null
           name: string
           name_ar: string | null
+          official_name: string | null
           price_egp: number | null
           product_url: string | null
           sku: string | null
+          source_url: string | null
+          technical_specs: Json
           updated_at: string
+          verification_status: string
         }
         Insert: {
+          approved_claims?: string[]
           category_id?: string | null
           created_at?: string
           description?: string | null
           description_ar?: string | null
+          dimensions?: string | null
           features?: string[]
           finishes?: string[]
+          forbidden_claims?: string[]
           id?: string
+          installation_type?: string | null
           is_active?: boolean
+          last_verified_at?: string | null
           materials?: string | null
           name: string
           name_ar?: string | null
+          official_name?: string | null
           price_egp?: number | null
           product_url?: string | null
           sku?: string | null
+          source_url?: string | null
+          technical_specs?: Json
           updated_at?: string
+          verification_status?: string
         }
         Update: {
+          approved_claims?: string[]
           category_id?: string | null
           created_at?: string
           description?: string | null
           description_ar?: string | null
+          dimensions?: string | null
           features?: string[]
           finishes?: string[]
+          forbidden_claims?: string[]
           id?: string
+          installation_type?: string | null
           is_active?: boolean
+          last_verified_at?: string | null
           materials?: string | null
           name?: string
           name_ar?: string | null
+          official_name?: string | null
           price_egp?: number | null
           product_url?: string | null
           sku?: string | null
+          source_url?: string | null
+          technical_specs?: Json
           updated_at?: string
+          verification_status?: string
         }
         Relationships: [
           {
