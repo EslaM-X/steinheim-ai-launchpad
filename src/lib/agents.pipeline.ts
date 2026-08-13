@@ -523,9 +523,9 @@ export async function runBrandReviewer(
 
 /* ------------------------------------------------------------------ Orchestration */
 
-export async function generateTodayPipeline(supabase: DB, userId: string) {
+export async function generateTodayPipeline(supabase: DB, userId: string, brief?: StrategyBrief) {
   const kb = await loadKnowledge(supabase);
-  const strategy = await runStrategist(supabase, kb);
+  const strategy = await runStrategist(supabase, kb, brief);
 
   const productRow = strategy.product_sku
     ? await supabase.from("products").select("id").eq("sku", strategy.product_sku).maybeSingle()
@@ -559,7 +559,11 @@ export async function generateTodayPipeline(supabase: DB, userId: string) {
   while ((review.hard_fail || review.score < PASS_SCORE) && revisions < MAX_REVISIONS) {
     revisions += 1;
     const shared = [
-      `Overall score ${Math.round(review.score)}/100.`,
+      `Overall score ${Math.round(review.score)}/100 (${review.band}), raw ${review.raw_score} before penalties.`,
+      review.applied_penalties.length
+        ? `Penalties: ${review.applied_penalties.map((x) => `${x.code} (${x.reason})`).join("; ")}`
+        : "",
+      review.blocking_reason ? `Strongest argument against publishing: ${review.blocking_reason}` : "",
       review.hard_fail ? `HARD FAIL: ${review.hard_fail_reasons.join("; ")}` : "",
       `Platform differentiation: ${review.platform_differentiation}`,
       review.notes,
@@ -590,6 +594,10 @@ export async function generateTodayPipeline(supabase: DB, userId: string) {
       content_type: strategy.content_type,
       content_format: strategy.content_format,
       funnel_stage: strategy.funnel_stage,
+      strategic_angle: strategy.strategic_angle || strategy.angle,
+      content_fingerprint: contentFingerprint([strategy.strategic_angle, strategy.big_idea, strategy.topic_en]),
+      fingerprint_terms: strategy.fingerprint_terms,
+      similarity_score: strategy.similarity_score,
       research_notes: [
         research.summary,
         "",
@@ -637,6 +645,9 @@ export async function generateTodayPipeline(supabase: DB, userId: string) {
     image_prompt: imagePromptText,
     status: passed ? "reviewed" : "needs_revision",
     review_score: Math.round(review.score),
+    raw_score: review.raw_score,
+    score_band: review.band,
+    penalties: review.applied_penalties as never,
     review_notes: `${review.notes}\n\n${p}: ${review.per_platform_notes[p]}`,
     hard_fail: review.hard_fail,
     review_breakdown: {
@@ -651,6 +662,10 @@ export async function generateTodayPipeline(supabase: DB, userId: string) {
       visual_potential,
       hard_fail_reasons: review.hard_fail_reasons,
       platform_differentiation: review.platform_differentiation,
+      blocking_reason: review.blocking_reason,
+      applied_penalties: review.applied_penalties,
+      raw_score: review.raw_score,
+      band: review.band,
     } as never,
     accuracy_report: accuracy as never,
   }));
@@ -663,7 +678,11 @@ export async function generateTodayPipeline(supabase: DB, userId: string) {
     topic: strategy.topic_en,
     contentType: strategy.content_type,
     score: Math.round(review.score),
+    rawScore: review.raw_score,
+    band: review.band,
+    penalties: review.applied_penalties,
     hardFail: review.hard_fail,
+    similarity: strategy.similarity_score,
     accuracyPassed: accuracy.passed,
     revisions,
     passed,
