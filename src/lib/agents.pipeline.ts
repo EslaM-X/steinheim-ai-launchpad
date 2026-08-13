@@ -99,12 +99,17 @@ export async function loadKnowledge(supabase: DB) {
       .lte("source_tier", 2),
     supabase
       .from("content_ideas")
-      .select("topic, content_type")
+      .select("topic, content_type, strategic_angle, fingerprint_terms")
       .order("created_at", { ascending: false })
-      .limit(15),
+      .limit(20),
   ]);
 
-  const recentRows = (recent.data ?? []) as Array<{ topic: string; content_type: string | null }>;
+  const recentRows = (recent.data ?? []) as Array<{
+    topic: string;
+    content_type: string | null;
+    strategic_angle: string | null;
+    fingerprint_terms: string[] | null;
+  }>;
 
   return {
     brand: brand.data ?? null,
@@ -115,6 +120,10 @@ export async function loadKnowledge(supabase: DB) {
     claims: (claims.data ?? []) as ClaimRow[],
     recentTopics: recentRows.map((r) => r.topic),
     recentTypes: recentRows.map((r) => r.content_type).filter(Boolean) as string[],
+    recentAngles: recentRows.map((r) => r.strategic_angle).filter(Boolean) as string[],
+    recentFingerprints: recentRows
+      .map((r) => (r.fingerprint_terms?.length ? r.fingerprint_terms : fingerprintTerms(r.topic)))
+      .filter((t) => t.length > 0),
   };
 }
 
@@ -150,27 +159,77 @@ export function productImages(kb: Knowledge, product: Record<string, unknown> | 
 
 /* ------------------------------------------------------------------ CEO / Strategist */
 
-export async function runStrategist(supabase: DB, kb: Knowledge): Promise<Strategy> {
-  const started = Date.now();
-  const strategy = await genObject({
+export type StrategyBrief = {
+  content_type?: string;
+  audience_name?: string;
+  platform_focus?: string;
+  product_sku?: string;
+  instruction?: string;
+};
+
+async function strategistAttempt(
+  kb: Knowledge,
+  brief: StrategyBrief | undefined,
+  avoid: string[],
+): Promise<Strategy> {
+  return genObject({
     schema: strategySchema,
     system: [
       brandSystemPrompt(kb.brand),
       FACT_DISCIPLINE,
+      INJECTION_DEFENSE,
       "You are the CEO / Content Strategist agent. You decide WHAT the brand publishes today and WHY — not how it is written.",
       `You must pick a content_type from: ${CONTENT_TYPES.join(", ")}.`,
       "Rotate content types, funnel stages and audiences across days. Never repeat a content_type used in the last 3 days.",
+      "ORIGINALITY RULE: a new idea is not original just because the wording differs. If the STRATEGIC IDEA (the underlying argument) matches a recent one, it is a repeat. Choose a different argument, not a different sentence.",
+      "strategic_angle: state the underlying argument in max 12 words, the way a strategist would file it (e.g. 'wall-mount reduces cleaning surfaces in high-traffic hospitality').",
     ].join("\n"),
     prompt: [
       knowledgeBlock(kb),
       `RECENT CONTENT TYPES (avoid repeating): ${kb.recentTypes.slice(0, 5).join(", ") || "none"}`,
+      `RECENT STRATEGIC ANGLES (must not be re-used or paraphrased): ${kb.recentAngles.slice(0, 12).join(" | ") || "none"}`,
+      avoid.length ? `REJECTED THIS SESSION for being too close to a previous idea: ${avoid.join(" | ")}` : "",
+      brief?.content_type ? `MANDATORY content_type: ${brief.content_type}` : "",
+      brief?.audience_name ? `MANDATORY target audience name: ${brief.audience_name}` : "",
+      brief?.product_sku ? `MANDATORY featured product SKU: ${brief.product_sku}` : "",
+      brief?.platform_focus ? `Primary platform for this idea: ${brief.platform_focus}` : "",
+      brief?.instruction ?? "",
       "",
-      "Decide today's content plan: topic (EN + AR), content_type, content_format, funnel_stage, goal, a specific creative angle, the big idea in one sentence, why this matters now, the featured product SKU (must exist in the product data, or null), and the target audience name (or null).",
+      "Decide today's content plan: topic (EN + AR), content_type, content_format, funnel_stage, goal, a specific creative angle, the strategic_angle, the big idea in one sentence, why this matters now, the featured product SKU (must exist in the product data, or null), and the target audience name (or null).",
       "The big idea must be something a competitor could NOT publish word-for-word.",
-    ].join("\n"),
+    ]
+      .filter(Boolean)
+      .join("\n"),
   });
-  await logRun(supabase, "strategist", { recentTypes: kb.recentTypes }, strategy, started);
-  return strategy;
+}
+
+export async function runStrategist(
+  supabase: DB,
+  kb: Knowledge,
+  brief?: StrategyBrief,
+): Promise<Strategy & { fingerprint_terms: string[]; similarity_score: number }> {
+  const started = Date.now();
+  const avoid: string[] = [];
+  let strategy = await strategistAttempt(kb, brief, avoid);
+  let terms = fingerprintTerms([strategy.strategic_angle, strategy.big_idea, strategy.topic_en].join(" "));
+  let sim = maxSimilarity(terms, kb.recentFingerprints);
+
+  for (let attempt = 0; attempt < 2 && sim > SIMILARITY_LIMIT; attempt += 1) {
+    avoid.push(strategy.strategic_angle || strategy.big_idea);
+    strategy = await strategistAttempt(kb, brief, avoid);
+    terms = fingerprintTerms([strategy.strategic_angle, strategy.big_idea, strategy.topic_en].join(" "));
+    sim = maxSimilarity(terms, kb.recentFingerprints);
+  }
+
+  const out = { ...strategy, fingerprint_terms: terms, similarity_score: Number(sim.toFixed(3)) };
+  await logRun(
+    supabase,
+    "strategist",
+    { recentTypes: kb.recentTypes, brief: brief ?? null, rejected: avoid },
+    out,
+    started,
+  );
+  return out;
 }
 
 /* ------------------------------------------------------------------ Research */
@@ -188,6 +247,7 @@ export async function runResearch(
     system: [
       brandSystemPrompt(kb.brand),
       FACT_DISCIPLINE,
+      INJECTION_DEFENSE,
       "You are the Research agent. You produce a factual brief. Every technical claim must be traced to a source in the knowledge base.",
       "Mark verified=true ONLY when the claim is directly supported by the supplied data; otherwise verified=false and keep it as a general design principle with no technical detail.",
       "You do not write marketing copy. No slogans, no adjectives-for-effect.",
@@ -223,6 +283,7 @@ export async function runPlatformStrategy(
     schema: platformStrategySchema,
     system: [
       brandSystemPrompt(kb.brand),
+      INJECTION_DEFENSE,
       "You are the Platform Strategy agent. You translate one big idea into three genuinely different platform executions.",
       "The three directions must differ in ENTRY POINT, VOICE and PURPOSE — not only in length.",
       PLATFORM_RULES["linkedin"],
@@ -281,6 +342,7 @@ export async function runPlatformWriter(
     system: [
       brandSystemPrompt(kb.brand),
       FACT_DISCIPLINE,
+      INJECTION_DEFENSE,
       `You are the ${platform.toUpperCase()} Writer agent. You write ONLY for ${platform}.`,
       PLATFORM_RULES[platform] ?? "",
       "You write English and Modern Standard Arabic. The Arabic is a native rewrite, never a literal translation.",
@@ -322,6 +384,7 @@ export async function runImageAgent(
     system: [
       brandSystemPrompt(kb.brand),
       FACT_DISCIPLINE,
+      INJECTION_DEFENSE,
       "You are the Designer / Image Prompt agent. Product accuracy outranks beauty: a beautiful image of the WRONG product is a failure.",
       "Describe only the geometry, finish, mounting and proportions supported by the product data. Never invent handles, spouts, logos, features or finishes.",
     ].join("\n"),
@@ -352,6 +415,7 @@ export async function runAccuracyValidator(
   const report = await genObject({
     schema: accuracySchema,
     system: [
+      INJECTION_DEFENSE,
       "You are the Accuracy Validator. You are adversarial and literal.",
       "You compare every factual statement in the copy against the supplied product data and the verified research claims.",
       "Any technical statement not directly supported is an unverified claim. Any statement that contradicts the data is a wrong fact.",
