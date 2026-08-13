@@ -56,7 +56,15 @@ function PostEditor() {
   const image = useServerFn(generatePostImage);
 
   const save = useMutation({
-    mutationFn: async (patch: Record<string, unknown>) => {
+    mutationFn: async (patch: {
+      body_en?: string;
+      body_ar?: string;
+      hashtags?: string[];
+      image_prompt?: string;
+      published_url?: string | null;
+      published_at?: string;
+      status?: string;
+    }) => {
       const { error } = await supabase.from("posts").update(patch).eq("id", postId);
       if (error) throw new Error(error.message);
     },
