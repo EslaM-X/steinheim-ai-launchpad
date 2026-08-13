@@ -46,7 +46,7 @@ function ProductsPage() {
         name_ar: nameAr || null,
         category_id: categoryId || null,
         description: description || null,
-        key_features: features.split("\n").map((f) => f.trim()).filter(Boolean),
+        features: features.split("\n").map((f) => f.trim()).filter(Boolean),
       });
       if (error) throw new Error(error.message);
     },
@@ -89,9 +89,9 @@ function ProductsPage() {
                 {product.description && (
                   <p className="mt-2 text-sm text-muted-foreground">{product.description}</p>
                 )}
-                {product.key_features?.length > 0 && (
+                {product.features?.length > 0 && (
                   <ul className="mt-3 flex flex-wrap gap-2">
-                    {product.key_features.map((f: string) => (
+                    {product.features.map((f: string) => (
                       <li key={f} className="rounded-sm bg-secondary px-2 py-1 text-xs">
                         {f}
                       </li>
