@@ -167,15 +167,15 @@ export type TestRunRow = {
 export const scenariosQuery = queryOptions({
   queryKey: ["test_scenarios"],
   queryFn: () =>
-    unwrap<ScenarioRow[]>(
+    unwrap<any[]>(
       supabase.from("test_scenarios").select("*").eq("is_active", true).order("sort_order"),
-    ),
+    ) as Promise<ScenarioRow[]>,
 });
 
 export const testRunsQuery = queryOptions({
   queryKey: ["test_runs"],
   queryFn: () =>
-    unwrap<TestRunRow[]>(
+    unwrap<any[]>(
       supabase.from("test_runs").select("*").order("created_at", { ascending: false }).limit(200),
-    ),
+    ) as Promise<TestRunRow[]>,
 });
