@@ -24,7 +24,14 @@ export type PostRow = {
   published_at: string | null;
   published_url: string | null;
   created_at: string;
-  content_ideas?: { topic: string; topic_ar: string | null; goal: string; planned_date: string } | null;
+  content_ideas?: {
+    topic: string;
+    topic_ar: string | null;
+    goal: string;
+    planned_date: string;
+    angle?: string | null;
+    research_notes?: string | null;
+  } | null;
 };
 
 export type IdeaRow = {
