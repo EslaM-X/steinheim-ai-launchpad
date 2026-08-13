@@ -302,17 +302,21 @@ export type Database = {
         Row: {
           angle: string | null
           audience_id: string | null
+          content_fingerprint: string | null
           content_format: string | null
           content_type: string | null
           created_at: string
           created_by: string | null
+          fingerprint_terms: string[]
           funnel_stage: string | null
           goal: string
           id: string
           planned_date: string
           product_id: string | null
           research_notes: string | null
+          similarity_score: number | null
           status: string
+          strategic_angle: string | null
           topic: string
           topic_ar: string | null
           updated_at: string
@@ -320,17 +324,21 @@ export type Database = {
         Insert: {
           angle?: string | null
           audience_id?: string | null
+          content_fingerprint?: string | null
           content_format?: string | null
           content_type?: string | null
           created_at?: string
           created_by?: string | null
+          fingerprint_terms?: string[]
           funnel_stage?: string | null
           goal?: string
           id?: string
           planned_date?: string
           product_id?: string | null
           research_notes?: string | null
+          similarity_score?: number | null
           status?: string
+          strategic_angle?: string | null
           topic: string
           topic_ar?: string | null
           updated_at?: string
@@ -338,17 +346,21 @@ export type Database = {
         Update: {
           angle?: string | null
           audience_id?: string | null
+          content_fingerprint?: string | null
           content_format?: string | null
           content_type?: string | null
           created_at?: string
           created_by?: string | null
+          fingerprint_terms?: string[]
           funnel_stage?: string | null
           goal?: string
           id?: string
           planned_date?: string
           product_id?: string | null
           research_notes?: string | null
+          similarity_score?: number | null
           status?: string
+          strategic_angle?: string | null
           topic?: string
           topic_ar?: string | null
           updated_at?: string
@@ -423,13 +435,16 @@ export type Database = {
           idea_id: string | null
           image_prompt: string | null
           image_url: string | null
+          penalties: Json
           platform: string
           published_at: string | null
           published_url: string | null
+          raw_score: number | null
           review_breakdown: Json | null
           review_notes: string | null
           review_score: number | null
           scheduled_at: string | null
+          score_band: string | null
           status: string
           updated_at: string
         }
@@ -444,13 +459,16 @@ export type Database = {
           idea_id?: string | null
           image_prompt?: string | null
           image_url?: string | null
+          penalties?: Json
           platform: string
           published_at?: string | null
           published_url?: string | null
+          raw_score?: number | null
           review_breakdown?: Json | null
           review_notes?: string | null
           review_score?: number | null
           scheduled_at?: string | null
+          score_band?: string | null
           status?: string
           updated_at?: string
         }
@@ -465,13 +483,16 @@ export type Database = {
           idea_id?: string | null
           image_prompt?: string | null
           image_url?: string | null
+          penalties?: Json
           platform?: string
           published_at?: string | null
           published_url?: string | null
+          raw_score?: number | null
           review_breakdown?: Json | null
           review_notes?: string | null
           review_score?: number | null
           scheduled_at?: string | null
+          score_band?: string | null
           status?: string
           updated_at?: string
         }

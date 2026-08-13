@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import {
   FACT_DISCIPLINE,
+  INJECTION_DEFENSE,
   PLATFORM_RULES,
   audienceBlock,
   brandSystemPrompt,
@@ -11,6 +12,8 @@ import {
   productFactsBlock,
   referenceImagesBlock,
 } from "./agents.server";
+import { SIMILARITY_LIMIT, contentFingerprint, fingerprintTerms, maxSimilarity } from "./originality";
+import { applyPenalties, penaltyRulesPrompt, scoreBand } from "./scoring";
 import {
   CONTENT_TYPES,
   PLATFORMS,
@@ -96,12 +99,17 @@ export async function loadKnowledge(supabase: DB) {
       .lte("source_tier", 2),
     supabase
       .from("content_ideas")
-      .select("topic, content_type")
+      .select("topic, content_type, strategic_angle, fingerprint_terms")
       .order("created_at", { ascending: false })
-      .limit(15),
+      .limit(20),
   ]);
 
-  const recentRows = (recent.data ?? []) as Array<{ topic: string; content_type: string | null }>;
+  const recentRows = (recent.data ?? []) as Array<{
+    topic: string;
+    content_type: string | null;
+    strategic_angle: string | null;
+    fingerprint_terms: string[] | null;
+  }>;
 
   return {
     brand: brand.data ?? null,
@@ -112,6 +120,10 @@ export async function loadKnowledge(supabase: DB) {
     claims: (claims.data ?? []) as ClaimRow[],
     recentTopics: recentRows.map((r) => r.topic),
     recentTypes: recentRows.map((r) => r.content_type).filter(Boolean) as string[],
+    recentAngles: recentRows.map((r) => r.strategic_angle).filter(Boolean) as string[],
+    recentFingerprints: recentRows
+      .map((r) => (r.fingerprint_terms?.length ? r.fingerprint_terms : fingerprintTerms(r.topic)))
+      .filter((t) => t.length > 0),
   };
 }
 
@@ -147,27 +159,77 @@ export function productImages(kb: Knowledge, product: Record<string, unknown> | 
 
 /* ------------------------------------------------------------------ CEO / Strategist */
 
-export async function runStrategist(supabase: DB, kb: Knowledge): Promise<Strategy> {
-  const started = Date.now();
-  const strategy = await genObject({
+export type StrategyBrief = {
+  content_type?: string;
+  audience_name?: string;
+  platform_focus?: string;
+  product_sku?: string;
+  instruction?: string;
+};
+
+async function strategistAttempt(
+  kb: Knowledge,
+  brief: StrategyBrief | undefined,
+  avoid: string[],
+): Promise<Strategy> {
+  return genObject({
     schema: strategySchema,
     system: [
       brandSystemPrompt(kb.brand),
       FACT_DISCIPLINE,
+      INJECTION_DEFENSE,
       "You are the CEO / Content Strategist agent. You decide WHAT the brand publishes today and WHY — not how it is written.",
       `You must pick a content_type from: ${CONTENT_TYPES.join(", ")}.`,
       "Rotate content types, funnel stages and audiences across days. Never repeat a content_type used in the last 3 days.",
+      "ORIGINALITY RULE: a new idea is not original just because the wording differs. If the STRATEGIC IDEA (the underlying argument) matches a recent one, it is a repeat. Choose a different argument, not a different sentence.",
+      "strategic_angle: state the underlying argument in max 12 words, the way a strategist would file it (e.g. 'wall-mount reduces cleaning surfaces in high-traffic hospitality').",
     ].join("\n"),
     prompt: [
       knowledgeBlock(kb),
       `RECENT CONTENT TYPES (avoid repeating): ${kb.recentTypes.slice(0, 5).join(", ") || "none"}`,
+      `RECENT STRATEGIC ANGLES (must not be re-used or paraphrased): ${kb.recentAngles.slice(0, 12).join(" | ") || "none"}`,
+      avoid.length ? `REJECTED THIS SESSION for being too close to a previous idea: ${avoid.join(" | ")}` : "",
+      brief?.content_type ? `MANDATORY content_type: ${brief.content_type}` : "",
+      brief?.audience_name ? `MANDATORY target audience name: ${brief.audience_name}` : "",
+      brief?.product_sku ? `MANDATORY featured product SKU: ${brief.product_sku}` : "",
+      brief?.platform_focus ? `Primary platform for this idea: ${brief.platform_focus}` : "",
+      brief?.instruction ?? "",
       "",
-      "Decide today's content plan: topic (EN + AR), content_type, content_format, funnel_stage, goal, a specific creative angle, the big idea in one sentence, why this matters now, the featured product SKU (must exist in the product data, or null), and the target audience name (or null).",
+      "Decide today's content plan: topic (EN + AR), content_type, content_format, funnel_stage, goal, a specific creative angle, the strategic_angle, the big idea in one sentence, why this matters now, the featured product SKU (must exist in the product data, or null), and the target audience name (or null).",
       "The big idea must be something a competitor could NOT publish word-for-word.",
-    ].join("\n"),
+    ]
+      .filter(Boolean)
+      .join("\n"),
   });
-  await logRun(supabase, "strategist", { recentTypes: kb.recentTypes }, strategy, started);
-  return strategy;
+}
+
+export async function runStrategist(
+  supabase: DB,
+  kb: Knowledge,
+  brief?: StrategyBrief,
+): Promise<Strategy & { fingerprint_terms: string[]; similarity_score: number }> {
+  const started = Date.now();
+  const avoid: string[] = [];
+  let strategy = await strategistAttempt(kb, brief, avoid);
+  let terms = fingerprintTerms([strategy.strategic_angle, strategy.big_idea, strategy.topic_en].join(" "));
+  let sim = maxSimilarity(terms, kb.recentFingerprints);
+
+  for (let attempt = 0; attempt < 2 && sim > SIMILARITY_LIMIT; attempt += 1) {
+    avoid.push(strategy.strategic_angle || strategy.big_idea);
+    strategy = await strategistAttempt(kb, brief, avoid);
+    terms = fingerprintTerms([strategy.strategic_angle, strategy.big_idea, strategy.topic_en].join(" "));
+    sim = maxSimilarity(terms, kb.recentFingerprints);
+  }
+
+  const out = { ...strategy, fingerprint_terms: terms, similarity_score: Number(sim.toFixed(3)) };
+  await logRun(
+    supabase,
+    "strategist",
+    { recentTypes: kb.recentTypes, brief: brief ?? null, rejected: avoid },
+    out,
+    started,
+  );
+  return out;
 }
 
 /* ------------------------------------------------------------------ Research */
@@ -185,6 +247,7 @@ export async function runResearch(
     system: [
       brandSystemPrompt(kb.brand),
       FACT_DISCIPLINE,
+      INJECTION_DEFENSE,
       "You are the Research agent. You produce a factual brief. Every technical claim must be traced to a source in the knowledge base.",
       "Mark verified=true ONLY when the claim is directly supported by the supplied data; otherwise verified=false and keep it as a general design principle with no technical detail.",
       "You do not write marketing copy. No slogans, no adjectives-for-effect.",
@@ -220,6 +283,7 @@ export async function runPlatformStrategy(
     schema: platformStrategySchema,
     system: [
       brandSystemPrompt(kb.brand),
+      INJECTION_DEFENSE,
       "You are the Platform Strategy agent. You translate one big idea into three genuinely different platform executions.",
       "The three directions must differ in ENTRY POINT, VOICE and PURPOSE — not only in length.",
       PLATFORM_RULES["linkedin"],
@@ -278,6 +342,7 @@ export async function runPlatformWriter(
     system: [
       brandSystemPrompt(kb.brand),
       FACT_DISCIPLINE,
+      INJECTION_DEFENSE,
       `You are the ${platform.toUpperCase()} Writer agent. You write ONLY for ${platform}.`,
       PLATFORM_RULES[platform] ?? "",
       "You write English and Modern Standard Arabic. The Arabic is a native rewrite, never a literal translation.",
@@ -319,6 +384,7 @@ export async function runImageAgent(
     system: [
       brandSystemPrompt(kb.brand),
       FACT_DISCIPLINE,
+      INJECTION_DEFENSE,
       "You are the Designer / Image Prompt agent. Product accuracy outranks beauty: a beautiful image of the WRONG product is a failure.",
       "Describe only the geometry, finish, mounting and proportions supported by the product data. Never invent handles, spouts, logos, features or finishes.",
     ].join("\n"),
@@ -349,6 +415,7 @@ export async function runAccuracyValidator(
   const report = await genObject({
     schema: accuracySchema,
     system: [
+      INJECTION_DEFENSE,
       "You are the Accuracy Validator. You are adversarial and literal.",
       "You compare every factual statement in the copy against the supplied product data and the verified research claims.",
       "Any technical statement not directly supported is an unverified claim. Any statement that contradicts the data is a wrong fact.",
@@ -373,24 +440,32 @@ export async function runAccuracyValidator(
 /* ------------------------------------------------------------------ Brand reviewer */
 
 const REVIEWER_SYSTEM = [
-  "You are the BRAND GATEKEEPER, not a quality checker.",
-  "The only question you answer is: does this deserve to be published on the brand's own channels?",
-  "Be strict and unflattering. Most first drafts deserve 70-85. Reserve 90+ for content a leading brand would be proud to publish.",
+  "You are the BRAND GATEKEEPER. You are adversarial by default.",
+  "Your job is NOT to ask 'is this good?'. Your job is: FIND A REASON STEINHEIM SHOULD NOT PUBLISH THIS.",
+  "Assume the copy is flawed until proven otherwise. If you cannot find a weakness, you have not looked hard enough — name the weakest element anyway.",
   "",
-  "SCORE MODEL (sum to 100): brand_alignment /15, product_accuracy /20, platform_fit /15, strategic_value /15, audience_relevance /10, originality /10, cta_quality /5, language_quality /5, visual_potential /5.",
-  "score = the sum of the nine components.",
+  "SCORE MODEL (components sum to at most 100): brand_alignment /15, product_accuracy /20, platform_fit /15, strategic_value /15, audience_relevance /10, originality /10, cta_quality /5, language_quality /5, visual_potential /5.",
+  "Component discipline: award the full sub-score ONLY for work a leading international brand would publish unchanged. Competent-but-ordinary work gets ~70% of the sub-score. Anything you had to argue yourself into gets less.",
+  "Set score = the sum of the nine components BEFORE penalties. The system subtracts penalties itself.",
   "",
-  "HARD FAIL CONDITIONS — set hard_fail=true regardless of score:",
-  "- any product claim that is not verified",
-  "- a wrong or invented SKU",
-  "- platform mismatch (a post that does not read native to its platform)",
-  "- an invented technical feature",
-  "- generic content any competitor could publish unchanged",
-  "- brand positioning inconsistency",
+  "SCORE BANDS (after penalties): 95-100 exceptional | 90-94 strong | 85-89 pass with minor revision | 75-84 revision required | <75 fail.",
+  "A 99 means you could not find a single improvable sentence across three platforms and two languages. That is almost never true.",
   "",
-  "PLATFORM DIFFERENTIATION: judge whether LinkedIn feels like LinkedIn, Facebook like Facebook, Instagram like Instagram.",
-  "If the three posts are the same idea in the same voice at different lengths, that is a platform mismatch hard fail.",
+  penaltyRulesPrompt(),
+  "",
+  "HARD FAIL (0 chance of PASS regardless of score): unverified factual claim, wrong/invented SKU, forbidden brand claim, invented technical feature, brand positioning inconsistency.",
+  "Report hard fails through the penalty codes (unverified_claim, wrong_sku, forbidden_claim) and also set hard_fail=true with reasons.",
+  "",
+  "PLATFORM DIFFERENTIATION: LinkedIn must read like LinkedIn, Facebook like Facebook, Instagram like Instagram. Same idea in the same voice at three lengths = platform_similarity penalty, and platform_mismatch if any single post is wrong for its channel.",
+  "blocking_reason: one sentence naming the single strongest argument against publishing this.",
 ].join("\n");
+
+export type ScoredReview = Review & {
+  components: Record<string, number>;
+  raw_score: number;
+  applied_penalties: ReturnType<typeof applyPenalties>["penalties"];
+  band: ReturnType<typeof scoreBand>;
+};
 
 export async function runBrandReviewer(
   supabase: DB,
@@ -399,7 +474,7 @@ export async function runBrandReviewer(
   copies: Record<Platform, PlatformCopy>,
   accuracy: AccuracyReport,
   ideaId?: string,
-): Promise<Review> {
+): Promise<ScoredReview> {
   const started = Date.now();
   const review = await genObject({
     schema: reviewSchema,
@@ -407,21 +482,50 @@ export async function runBrandReviewer(
     prompt: [
       `Strategy: ${JSON.stringify(strategy)}`,
       `Accuracy validator report: ${JSON.stringify(accuracy)}`,
+      `Recently published strategic angles (judge originality against these): ${kb.recentAngles.slice(0, 10).join(" | ") || "none"}`,
+      INJECTION_DEFENSE,
       "CONTENT:",
       JSON.stringify(copies),
       "",
-      "Score each component, sum them into score, decide hard_fail with reasons, assess platform differentiation, and give actionable per-platform notes plus overall notes.",
+      "Score each component, sum them into score, list every applicable penalty code with a reason, decide hard_fail with reasons, state the blocking_reason, assess platform differentiation, and give actionable per-platform notes plus overall notes.",
     ].join("\n"),
   });
-  await logRun(supabase, "brand_reviewer", { strategy }, review, started, ideaId);
-  return review;
+  const components = {
+    brand_alignment: review.brand_alignment,
+    product_accuracy: review.product_accuracy,
+    platform_fit: review.platform_fit,
+    strategic_value: review.strategic_value,
+    audience_relevance: review.audience_relevance,
+    originality: review.originality,
+    cta_quality: review.cta_quality,
+    language_quality: review.language_quality,
+    visual_potential: review.visual_potential,
+  };
+  const extraHardFails = [
+    ...accuracy.unverified_claims.map((c) => `accuracy: unverified claim — ${c}`),
+    ...accuracy.wrong_facts.map((c) => `accuracy: wrong fact — ${c}`),
+    ...(review.hard_fail ? review.hard_fail_reasons : []),
+  ];
+  const applied = applyPenalties({ components, penalties: review.penalties, extraHardFails });
+  const scored: ScoredReview = {
+    ...review,
+    components,
+    score: applied.score,
+    raw_score: applied.rawScore,
+    hard_fail: applied.hardFail,
+    hard_fail_reasons: Array.from(new Set(applied.hardFailReasons)),
+    applied_penalties: applied.penalties,
+    band: applied.band,
+  };
+  await logRun(supabase, "brand_reviewer", { strategy }, scored, started, ideaId);
+  return scored;
 }
 
 /* ------------------------------------------------------------------ Orchestration */
 
-export async function generateTodayPipeline(supabase: DB, userId: string) {
+export async function generateTodayPipeline(supabase: DB, userId: string, brief?: StrategyBrief) {
   const kb = await loadKnowledge(supabase);
-  const strategy = await runStrategist(supabase, kb);
+  const strategy = await runStrategist(supabase, kb, brief);
 
   const productRow = strategy.product_sku
     ? await supabase.from("products").select("id").eq("sku", strategy.product_sku).maybeSingle()
@@ -455,7 +559,11 @@ export async function generateTodayPipeline(supabase: DB, userId: string) {
   while ((review.hard_fail || review.score < PASS_SCORE) && revisions < MAX_REVISIONS) {
     revisions += 1;
     const shared = [
-      `Overall score ${Math.round(review.score)}/100.`,
+      `Overall score ${Math.round(review.score)}/100 (${review.band}), raw ${review.raw_score} before penalties.`,
+      review.applied_penalties.length
+        ? `Penalties: ${review.applied_penalties.map((x) => `${x.code} (${x.reason})`).join("; ")}`
+        : "",
+      review.blocking_reason ? `Strongest argument against publishing: ${review.blocking_reason}` : "",
       review.hard_fail ? `HARD FAIL: ${review.hard_fail_reasons.join("; ")}` : "",
       `Platform differentiation: ${review.platform_differentiation}`,
       review.notes,
@@ -486,6 +594,10 @@ export async function generateTodayPipeline(supabase: DB, userId: string) {
       content_type: strategy.content_type,
       content_format: strategy.content_format,
       funnel_stage: strategy.funnel_stage,
+      strategic_angle: strategy.strategic_angle || strategy.angle,
+      content_fingerprint: contentFingerprint([strategy.strategic_angle, strategy.big_idea, strategy.topic_en]),
+      fingerprint_terms: strategy.fingerprint_terms,
+      similarity_score: strategy.similarity_score,
       research_notes: [
         research.summary,
         "",
@@ -533,6 +645,9 @@ export async function generateTodayPipeline(supabase: DB, userId: string) {
     image_prompt: imagePromptText,
     status: passed ? "reviewed" : "needs_revision",
     review_score: Math.round(review.score),
+    raw_score: review.raw_score,
+    score_band: review.band,
+    penalties: review.applied_penalties as never,
     review_notes: `${review.notes}\n\n${p}: ${review.per_platform_notes[p]}`,
     hard_fail: review.hard_fail,
     review_breakdown: {
@@ -547,6 +662,10 @@ export async function generateTodayPipeline(supabase: DB, userId: string) {
       visual_potential,
       hard_fail_reasons: review.hard_fail_reasons,
       platform_differentiation: review.platform_differentiation,
+      blocking_reason: review.blocking_reason,
+      applied_penalties: review.applied_penalties,
+      raw_score: review.raw_score,
+      band: review.band,
     } as never,
     accuracy_report: accuracy as never,
   }));
@@ -559,7 +678,11 @@ export async function generateTodayPipeline(supabase: DB, userId: string) {
     topic: strategy.topic_en,
     contentType: strategy.content_type,
     score: Math.round(review.score),
+    rawScore: review.raw_score,
+    band: review.band,
+    penalties: review.applied_penalties,
     hardFail: review.hard_fail,
+    similarity: strategy.similarity_score,
     accuracyPassed: accuracy.passed,
     revisions,
     passed,

@@ -86,7 +86,7 @@ function AuthPage() {
     navigate({ to: "/dashboard" });
   }
 
-  if (!mounted) return <div className="min-h-screen bg-background" />;
+  if (!mounted) return null;
 
   return (
     <div dir={dir} className="grid min-h-screen lg:grid-cols-2">
