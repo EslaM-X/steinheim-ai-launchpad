@@ -648,7 +648,14 @@ export async function generateTodayPipeline(
     idea_id: idea.id,
     hashtags: copies[p].hashtags,
     image_prompt: imagePromptText,
-    status: passed ? "reviewed" : "needs_revision",
+    // AI approval only — a human still has to approve before scheduling/publishing.
+    status: passed ? "ai_approved" : "needs_revision",
+    ai_approved: passed,
+    ai_approved_at: passed ? new Date().toISOString() : null,
+    ai_recommendation: passed
+      ? `AI recommends publishing (${Math.round(review.score)}/100, ${review.band}). Awaiting human approval.`
+      : `AI does not recommend publishing: ${review.hard_fail ? review.hard_fail_reasons.join("; ") : review.blocking_reason}`,
+    is_test: options?.isTest ?? false,
     review_score: Math.round(review.score),
     raw_score: review.raw_score,
     score_band: review.band,
@@ -682,14 +689,23 @@ export async function generateTodayPipeline(
     ideaId: idea.id as string,
     topic: strategy.topic_en,
     contentType: strategy.content_type,
+    audienceName: strategy.audience_name,
+    productSku: strategy.product_sku,
     score: Math.round(review.score),
     rawScore: review.raw_score,
     band: review.band,
     penalties: review.applied_penalties,
+    penaltyCodes: review.applied_penalties.map((x) => x.code),
     hardFail: review.hard_fail,
+    hardFailReasons: review.hard_fail_reasons,
     similarity: strategy.similarity_score,
     accuracyPassed: accuracy.passed,
+    unverifiedClaims: accuracy.unverified_claims,
+    wrongFacts: accuracy.wrong_facts,
+    copyText: PLATFORMS.map((p) => `${copies[p].body_en}\n${copies[p].body_ar}`).join("\n"),
     revisions,
     passed,
+    aiApproved: passed,
   };
 }
+
