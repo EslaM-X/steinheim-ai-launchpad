@@ -33,6 +33,8 @@ const dict = {
   publish: { ar: "النشر", en: "Publish" },
   analytics: { ar: "التحليلات", en: "Analytics" },
   logs: { ar: "السجل", en: "Logs" },
+  tests: { ar: "الاختبارات", en: "Tests" },
+
   generateToday: { ar: "توليد محتوى اليوم", en: "Generate Today" },
   generating: { ar: "جارٍ التوليد…", en: "Generating…" },
   postsThisMonth: { ar: "منشورات هذا الشهر", en: "Posts this month" },
