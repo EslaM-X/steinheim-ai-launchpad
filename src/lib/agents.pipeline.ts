@@ -55,17 +55,45 @@ async function logRun(
   });
 }
 
+export type ClaimRow = {
+  id: string;
+  claim_text: string;
+  claim_type: string;
+  entity_type: string;
+  entity_label: string | null;
+  source_tier: number;
+  approved_for: string[];
+};
+
 export async function loadKnowledge(supabase: DB) {
-  const [brand, products, audiences, projects, recent] = await Promise.all([
+  const [brand, products, images, audiences, projects, claims, recent] = await Promise.all([
     supabase.from("brand_profile").select("*").limit(1).maybeSingle(),
     supabase
       .from("products")
       .select(
-        "name, official_name, name_ar, sku, description, materials, finishes, features, dimensions, installation_type, technical_specs, approved_claims, forbidden_claims, verification_status, source_url, product_url",
+        "id, name, official_name, name_ar, sku, description, materials, finishes, features, dimensions, installation_type, technical_specs, approved_claims, forbidden_claims, verification_status, source_url, product_url, price_egp",
       )
       .eq("is_active", true),
-    supabase.from("audiences").select("name, name_ar, description, pain_points, motivations, channels"),
-    supabase.from("projects").select("name, location, country, description"),
+    supabase
+      .from("product_images")
+      .select("product_id, image_url, alt_text, image_type, angle, finish, background, visual_notes, is_primary")
+      .eq("approved_for_ai", true)
+      .eq("verified", true),
+    supabase
+      .from("audiences")
+      .select(
+        "name, name_ar, role, description, business_context, pain_points, motivations, goals, buying_criteria, objections, decision_authority, preferred_content, cta_preference, channels, language",
+      ),
+    supabase
+      .from("projects")
+      .select(
+        "name, location, country, project_type, description, collections, finishes, verified_facts, approved_claims, verification_status",
+      ),
+    supabase
+      .from("claims")
+      .select("id, claim_text, claim_type, entity_type, entity_label, source_tier, approved_for")
+      .eq("verified", true)
+      .lte("source_tier", 2),
     supabase
       .from("content_ideas")
       .select("topic, content_type")
@@ -78,8 +106,10 @@ export async function loadKnowledge(supabase: DB) {
   return {
     brand: brand.data ?? null,
     products: products.data ?? [],
+    images: (images.data ?? []) as Array<Record<string, unknown>>,
     audiences: audiences.data ?? [],
     projects: projects.data ?? [],
+    claims: (claims.data ?? []) as ClaimRow[],
     recentTopics: recentRows.map((r) => r.topic),
     recentTypes: recentRows.map((r) => r.content_type).filter(Boolean) as string[],
   };
@@ -92,6 +122,27 @@ export function findProduct(kb: Knowledge, sku: string | null) {
   return (
     (kb.products as Array<Record<string, unknown>>).find((p) => p["sku"] === sku) ?? null
   );
+}
+
+export function findAudience(kb: Knowledge, name: string | null) {
+  if (!name) return null;
+  return (
+    (kb.audiences as Array<Record<string, unknown>>).find(
+      (a) => String(a["name"]).toLowerCase() === name.toLowerCase(),
+    ) ?? null
+  );
+}
+
+/** Claims scoped to the featured product (or SKU-agnostic brand/project claims). */
+export function relevantClaims(kb: Knowledge, sku: string | null): ClaimRow[] {
+  return kb.claims.filter(
+    (c) => c.entity_type !== "product" || (sku != null && c.entity_label === sku),
+  );
+}
+
+export function productImages(kb: Knowledge, product: Record<string, unknown> | null) {
+  if (!product) return [];
+  return kb.images.filter((i) => i["product_id"] === product["id"]);
 }
 
 /* ------------------------------------------------------------------ CEO / Strategist */
