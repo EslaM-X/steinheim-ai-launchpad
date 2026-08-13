@@ -426,15 +426,21 @@ export type Database = {
       posts: {
         Row: {
           accuracy_report: Json | null
+          ai_approved: boolean
+          ai_approved_at: string | null
+          ai_recommendation: string | null
           body_ar: string | null
           body_en: string | null
           created_at: string
           hard_fail: boolean
           hashtags: string[]
+          human_approved_at: string | null
+          human_approved_by: string | null
           id: string
           idea_id: string | null
           image_prompt: string | null
           image_url: string | null
+          is_test: boolean
           penalties: Json
           platform: string
           published_at: string | null
@@ -450,15 +456,21 @@ export type Database = {
         }
         Insert: {
           accuracy_report?: Json | null
+          ai_approved?: boolean
+          ai_approved_at?: string | null
+          ai_recommendation?: string | null
           body_ar?: string | null
           body_en?: string | null
           created_at?: string
           hard_fail?: boolean
           hashtags?: string[]
+          human_approved_at?: string | null
+          human_approved_by?: string | null
           id?: string
           idea_id?: string | null
           image_prompt?: string | null
           image_url?: string | null
+          is_test?: boolean
           penalties?: Json
           platform: string
           published_at?: string | null
@@ -474,15 +486,21 @@ export type Database = {
         }
         Update: {
           accuracy_report?: Json | null
+          ai_approved?: boolean
+          ai_approved_at?: string | null
+          ai_recommendation?: string | null
           body_ar?: string | null
           body_en?: string | null
           created_at?: string
           hard_fail?: boolean
           hashtags?: string[]
+          human_approved_at?: string | null
+          human_approved_by?: string | null
           id?: string
           idea_id?: string | null
           image_prompt?: string | null
           image_url?: string | null
+          is_test?: boolean
           penalties?: Json
           platform?: string
           published_at?: string | null
@@ -735,6 +753,135 @@ export type Database = {
           updated_at?: string
           verification_status?: string
           verified_facts?: string[]
+        }
+        Relationships: []
+      }
+      test_runs: {
+        Row: {
+          accuracy_passed: boolean | null
+          band: string | null
+          batch_id: string | null
+          checks: Json
+          created_at: string
+          created_by: string | null
+          duration_ms: number | null
+          error: string | null
+          final_score: number | null
+          hard_fail: boolean
+          hard_fail_reasons: Json
+          id: string
+          idea_id: string | null
+          passed: boolean
+          penalties: Json
+          raw_score: number | null
+          revisions: number
+          scenario_id: string | null
+          scenario_key: string
+          similarity_score: number | null
+          suite: string
+          unverified_count: number
+        }
+        Insert: {
+          accuracy_passed?: boolean | null
+          band?: string | null
+          batch_id?: string | null
+          checks?: Json
+          created_at?: string
+          created_by?: string | null
+          duration_ms?: number | null
+          error?: string | null
+          final_score?: number | null
+          hard_fail?: boolean
+          hard_fail_reasons?: Json
+          id?: string
+          idea_id?: string | null
+          passed?: boolean
+          penalties?: Json
+          raw_score?: number | null
+          revisions?: number
+          scenario_id?: string | null
+          scenario_key: string
+          similarity_score?: number | null
+          suite?: string
+          unverified_count?: number
+        }
+        Update: {
+          accuracy_passed?: boolean | null
+          band?: string | null
+          batch_id?: string | null
+          checks?: Json
+          created_at?: string
+          created_by?: string | null
+          duration_ms?: number | null
+          error?: string | null
+          final_score?: number | null
+          hard_fail?: boolean
+          hard_fail_reasons?: Json
+          id?: string
+          idea_id?: string | null
+          passed?: boolean
+          penalties?: Json
+          raw_score?: number | null
+          revisions?: number
+          scenario_id?: string | null
+          scenario_key?: string
+          similarity_score?: number | null
+          suite?: string
+          unverified_count?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "test_runs_idea_id_fkey"
+            columns: ["idea_id"]
+            isOneToOne: false
+            referencedRelation: "content_ideas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "test_runs_scenario_id_fkey"
+            columns: ["scenario_id"]
+            isOneToOne: false
+            referencedRelation: "test_scenarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      test_scenarios: {
+        Row: {
+          brief: Json
+          created_at: string
+          description: string | null
+          expected: Json
+          id: string
+          is_active: boolean
+          key: string
+          name: string
+          sort_order: number
+          suite: string
+        }
+        Insert: {
+          brief?: Json
+          created_at?: string
+          description?: string | null
+          expected?: Json
+          id?: string
+          is_active?: boolean
+          key: string
+          name: string
+          sort_order?: number
+          suite?: string
+        }
+        Update: {
+          brief?: Json
+          created_at?: string
+          description?: string | null
+          expected?: Json
+          id?: string
+          is_active?: boolean
+          key?: string
+          name?: string
+          sort_order?: number
+          suite?: string
         }
         Relationships: []
       }
