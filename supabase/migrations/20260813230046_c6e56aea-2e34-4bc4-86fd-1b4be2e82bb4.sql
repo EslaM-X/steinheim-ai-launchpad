@@ -1,0 +1,12 @@
+CREATE INDEX IF NOT EXISTS idx_products_category ON public.products (category_id);
+CREATE INDEX IF NOT EXISTS idx_product_images_product ON public.product_images (product_id);
+CREATE INDEX IF NOT EXISTS idx_ideas_product ON public.content_ideas (product_id);
+CREATE INDEX IF NOT EXISTS idx_ideas_audience ON public.content_ideas (audience_id);
+CREATE INDEX IF NOT EXISTS idx_ideas_planned_date ON public.content_ideas (planned_date DESC);
+CREATE INDEX IF NOT EXISTS idx_posts_idea ON public.posts (idea_id);
+CREATE INDEX IF NOT EXISTS idx_posts_status ON public.posts (status);
+CREATE INDEX IF NOT EXISTS idx_posts_created_at ON public.posts (created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_analytics_post ON public.post_analytics (post_id);
+CREATE INDEX IF NOT EXISTS idx_analytics_measured_on ON public.post_analytics (measured_on DESC);
+CREATE INDEX IF NOT EXISTS idx_agent_runs_idea ON public.agent_runs (idea_id);
+CREATE INDEX IF NOT EXISTS idx_agent_runs_created_at ON public.agent_runs (created_at DESC);

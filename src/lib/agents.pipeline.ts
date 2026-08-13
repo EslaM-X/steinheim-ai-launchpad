@@ -59,6 +59,9 @@ export async function runStrategist(supabase: DB) {
   return { strategy, kb };
 }
 
+export const PASS_SCORE = 78;
+export const MAX_REVISIONS = 2;
+
 export async function runResearch(
   supabase: DB,
   kb: Awaited<ReturnType<typeof loadKnowledge>>,
@@ -121,8 +124,22 @@ export async function generateTodayPipeline(supabase: DB, userId: string) {
     : null;
 
   const research = await runResearch(supabase, kb, strategy);
-  const copy = await runCopywriter(supabase, kb, strategy, research);
-  const review = await runReviewer(supabase, kb, copy);
+  let copy = await runCopywriter(supabase, kb, strategy, research);
+  let review = await runReviewer(supabase, kb, copy);
+  let revisions = 0;
+
+  // FAIL -> Revision loop: rewrite with the reviewer's notes, then re-review.
+  while (review.score < PASS_SCORE && revisions < MAX_REVISIONS) {
+    revisions += 1;
+    copy = await runCopywriter(
+      supabase,
+      kb,
+      strategy,
+      `${research}\n\nREVIEWER FEEDBACK (must be fixed, score was ${Math.round(review.score)}/100):\n${review.notes}`,
+    );
+    review = await runReviewer(supabase, kb, copy);
+  }
+  const passed = review.score >= PASS_SCORE;
 
   const { data: idea, error: ideaError } = await supabase
     .from("content_ideas")
@@ -134,7 +151,7 @@ export async function generateTodayPipeline(supabase: DB, userId: string) {
       research_notes: research,
       product_id: productRow?.data?.id ?? null,
       audience_id: audienceRow?.data?.id ?? null,
-      status: "generated",
+      status: passed ? "generated" : "needs_revision",
       created_by: userId,
     })
     .select("id")
@@ -150,7 +167,7 @@ export async function generateTodayPipeline(supabase: DB, userId: string) {
     idea_id: idea.id,
     hashtags: copy.hashtags,
     image_prompt: copy.image_prompt,
-    status: "reviewed",
+    status: passed ? "reviewed" : "needs_revision",
     review_score: Math.round(review.score),
     review_notes: review.notes,
   }));
@@ -158,5 +175,11 @@ export async function generateTodayPipeline(supabase: DB, userId: string) {
   const { error: postsError } = await supabase.from("posts").insert(posts);
   if (postsError) throw new Error(postsError.message);
 
-  return { ideaId: idea.id as string, topic: strategy.topic_en, score: Math.round(review.score) };
+  return {
+    ideaId: idea.id as string,
+    topic: strategy.topic_en,
+    score: Math.round(review.score),
+    revisions,
+    passed,
+  };
 }
