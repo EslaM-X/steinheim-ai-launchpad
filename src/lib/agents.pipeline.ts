@@ -460,6 +460,13 @@ const REVIEWER_SYSTEM = [
   "blocking_reason: one sentence naming the single strongest argument against publishing this.",
 ].join("\n");
 
+export type ScoredReview = Review & {
+  components: Record<string, number>;
+  raw_score: number;
+  applied_penalties: ReturnType<typeof applyPenalties>["penalties"];
+  band: ReturnType<typeof scoreBand>;
+};
+
 export async function runBrandReviewer(
   supabase: DB,
   kb: Knowledge,
@@ -467,7 +474,7 @@ export async function runBrandReviewer(
   copies: Record<Platform, PlatformCopy>,
   accuracy: AccuracyReport,
   ideaId?: string,
-): Promise<Review> {
+): Promise<ScoredReview> {
   const started = Date.now();
   const review = await genObject({
     schema: reviewSchema,
@@ -483,8 +490,35 @@ export async function runBrandReviewer(
       "Score each component, sum them into score, list every applicable penalty code with a reason, decide hard_fail with reasons, state the blocking_reason, assess platform differentiation, and give actionable per-platform notes plus overall notes.",
     ].join("\n"),
   });
-  await logRun(supabase, "brand_reviewer", { strategy }, review, started, ideaId);
-  return review;
+  const components = {
+    brand_alignment: review.brand_alignment,
+    product_accuracy: review.product_accuracy,
+    platform_fit: review.platform_fit,
+    strategic_value: review.strategic_value,
+    audience_relevance: review.audience_relevance,
+    originality: review.originality,
+    cta_quality: review.cta_quality,
+    language_quality: review.language_quality,
+    visual_potential: review.visual_potential,
+  };
+  const extraHardFails = [
+    ...accuracy.unverified_claims.map((c) => `accuracy: unverified claim — ${c}`),
+    ...accuracy.wrong_facts.map((c) => `accuracy: wrong fact — ${c}`),
+    ...(review.hard_fail ? review.hard_fail_reasons : []),
+  ];
+  const applied = applyPenalties({ components, penalties: review.penalties, extraHardFails });
+  const scored: ScoredReview = {
+    ...review,
+    components,
+    score: applied.score,
+    raw_score: applied.rawScore,
+    hard_fail: applied.hardFail,
+    hard_fail_reasons: Array.from(new Set(applied.hardFailReasons)),
+    applied_penalties: applied.penalties,
+    band: applied.band,
+  };
+  await logRun(supabase, "brand_reviewer", { strategy }, scored, started, ideaId);
+  return scored;
 }
 
 /* ------------------------------------------------------------------ Orchestration */
