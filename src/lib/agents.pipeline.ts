@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import {
   FACT_DISCIPLINE,
+  INJECTION_DEFENSE,
   PLATFORM_RULES,
   audienceBlock,
   brandSystemPrompt,
@@ -11,6 +12,8 @@ import {
   productFactsBlock,
   referenceImagesBlock,
 } from "./agents.server";
+import { SIMILARITY_LIMIT, contentFingerprint, fingerprintTerms, maxSimilarity } from "./originality";
+import { applyPenalties, penaltyRulesPrompt, scoreBand } from "./scoring";
 import {
   CONTENT_TYPES,
   PLATFORMS,
@@ -373,23 +376,24 @@ export async function runAccuracyValidator(
 /* ------------------------------------------------------------------ Brand reviewer */
 
 const REVIEWER_SYSTEM = [
-  "You are the BRAND GATEKEEPER, not a quality checker.",
-  "The only question you answer is: does this deserve to be published on the brand's own channels?",
-  "Be strict and unflattering. Most first drafts deserve 70-85. Reserve 90+ for content a leading brand would be proud to publish.",
+  "You are the BRAND GATEKEEPER. You are adversarial by default.",
+  "Your job is NOT to ask 'is this good?'. Your job is: FIND A REASON STEINHEIM SHOULD NOT PUBLISH THIS.",
+  "Assume the copy is flawed until proven otherwise. If you cannot find a weakness, you have not looked hard enough — name the weakest element anyway.",
   "",
-  "SCORE MODEL (sum to 100): brand_alignment /15, product_accuracy /20, platform_fit /15, strategic_value /15, audience_relevance /10, originality /10, cta_quality /5, language_quality /5, visual_potential /5.",
-  "score = the sum of the nine components.",
+  "SCORE MODEL (components sum to at most 100): brand_alignment /15, product_accuracy /20, platform_fit /15, strategic_value /15, audience_relevance /10, originality /10, cta_quality /5, language_quality /5, visual_potential /5.",
+  "Component discipline: award the full sub-score ONLY for work a leading international brand would publish unchanged. Competent-but-ordinary work gets ~70% of the sub-score. Anything you had to argue yourself into gets less.",
+  "Set score = the sum of the nine components BEFORE penalties. The system subtracts penalties itself.",
   "",
-  "HARD FAIL CONDITIONS — set hard_fail=true regardless of score:",
-  "- any product claim that is not verified",
-  "- a wrong or invented SKU",
-  "- platform mismatch (a post that does not read native to its platform)",
-  "- an invented technical feature",
-  "- generic content any competitor could publish unchanged",
-  "- brand positioning inconsistency",
+  "SCORE BANDS (after penalties): 95-100 exceptional | 90-94 strong | 85-89 pass with minor revision | 75-84 revision required | <75 fail.",
+  "A 99 means you could not find a single improvable sentence across three platforms and two languages. That is almost never true.",
   "",
-  "PLATFORM DIFFERENTIATION: judge whether LinkedIn feels like LinkedIn, Facebook like Facebook, Instagram like Instagram.",
-  "If the three posts are the same idea in the same voice at different lengths, that is a platform mismatch hard fail.",
+  penaltyRulesPrompt(),
+  "",
+  "HARD FAIL (0 chance of PASS regardless of score): unverified factual claim, wrong/invented SKU, forbidden brand claim, invented technical feature, brand positioning inconsistency.",
+  "Report hard fails through the penalty codes (unverified_claim, wrong_sku, forbidden_claim) and also set hard_fail=true with reasons.",
+  "",
+  "PLATFORM DIFFERENTIATION: LinkedIn must read like LinkedIn, Facebook like Facebook, Instagram like Instagram. Same idea in the same voice at three lengths = platform_similarity penalty, and platform_mismatch if any single post is wrong for its channel.",
+  "blocking_reason: one sentence naming the single strongest argument against publishing this.",
 ].join("\n");
 
 export async function runBrandReviewer(
@@ -407,10 +411,12 @@ export async function runBrandReviewer(
     prompt: [
       `Strategy: ${JSON.stringify(strategy)}`,
       `Accuracy validator report: ${JSON.stringify(accuracy)}`,
+      `Recently published strategic angles (judge originality against these): ${kb.recentAngles.slice(0, 10).join(" | ") || "none"}`,
+      INJECTION_DEFENSE,
       "CONTENT:",
       JSON.stringify(copies),
       "",
-      "Score each component, sum them into score, decide hard_fail with reasons, assess platform differentiation, and give actionable per-platform notes plus overall notes.",
+      "Score each component, sum them into score, list every applicable penalty code with a reason, decide hard_fail with reasons, state the blocking_reason, assess platform differentiation, and give actionable per-platform notes plus overall notes.",
     ].join("\n"),
   });
   await logRun(supabase, "brand_reviewer", { strategy }, review, started, ideaId);
