@@ -325,6 +325,7 @@ export async function runImageAgent(
     prompt: [
       `Scene should support: ${strategy.big_idea}`,
       productFactsBlock(product),
+      referenceImagesBlock(productImages(kb, product)),
       "",
       "Return a photorealistic image prompt (interior architecture scene, materials, light, composition, camera angle, no text/logos/watermarks), plus the exact product_geometry, finish, mounting_configuration, and a list of forbidden_modifications the generator must not apply.",
     ].join("\n"),
