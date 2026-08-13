@@ -291,6 +291,8 @@ export async function runPlatformWriter(
       `Recommended CTA: ${research.recommended_cta}`,
       "VERIFIED FACTS YOU MAY USE (nothing else):",
       verifiedFacts(research),
+      claimsBlock(relevantClaims(kb, strategy.product_sku), platform),
+      audienceBlock(findAudience(kb, strategy.audience_name)),
       productFactsBlock(product),
       feedback ? `\nREVIEWER FEEDBACK — must be fixed:\n${feedback}` : "",
       "",
