@@ -60,43 +60,74 @@ export type Database = {
       }
       audiences: {
         Row: {
+          business_context: string | null
+          buying_criteria: string[]
           channels: string[]
           created_at: string
+          cta_preference: string | null
+          decision_authority: string | null
           description: string | null
+          goals: string[]
           id: string
+          language: string
           motivations: string[]
           name: string
           name_ar: string | null
+          objections: string[]
           pain_points: string[]
+          preferred_content: string[]
+          role: string | null
           updated_at: string
         }
         Insert: {
+          business_context?: string | null
+          buying_criteria?: string[]
           channels?: string[]
           created_at?: string
+          cta_preference?: string | null
+          decision_authority?: string | null
           description?: string | null
+          goals?: string[]
           id?: string
+          language?: string
           motivations?: string[]
           name: string
           name_ar?: string | null
+          objections?: string[]
           pain_points?: string[]
+          preferred_content?: string[]
+          role?: string | null
           updated_at?: string
         }
         Update: {
+          business_context?: string | null
+          buying_criteria?: string[]
           channels?: string[]
           created_at?: string
+          cta_preference?: string | null
+          decision_authority?: string | null
           description?: string | null
+          goals?: string[]
           id?: string
+          language?: string
           motivations?: string[]
           name?: string
           name_ar?: string | null
+          objections?: string[]
           pain_points?: string[]
+          preferred_content?: string[]
+          role?: string | null
           updated_at?: string
         }
         Relationships: []
       }
       brand_profile: {
         Row: {
+          approved_ctas: string[]
           brand_name: string
+          brand_promises: string[]
+          brand_story: string | null
+          competitive_positioning: string | null
           contact_email: string | null
           created_at: string
           forbidden: string[]
@@ -104,14 +135,23 @@ export type Database = {
           key_messages: string[]
           languages: string[]
           markets: string[]
+          mission: string | null
           positioning: string | null
           tagline: string | null
           tone_of_voice: string | null
           updated_at: string
+          values_list: string[]
+          vision: string | null
+          vocabulary_avoid: string[]
+          vocabulary_use: string[]
           website: string | null
         }
         Insert: {
+          approved_ctas?: string[]
           brand_name: string
+          brand_promises?: string[]
+          brand_story?: string | null
+          competitive_positioning?: string | null
           contact_email?: string | null
           created_at?: string
           forbidden?: string[]
@@ -119,14 +159,23 @@ export type Database = {
           key_messages?: string[]
           languages?: string[]
           markets?: string[]
+          mission?: string | null
           positioning?: string | null
           tagline?: string | null
           tone_of_voice?: string | null
           updated_at?: string
+          values_list?: string[]
+          vision?: string | null
+          vocabulary_avoid?: string[]
+          vocabulary_use?: string[]
           website?: string | null
         }
         Update: {
+          approved_ctas?: string[]
           brand_name?: string
+          brand_promises?: string[]
+          brand_story?: string | null
+          competitive_positioning?: string | null
           contact_email?: string | null
           created_at?: string
           forbidden?: string[]
@@ -134,10 +183,15 @@ export type Database = {
           key_messages?: string[]
           languages?: string[]
           markets?: string[]
+          mission?: string | null
           positioning?: string | null
           tagline?: string | null
           tone_of_voice?: string | null
           updated_at?: string
+          values_list?: string[]
+          vision?: string | null
+          vocabulary_avoid?: string[]
+          vocabulary_use?: string[]
           website?: string | null
         }
         Relationships: []
@@ -172,6 +226,75 @@ export type Database = {
           name_ar?: string | null
           slug?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      claims: {
+        Row: {
+          approved_for: string[]
+          claim_text: string
+          claim_text_ar: string | null
+          claim_type: string
+          confidence: string
+          created_at: string
+          entity_id: string | null
+          entity_label: string | null
+          entity_type: string
+          expires_at: string | null
+          forbidden_for: string[]
+          id: string
+          notes: string | null
+          source_id: string | null
+          source_tier: number
+          source_type: string
+          source_url: string | null
+          updated_at: string
+          verified: boolean
+          verified_at: string | null
+        }
+        Insert: {
+          approved_for?: string[]
+          claim_text: string
+          claim_text_ar?: string | null
+          claim_type?: string
+          confidence?: string
+          created_at?: string
+          entity_id?: string | null
+          entity_label?: string | null
+          entity_type?: string
+          expires_at?: string | null
+          forbidden_for?: string[]
+          id?: string
+          notes?: string | null
+          source_id?: string | null
+          source_tier?: number
+          source_type?: string
+          source_url?: string | null
+          updated_at?: string
+          verified?: boolean
+          verified_at?: string | null
+        }
+        Update: {
+          approved_for?: string[]
+          claim_text?: string
+          claim_text_ar?: string | null
+          claim_type?: string
+          confidence?: string
+          created_at?: string
+          entity_id?: string | null
+          entity_label?: string | null
+          entity_type?: string
+          expires_at?: string | null
+          forbidden_for?: string[]
+          id?: string
+          notes?: string | null
+          source_id?: string | null
+          source_tier?: number
+          source_type?: string
+          source_url?: string | null
+          updated_at?: string
+          verified?: boolean
+          verified_at?: string | null
         }
         Relationships: []
       }
@@ -365,27 +488,51 @@ export type Database = {
       product_images: {
         Row: {
           alt_text: string | null
+          angle: string | null
+          approved_for_ai: boolean
+          background: string | null
           created_at: string
+          finish: string | null
           id: string
+          image_type: string | null
           image_url: string
           is_primary: boolean
           product_id: string
+          storage_path: string | null
+          verified: boolean
+          visual_notes: string | null
         }
         Insert: {
           alt_text?: string | null
+          angle?: string | null
+          approved_for_ai?: boolean
+          background?: string | null
           created_at?: string
+          finish?: string | null
           id?: string
+          image_type?: string | null
           image_url: string
           is_primary?: boolean
           product_id: string
+          storage_path?: string | null
+          verified?: boolean
+          visual_notes?: string | null
         }
         Update: {
           alt_text?: string | null
+          angle?: string | null
+          approved_for_ai?: boolean
+          background?: string | null
           created_at?: string
+          finish?: string | null
           id?: string
+          image_type?: string | null
           image_url?: string
           is_primary?: boolean
           product_id?: string
+          storage_path?: string | null
+          verified?: boolean
+          visual_notes?: string | null
         }
         Relationships: [
           {
@@ -506,37 +653,67 @@ export type Database = {
       }
       projects: {
         Row: {
+          approved_claims: string[]
+          architect: string | null
+          collections: string[]
           country: string | null
           created_at: string
           description: string | null
+          developer: string | null
+          finishes: string[]
           id: string
           image_url: string | null
           location: string | null
           name: string
           products_used: string[]
+          project_type: string | null
+          source_tier: number
+          source_url: string | null
           updated_at: string
+          verification_status: string
+          verified_facts: string[]
         }
         Insert: {
+          approved_claims?: string[]
+          architect?: string | null
+          collections?: string[]
           country?: string | null
           created_at?: string
           description?: string | null
+          developer?: string | null
+          finishes?: string[]
           id?: string
           image_url?: string | null
           location?: string | null
           name: string
           products_used?: string[]
+          project_type?: string | null
+          source_tier?: number
+          source_url?: string | null
           updated_at?: string
+          verification_status?: string
+          verified_facts?: string[]
         }
         Update: {
+          approved_claims?: string[]
+          architect?: string | null
+          collections?: string[]
           country?: string | null
           created_at?: string
           description?: string | null
+          developer?: string | null
+          finishes?: string[]
           id?: string
           image_url?: string | null
           location?: string | null
           name?: string
           products_used?: string[]
+          project_type?: string | null
+          source_tier?: number
+          source_url?: string | null
           updated_at?: string
+          verification_status?: string
+          verified_facts?: string[]
         }
         Relationships: []
       }
