@@ -523,7 +523,12 @@ export async function runBrandReviewer(
 
 /* ------------------------------------------------------------------ Orchestration */
 
-export async function generateTodayPipeline(supabase: DB, userId: string, brief?: StrategyBrief) {
+export async function generateTodayPipeline(
+  supabase: DB,
+  userId: string,
+  brief?: StrategyBrief,
+  options?: { isTest?: boolean },
+) {
   const kb = await loadKnowledge(supabase);
   const strategy = await runStrategist(supabase, kb, brief);
 
