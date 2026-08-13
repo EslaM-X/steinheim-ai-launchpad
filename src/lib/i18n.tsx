@@ -11,6 +11,13 @@ import {
 export type Lang = "ar" | "en";
 
 const dict = {
+  catalogueSub: { ar: "كتالوج Steinheim الذي يغذي كل منشور", en: "The catalogue that feeds every post" },
+  addProduct: { ar: "إضافة منتج", en: "Add product" },
+  name: { ar: "الاسم", en: "Name" },
+  nameAr: { ar: "الاسم بالعربية", en: "Arabic name" },
+  category: { ar: "الفئة", en: "Category" },
+  description: { ar: "الوصف", en: "Description" },
+  keyFeatures: { ar: "المزايا (سطر لكل ميزة)", en: "Key features (one per line)" },
   brand: { ar: "Steinheim", en: "Steinheim" },
   system: { ar: "نظام التسويق الذكي", en: "AI Marketing System" },
   signIn: { ar: "تسجيل الدخول", en: "Sign in" },
