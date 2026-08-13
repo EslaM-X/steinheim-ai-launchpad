@@ -33,6 +33,8 @@ export const Route = createFileRoute("/auth")({
 
 function AuthPage() {
   const { t, lang, setLang, dir } = useI18n();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
   const navigate = useNavigate();
   const [mode, setMode] = useState<"in" | "up">("in");
   const [email, setEmail] = useState("");
@@ -83,6 +85,8 @@ function AuthPage() {
     if (result.redirected) return;
     navigate({ to: "/dashboard" });
   }
+
+  if (!mounted) return <div className="min-h-screen bg-background" />;
 
   return (
     <div dir={dir} className="grid min-h-screen lg:grid-cols-2">
