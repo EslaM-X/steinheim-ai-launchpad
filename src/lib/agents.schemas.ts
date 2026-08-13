@@ -38,6 +38,10 @@ export const strategySchema = z.object({
   funnel_stage: z.enum(FUNNEL_STAGES),
   goal: z.enum(["sales", "awareness", "brand"]),
   angle: z.string(),
+  strategic_angle: z
+    .string()
+    .nullish()
+    .transform((v) => v ?? ""),
   big_idea: z.string(),
   why_now: z.string(),
   product_sku: z
@@ -109,6 +113,14 @@ export const reviewSchema = z.object({
   score: z.number(),
   hard_fail: z.boolean(),
   hard_fail_reasons: z.array(z.string()),
+  penalties: z
+    .array(z.object({ code: z.string(), reason: z.string() }))
+    .nullish()
+    .transform((v) => v ?? []),
+  blocking_reason: z
+    .string()
+    .nullish()
+    .transform((v) => v ?? ""),
   platform_differentiation: z.string(),
   notes: z.string(),
   per_platform_notes: z.object({
