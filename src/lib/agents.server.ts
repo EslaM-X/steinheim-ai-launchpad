@@ -16,18 +16,36 @@ export function getModel() {
   return gateway(MODEL);
 }
 
+/** Surfaces the real gateway error instead of "No output generated". */
+function describeStreamError(error: unknown, streamError: unknown): Error {
+  const source = streamError ?? error;
+  if (source instanceof Error) {
+    const anyErr = source as Error & { statusCode?: number; responseBody?: string };
+    const status = anyErr.statusCode;
+    const detail = anyErr.responseBody ? ` — ${String(anyErr.responseBody).slice(0, 300)}` : "";
+    if (status === 402) return new Error("AI credits exhausted (402). Top up the AI workspace credits and retry.");
+    if (status === 429) return new Error("AI gateway rate limit (429). Wait a moment and retry.");
+    return new Error(`${source.message}${status ? ` (HTTP ${status})` : ""}${detail}`);
+  }
+  return new Error(String(source));
+}
+
 /** Structured generation over a streaming request (safe for long calls). */
 export async function genObject<T extends z.ZodType>(args: {
   schema: T;
   system: string;
   prompt: string;
 }): Promise<z.infer<T>> {
+  let streamError: unknown;
   try {
     const result = streamText({
       model: getModel(),
       system: args.system,
       prompt: args.prompt,
       output: Output.object({ schema: args.schema }),
+      onError: ({ error }) => {
+        streamError = error;
+      },
     });
     return (await result.output) as z.infer<T>;
   } catch (error) {
@@ -41,17 +59,25 @@ export async function genObject<T extends z.ZodType>(args: {
         }
       }
     }
-    throw error;
+    throw describeStreamError(error, streamError);
   }
 }
 
 export async function genText(args: { system: string; prompt: string }) {
-  const result = streamText({
-    model: getModel(),
-    system: args.system,
-    prompt: args.prompt,
-  });
-  return await result.text;
+  let streamError: unknown;
+  try {
+    const result = streamText({
+      model: getModel(),
+      system: args.system,
+      prompt: args.prompt,
+      onError: ({ error }) => {
+        streamError = error;
+      },
+    });
+    return await result.text;
+  } catch (error) {
+    throw describeStreamError(error, streamError);
+  }
 }
 
 type Brand = {
