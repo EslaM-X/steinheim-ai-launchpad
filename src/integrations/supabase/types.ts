@@ -14,6 +14,75 @@ export type Database = {
   }
   public: {
     Tables: {
+      ad_variants: {
+        Row: {
+          aspect_ratio: string
+          asset_id: string | null
+          campaign_id: string
+          caption: string | null
+          created_at: string
+          cta: string | null
+          duration_seconds: number | null
+          hashtags: string[]
+          headline: string | null
+          id: string
+          platform: string
+          primary_text: string | null
+          status: string
+          updated_at: string
+          variant_key: string
+        }
+        Insert: {
+          aspect_ratio?: string
+          asset_id?: string | null
+          campaign_id: string
+          caption?: string | null
+          created_at?: string
+          cta?: string | null
+          duration_seconds?: number | null
+          hashtags?: string[]
+          headline?: string | null
+          id?: string
+          platform: string
+          primary_text?: string | null
+          status?: string
+          updated_at?: string
+          variant_key: string
+        }
+        Update: {
+          aspect_ratio?: string
+          asset_id?: string | null
+          campaign_id?: string
+          caption?: string | null
+          created_at?: string
+          cta?: string | null
+          duration_seconds?: number | null
+          hashtags?: string[]
+          headline?: string | null
+          id?: string
+          platform?: string
+          primary_text?: string | null
+          status?: string
+          updated_at?: string
+          variant_key?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ad_variants_asset_id_fkey"
+            columns: ["asset_id"]
+            isOneToOne: false
+            referencedRelation: "creative_assets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ad_variants_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       agent_runs: {
         Row: {
           agent: string
@@ -195,6 +264,84 @@ export type Database = {
           website?: string | null
         }
         Relationships: []
+      }
+      campaigns: {
+        Row: {
+          audience_id: string | null
+          audience_segment: string | null
+          brief: Json
+          budget_egp: number | null
+          created_at: string
+          created_by: string | null
+          directions: string[]
+          duration_seconds: number
+          id: string
+          language: string
+          market: string
+          mode: string
+          name: string
+          objective: string
+          platforms: string[]
+          product_id: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          audience_id?: string | null
+          audience_segment?: string | null
+          brief?: Json
+          budget_egp?: number | null
+          created_at?: string
+          created_by?: string | null
+          directions?: string[]
+          duration_seconds?: number
+          id?: string
+          language?: string
+          market?: string
+          mode?: string
+          name: string
+          objective?: string
+          platforms?: string[]
+          product_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          audience_id?: string | null
+          audience_segment?: string | null
+          brief?: Json
+          budget_egp?: number | null
+          created_at?: string
+          created_by?: string | null
+          directions?: string[]
+          duration_seconds?: number
+          id?: string
+          language?: string
+          market?: string
+          mode?: string
+          name?: string
+          objective?: string
+          platforms?: string[]
+          product_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaigns_audience_id_fkey"
+            columns: ["audience_id"]
+            isOneToOne: false
+            referencedRelation: "audiences"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "campaigns_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       categories: {
         Row: {
@@ -378,6 +525,323 @@ export type Database = {
             columns: ["product_id"]
             isOneToOne: false
             referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      creative_assets: {
+        Row: {
+          asset_type: string
+          campaign_id: string | null
+          created_at: string
+          external_url: string | null
+          id: string
+          meta: Json
+          mode: string
+          model_used: string | null
+          shot_id: string | null
+          storage_path: string | null
+          updated_at: string
+        }
+        Insert: {
+          asset_type?: string
+          campaign_id?: string | null
+          created_at?: string
+          external_url?: string | null
+          id?: string
+          meta?: Json
+          mode?: string
+          model_used?: string | null
+          shot_id?: string | null
+          storage_path?: string | null
+          updated_at?: string
+        }
+        Update: {
+          asset_type?: string
+          campaign_id?: string | null
+          created_at?: string
+          external_url?: string | null
+          id?: string
+          meta?: Json
+          mode?: string
+          model_used?: string | null
+          shot_id?: string | null
+          storage_path?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "creative_assets_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "creative_assets_shot_id_fkey"
+            columns: ["shot_id"]
+            isOneToOne: false
+            referencedRelation: "shots"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      creative_concepts: {
+        Row: {
+          big_idea: string
+          campaign_id: string
+          created_at: string
+          emotional_trigger: string | null
+          hook: string | null
+          id: string
+          script_ar: string | null
+          script_en: string | null
+          selected: boolean
+          slot: number
+          title: string
+          updated_at: string
+          visual_language: string | null
+          why_it_works: string | null
+        }
+        Insert: {
+          big_idea: string
+          campaign_id: string
+          created_at?: string
+          emotional_trigger?: string | null
+          hook?: string | null
+          id?: string
+          script_ar?: string | null
+          script_en?: string | null
+          selected?: boolean
+          slot?: number
+          title: string
+          updated_at?: string
+          visual_language?: string | null
+          why_it_works?: string | null
+        }
+        Update: {
+          big_idea?: string
+          campaign_id?: string
+          created_at?: string
+          emotional_trigger?: string | null
+          hook?: string | null
+          id?: string
+          script_ar?: string | null
+          script_en?: string | null
+          selected?: boolean
+          slot?: number
+          title?: string
+          updated_at?: string
+          visual_language?: string | null
+          why_it_works?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "creative_concepts_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      creative_references: {
+        Row: {
+          campaign_id: string | null
+          created_at: string
+          creative_dna: Json
+          id: string
+          improvement_notes: string | null
+          kind: string
+          notes: string | null
+          source_url: string | null
+          storage_path: string | null
+          updated_at: string
+        }
+        Insert: {
+          campaign_id?: string | null
+          created_at?: string
+          creative_dna?: Json
+          id?: string
+          improvement_notes?: string | null
+          kind?: string
+          notes?: string | null
+          source_url?: string | null
+          storage_path?: string | null
+          updated_at?: string
+        }
+        Update: {
+          campaign_id?: string | null
+          created_at?: string
+          creative_dna?: Json
+          id?: string
+          improvement_notes?: string | null
+          kind?: string
+          notes?: string | null
+          source_url?: string | null
+          storage_path?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "creative_references_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      creative_reviews: {
+        Row: {
+          ai_approved: boolean
+          ai_artifact_score: number | null
+          band: string | null
+          breakdown: Json
+          campaign_id: string | null
+          created_at: string
+          final_score: number | null
+          hard_fail: boolean
+          hard_fail_reasons: Json
+          human_approved_at: string | null
+          human_approved_by: string | null
+          id: string
+          notes: string | null
+          penalties: Json
+          raw_score: number | null
+          scope: string
+          shot_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          ai_approved?: boolean
+          ai_artifact_score?: number | null
+          band?: string | null
+          breakdown?: Json
+          campaign_id?: string | null
+          created_at?: string
+          final_score?: number | null
+          hard_fail?: boolean
+          hard_fail_reasons?: Json
+          human_approved_at?: string | null
+          human_approved_by?: string | null
+          id?: string
+          notes?: string | null
+          penalties?: Json
+          raw_score?: number | null
+          scope?: string
+          shot_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          ai_approved?: boolean
+          ai_artifact_score?: number | null
+          band?: string | null
+          breakdown?: Json
+          campaign_id?: string | null
+          created_at?: string
+          final_score?: number | null
+          hard_fail?: boolean
+          hard_fail_reasons?: Json
+          human_approved_at?: string | null
+          human_approved_by?: string | null
+          id?: string
+          notes?: string | null
+          penalties?: Json
+          raw_score?: number | null
+          scope?: string
+          shot_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "creative_reviews_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "creative_reviews_shot_id_fkey"
+            columns: ["shot_id"]
+            isOneToOne: false
+            referencedRelation: "shots"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      generation_jobs: {
+        Row: {
+          attempts: number
+          campaign_id: string | null
+          claimed_at: string | null
+          completed_at: string | null
+          created_at: string
+          error: string | null
+          id: string
+          kind: string
+          mode: string
+          payload: Json
+          result_asset_id: string | null
+          shot_id: string | null
+          status: string
+          updated_at: string
+          worker_id: string | null
+        }
+        Insert: {
+          attempts?: number
+          campaign_id?: string | null
+          claimed_at?: string | null
+          completed_at?: string | null
+          created_at?: string
+          error?: string | null
+          id?: string
+          kind?: string
+          mode?: string
+          payload?: Json
+          result_asset_id?: string | null
+          shot_id?: string | null
+          status?: string
+          updated_at?: string
+          worker_id?: string | null
+        }
+        Update: {
+          attempts?: number
+          campaign_id?: string | null
+          claimed_at?: string | null
+          completed_at?: string | null
+          created_at?: string
+          error?: string | null
+          id?: string
+          kind?: string
+          mode?: string
+          payload?: Json
+          result_asset_id?: string | null
+          shot_id?: string | null
+          status?: string
+          updated_at?: string
+          worker_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "generation_jobs_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "generation_jobs_result_asset_id_fkey"
+            columns: ["result_asset_id"]
+            isOneToOne: false
+            referencedRelation: "creative_assets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "generation_jobs_shot_id_fkey"
+            columns: ["shot_id"]
+            isOneToOne: false
+            referencedRelation: "shots"
             referencedColumns: ["id"]
           },
         ]
@@ -755,6 +1219,168 @@ export type Database = {
           verified_facts?: string[]
         }
         Relationships: []
+      }
+      shots: {
+        Row: {
+          ai_artifact_score: number | null
+          audio_note: string | null
+          camera: string | null
+          created_at: string
+          duration_seconds: number
+          environment: string | null
+          id: string
+          image_asset_id: string | null
+          lens: string | null
+          lighting: string | null
+          movement: string | null
+          product_id: string | null
+          product_reference_image: string | null
+          prompt: string
+          shot_number: number
+          start_second: number
+          status: string
+          storyboard_id: string
+          transition: string | null
+          updated_at: string
+          video_asset_id: string | null
+          visual: string
+          workflow: string
+        }
+        Insert: {
+          ai_artifact_score?: number | null
+          audio_note?: string | null
+          camera?: string | null
+          created_at?: string
+          duration_seconds?: number
+          environment?: string | null
+          id?: string
+          image_asset_id?: string | null
+          lens?: string | null
+          lighting?: string | null
+          movement?: string | null
+          product_id?: string | null
+          product_reference_image?: string | null
+          prompt: string
+          shot_number?: number
+          start_second?: number
+          status?: string
+          storyboard_id: string
+          transition?: string | null
+          updated_at?: string
+          video_asset_id?: string | null
+          visual: string
+          workflow?: string
+        }
+        Update: {
+          ai_artifact_score?: number | null
+          audio_note?: string | null
+          camera?: string | null
+          created_at?: string
+          duration_seconds?: number
+          environment?: string | null
+          id?: string
+          image_asset_id?: string | null
+          lens?: string | null
+          lighting?: string | null
+          movement?: string | null
+          product_id?: string | null
+          product_reference_image?: string | null
+          prompt?: string
+          shot_number?: number
+          start_second?: number
+          status?: string
+          storyboard_id?: string
+          transition?: string | null
+          updated_at?: string
+          video_asset_id?: string | null
+          visual?: string
+          workflow?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shots_image_asset_fkey"
+            columns: ["image_asset_id"]
+            isOneToOne: false
+            referencedRelation: "creative_assets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shots_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shots_product_reference_image_fkey"
+            columns: ["product_reference_image"]
+            isOneToOne: false
+            referencedRelation: "product_images"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shots_storyboard_id_fkey"
+            columns: ["storyboard_id"]
+            isOneToOne: false
+            referencedRelation: "storyboards"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shots_video_asset_fkey"
+            columns: ["video_asset_id"]
+            isOneToOne: false
+            referencedRelation: "creative_assets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      storyboards: {
+        Row: {
+          campaign_id: string
+          concept_id: string | null
+          created_at: string
+          edl: Json
+          id: string
+          status: string
+          total_seconds: number
+          updated_at: string
+        }
+        Insert: {
+          campaign_id: string
+          concept_id?: string | null
+          created_at?: string
+          edl?: Json
+          id?: string
+          status?: string
+          total_seconds?: number
+          updated_at?: string
+        }
+        Update: {
+          campaign_id?: string
+          concept_id?: string | null
+          created_at?: string
+          edl?: Json
+          id?: string
+          status?: string
+          total_seconds?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "storyboards_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "storyboards_concept_id_fkey"
+            columns: ["concept_id"]
+            isOneToOne: false
+            referencedRelation: "creative_concepts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       test_runs: {
         Row: {
