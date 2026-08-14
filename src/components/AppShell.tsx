@@ -3,6 +3,7 @@ import {
   BarChart3,
   CalendarDays,
   ClipboardList,
+  FlaskConical,
   LayoutDashboard,
   LogOut,
   Package,
@@ -25,6 +26,7 @@ const nav: Array<{ to: string; key: TKey; icon: typeof LayoutDashboard }> = [
   { to: "/publish", key: "publish", icon: Send },
   { to: "/analytics", key: "analytics", icon: BarChart3 },
   { to: "/logs", key: "logs", icon: ClipboardList },
+  { to: "/tests", key: "tests", icon: FlaskConical },
 ];
 
 export function AppShell({ children }: { children: ReactNode }) {
