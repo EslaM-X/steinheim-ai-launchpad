@@ -467,7 +467,7 @@ function CreativeStudio() {
                             </p>
                           ))}
                       </div>
-                      {(review.data.hard_fail_reasons ?? []).map((r: string) => (
+                      {((review.data.hard_fail_reasons ?? []) as string[]).map((r: string) => (
                         <p key={r} className="text-destructive">
                           {r}
                         </p>
