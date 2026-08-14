@@ -111,6 +111,8 @@ function TestsPage() {
         </div>
       </div>
 
+      <TestMetrics scenarios={all} runs={latest} />
+
       {suites.map((group) => (
         <section key={group.id} className="space-y-3">
           <h2 className="font-serif text-xl">{group.label}</h2>
