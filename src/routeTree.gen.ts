@@ -22,6 +22,7 @@ import { Route as AuthenticatedProductsRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedPublishRouteImport } from './routes/_authenticated/publish'
 import { Route as AuthenticatedTestsRouteImport } from './routes/_authenticated/tests'
 import { Route as AuthenticatedPostsPostIdRouteImport } from './routes/_authenticated/posts.$postId'
+import { Route as ApiPublicCreativeClaimRouteImport } from './routes/api/public/creative/claim'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -88,6 +89,11 @@ const AuthenticatedPostsPostIdRoute =
     path: '/posts/$postId',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const ApiPublicCreativeClaimRoute = ApiPublicCreativeClaimRouteImport.update({
+  id: '/api/public/creative/claim',
+  path: '/api/public/creative/claim',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -102,6 +108,7 @@ export interface FileRoutesByFullPath {
   '/publish': typeof AuthenticatedPublishRoute
   '/tests': typeof AuthenticatedTestsRoute
   '/posts/$postId': typeof AuthenticatedPostsPostIdRoute
+  '/api/public/creative/claim': typeof ApiPublicCreativeClaimRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -116,6 +123,7 @@ export interface FileRoutesByTo {
   '/publish': typeof AuthenticatedPublishRoute
   '/tests': typeof AuthenticatedTestsRoute
   '/posts/$postId': typeof AuthenticatedPostsPostIdRoute
+  '/api/public/creative/claim': typeof ApiPublicCreativeClaimRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -132,6 +140,7 @@ export interface FileRoutesById {
   '/_authenticated/publish': typeof AuthenticatedPublishRoute
   '/_authenticated/tests': typeof AuthenticatedTestsRoute
   '/_authenticated/posts/$postId': typeof AuthenticatedPostsPostIdRoute
+  '/api/public/creative/claim': typeof ApiPublicCreativeClaimRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -148,6 +157,7 @@ export interface FileRouteTypes {
     | '/publish'
     | '/tests'
     | '/posts/$postId'
+    | '/api/public/creative/claim'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -162,6 +172,7 @@ export interface FileRouteTypes {
     | '/publish'
     | '/tests'
     | '/posts/$postId'
+    | '/api/public/creative/claim'
   id:
     | '__root__'
     | '/'
@@ -177,12 +188,14 @@ export interface FileRouteTypes {
     | '/_authenticated/publish'
     | '/_authenticated/tests'
     | '/_authenticated/posts/$postId'
+    | '/api/public/creative/claim'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
+  ApiPublicCreativeClaimRoute: typeof ApiPublicCreativeClaimRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -278,6 +291,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPostsPostIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/api/public/creative/claim': {
+      id: '/api/public/creative/claim'
+      path: '/api/public/creative/claim'
+      fullPath: '/api/public/creative/claim'
+      preLoaderRoute: typeof ApiPublicCreativeClaimRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -314,6 +334,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
+  ApiPublicCreativeClaimRoute: ApiPublicCreativeClaimRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
