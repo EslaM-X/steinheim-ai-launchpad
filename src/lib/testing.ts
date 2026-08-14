@@ -11,6 +11,8 @@ export type Expected = {
   min_score?: number;
   max_unverified?: number;
   max_similarity?: number;
+  /** Terms that must never survive into the copy unless the run HARD FAILs. */
+  forbidden_terms?: string[];
 };
 
 export type PipelineResult = {
@@ -101,6 +103,17 @@ export function evaluateScenario(expected: Expected, r: PipelineResult): { check
       "confirmation_disclaimer",
       DISCLAIMER_HINTS.some((h) => text.includes(h)),
       "copy must carry a project-confirmation disclaimer",
+    );
+  }
+  if (expected.forbidden_terms?.length) {
+    const text = r.copyText.toLowerCase();
+    const leaked = expected.forbidden_terms.filter((term) => text.includes(term.toLowerCase()));
+    add(
+      "forbidden_terms",
+      leaked.length === 0 || r.hardFail,
+      leaked.length === 0
+        ? "no forbidden term reached the copy"
+        : `leaked: ${leaked.join(", ")} — must trigger HARD FAIL`,
     );
   }
   if (expected.expected_claim_behavior?.includes("not available")) {
