@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { TestMetrics } from "@/components/TestMetrics";
 import { scenariosQuery, testRunsQuery, type TestRunRow } from "@/lib/queries";
 import { runTestScenario, runTestSuite } from "@/lib/testing.functions";
 
@@ -109,6 +110,8 @@ function TestsPage() {
           ))}
         </div>
       </div>
+
+      <TestMetrics scenarios={all} runs={latest} />
 
       {suites.map((group) => (
         <section key={group.id} className="space-y-3">
