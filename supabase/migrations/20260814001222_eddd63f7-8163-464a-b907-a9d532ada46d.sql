@@ -1,0 +1,1 @@
+DELETE FROM public.test_runs WHERE error IS NOT NULL;
