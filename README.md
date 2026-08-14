@@ -1,93 +1,246 @@
+<div align="center">
+
 # Steinheim AI Launchpad
 
-Marketing operating system for **Steinheim** (German luxury bathroom systems in Egypt). A verified
-product knowledge base drives a team of AI agents that plan, write, illustrate and quality-check
-daily content — and nothing reaches a social channel without a human approving it.
+**A marketing operating system that cannot lie about the product.**
 
-## Architecture
+A verified knowledge base drives a team of AI agents that plan, write, illustrate
+and quality-check daily content for [Steinheim](https://steinheim-eg.com) —
+German luxury bathroom systems in Egypt. Every claim is traced to a fact. Every
+post waits for a human.
 
-```text
-Truth Layer          verified products, projects, audiences, approved/forbidden claims
-      │
-Marketing OS         Strategist → Research → Platform Strategy → Writers → Accuracy → Gatekeeper
-      │
-Creative Studio      Director → Concepts → Storyboard → Shots → Assets (via an external GPU worker)
-      │
-Quality Gates        AI approval (score ≥ 85, zero unverified claims) → human approval
-      │
-Automation (n8n)     scheduling, publishing, metrics collection
-      │
-Channels             LinkedIn · Facebook · Instagram · TikTok · Telegram
-      │
-Analytics            canonical metrics feed the next day's strategy
+`TanStack Start` · `React 19` · `Supabase` · `Vercel AI SDK` · `n8n` · `Tailwind 4`
+
+</div>
+
+---
+
+## Why this exists
+
+Most "AI social media" tools generate plausible sentences. For a technical product
+sold to architects, developers and hospitality buyers, a plausible sentence is a
+liability: an invented flow rate or a fabricated project reference is a claim the
+company has to answer for.
+
+So the system is built around two rules that are enforced in code, not in prompts:
+
+> **1. No unverified claim ships.**
+> Writers may only state facts that exist in the Truth Layer — approved product
+> specifications, approved claims, real projects. An accuracy validator rejects
+> everything else *before* the content is ever scored.
+>
+> **2. No publish without a human.**
+> The AI scores and recommends. `ai_approved` is never sufficient. Only a human
+> approval moves a post into the publish queue — from the dashboard or from
+> Telegram, never from an agent.
+
+---
+
+## How it works
+
+```mermaid
+flowchart LR
+    T["🗄 Truth Layer<br/><sub>products · projects<br/>audiences · claims</sub>"]
+    A["🧠 Agents<br/><sub>strategy · research<br/>writing · imagery</sub>"]
+    Q["🛡 Quality gates<br/><sub>accuracy · brand<br/>score ≥ 85</sub>"]
+    H["👤 Human<br/><sub>approval</sub>"]
+    N["🤖 n8n<br/><sub>schedule · publish<br/>collect</sub>"]
+    C["📡 Channels<br/><sub>LinkedIn · Facebook<br/>Instagram · TikTok · Telegram</sub>"]
+    M["📊 Performance"]
+
+    T --> A --> Q --> H --> N --> C --> M
+    M -.->|informs tomorrow| A
 ```
 
-Two rules the whole system is built around:
+A single day, end to end: the **Strategist** decides what deserves saying today
+based on rotation, audience and past performance. **Research** gathers only
+approved facts. **Platform Strategy** decides how the idea lands differently on
+each channel. Three **Writers** produce native copy. The **Image agent** writes
+the visual brief. The **Accuracy Validator** checks every claim against the Truth
+Layer. The **Brand Gatekeeper** scores nine dimensions and blocks anything under
+85 or carrying a hard fail. Then it stops, and waits for a person.
 
-1. **No unverified claim ships.** Writers may only use facts present in the Truth Layer; the
-   accuracy validator rejects anything else.
-2. **No publish without a human.** The AI recommends and scores; a person approves.
+### The agent team
 
-## Stack
+| Agent | Decides |
+| --- | --- |
+| 🧠 **Strategist** | what to say today, to whom, at which funnel stage |
+| 🔎 **Research** | which approved facts support it |
+| 🎯 **Platform Strategy** | how the idea differs per channel |
+| ✍️ **Writers** ×3 | native copy for LinkedIn, Facebook, Instagram — Arabic and English |
+| 🖼 **Image agent** | the visual brief, in the brand's language |
+| 🔍 **Accuracy Validator** | whether every claim is verifiable |
+| 🛡 **Brand Gatekeeper** | whether this deserves to represent the brand |
+| 🎬 **Creative Studio** | concept → storyboard → shots → assets, via an external GPU worker |
 
-TanStack Start (React 19, Vite) · Supabase (Postgres + Auth + Storage + RLS) · Vercel AI SDK
-against any OpenAI-compatible provider · Tailwind 4 · deployed on Vercel.
+Agents never publish. They produce, score, and hand over.
 
-## Setup
+---
+
+## Channels
+
+TikTok and Telegram are first-class in the schema, the adapters and the analytics
+from day one — so switching them on is configuration, not a refactor.
+
+| Channel | Publishing | Waiting on |
+| --- | --- | --- |
+| **Telegram** | ✅ live | — |
+| **Facebook** | 🔨 contract | Meta App Review (`pages_manage_posts`) |
+| **Instagram** | 🔨 contract | Business account link + `instagram_content_publish` |
+| **LinkedIn** | 🔨 contract | Community Management API (`w_organization_social`) |
+| **TikTok** | 🔨 contract | Content Posting API audit (`video.publish`) |
+
+Telegram is also the **command centre**: `/status`, `/today`, `/pending`,
+`/analytics`, with inline approve and reject. Approving queues a post — it never
+publishes from the chat.
+
+---
+
+## Quick start
 
 ```bash
 npm install
 npm run dev
 ```
 
-Environment variables:
+| Command | |
+| --- | --- |
+| `npm run dev` | dev server on `:8080` |
+| `npm run typecheck` | `tsc --noEmit` |
+| `npm run build` | production build |
+| `npm run lint` | eslint |
 
-| Variable | Where | Purpose |
-| --- | --- | --- |
-| `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY` | client | browser Supabase client |
-| `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY` | server | SSR + auth middleware |
-| `SUPABASE_SERVICE_ROLE_KEY` | server | admin writes, bypasses RLS — never expose |
-| `AI_BASE_URL`, `AI_API_KEY` | server | OpenAI-compatible LLM endpoint |
-| `AI_MODEL`, `AI_IMAGE_MODEL` | server | optional model overrides |
-| `CREATIVE_MODE` | server | `mock` (no GPU, no credits) / `local` / `cloud` |
-| `CREATIVE_WORKER_SECRET` | server | shared secret for the GPU worker endpoints |
-
-## Commands
-
-```bash
-npm run dev        # dev server
-npm run typecheck  # tsc --noEmit
-npm run build      # production build
-npm run lint       # eslint
-```
-
-## Database
-
-Migrations live in `supabase/migrations/` and run in filename order via the Supabase CLI:
+Database — 14 migrations, 26 tables:
 
 ```bash
 supabase db push
 ```
 
-## Automation
-
-Self-hosted n8n (Community Edition — free, no account, no trial) lives in `infra/n8n/`:
+Self-hosted automation — n8n Community Edition, free with no account and no trial:
 
 ```bash
 cd infra/n8n && cp .env.example .env && docker compose up -d
 ```
 
-## Docs
+Full deployment path in **[docs/deployment.md](docs/deployment.md)**.
 
-- [`docs/deployment.md`](docs/deployment.md) — Supabase + Vercel runbook, env var scoping, Telegram setup, smoke test
-- [`docs/plan/`](docs/plan/) — phase plans
+---
+
+## Configuration
+
+| Variable | Scope | Purpose |
+| --- | --- | --- |
+| `VITE_SUPABASE_URL` `VITE_SUPABASE_PUBLISHABLE_KEY` | client | public by design |
+| `SUPABASE_URL` `SUPABASE_PUBLISHABLE_KEY` | server | SSR and auth middleware |
+| `SUPABASE_SERVICE_ROLE_KEY` | **server only** | admin writes, bypasses RLS |
+| `AI_BASE_URL` `AI_API_KEY` | **server only** | any OpenAI-compatible endpoint |
+| `AI_MODEL` `AI_IMAGE_MODEL` | server | optional overrides |
+| `AUTOMATION_SECRET` | **server only** | n8n credential |
+| `TELEGRAM_BOT_TOKEN` `TELEGRAM_WEBHOOK_SECRET` | **server only** | command centre |
+| `CREATIVE_MODE` `CREATIVE_WORKER_SECRET` | server | GPU worker channel |
+
+Changing LLM provider is a deployment change, never a code change.
+
+---
 
 ## Automation API
 
-Four secret-authenticated endpoints under `/api/public/automation/` drive the daily
-cycle from n8n: `generate-today`, `approved`, `published`, `analytics`. Every request
-needs `x-automation-secret`, `x-automation-timestamp` and a single-use
-`x-automation-nonce`; retries should carry an `Idempotency-Key`. The GPU worker
-channel (`x-worker-secret`) is deliberately separate.
+Four endpoints under `/api/public/automation/` drive the daily cycle from n8n.
+They sit under `public` because no Supabase session authenticates them — they are
+**not public**.
 
-Verify a deployment with `./scripts/smoke-automation.sh`.
+| Endpoint | |
+| --- | --- |
+| `POST generate-today` | run the daily content cycle |
+| `GET approved` | the publish queue; `?claim=true` claims atomically, `?state=unknown` lists posts awaiting reconciliation |
+| `POST published` | record the outcome of a publish attempt |
+| `POST analytics` | ingest a metrics snapshot |
+
+Every request carries a shared secret compared in constant time, a timestamp
+inside a five-minute window, and a single-use nonce. Retries carry an
+`Idempotency-Key` and get the first attempt's response replayed verbatim.
+
+```bash
+curl -X POST "$APP/api/public/automation/generate-today" \
+  -H "x-automation-secret: $AUTOMATION_SECRET" \
+  -H "x-automation-timestamp: $(date +%s)" \
+  -H "x-automation-nonce: $(uuidgen)" \
+  -H "idempotency-key: daily-$(date +%F)"
+```
+
+### The hard part: never publishing twice
+
+The dangerous failure is not a request that fails. It is a request that **succeeds
+while the caller never learns it did**. Retrying that posts the same ad twice.
+
+```
+publishing ─┬─ confirmed ────────► published
+            ├─ definitive error ─► failed
+            └─ no answer ────────► unknown ──► reconcile ──► published
+                                                         └─► approved (safe retry)
+```
+
+`unknown` never returns to `publishing` on its own, and a claim abandoned by a
+dead worker is quarantined rather than re-queued. Backed by
+`UNIQUE (platform, platform_post_id)`, `UNIQUE (publish_idempotency_key)` and a
+`CHECK` on the status vocabulary.
+
+---
+
+## Security model
+
+Three credentials, never interchangeable: `x-automation-secret` for n8n,
+`x-worker-secret` for the GPU worker, `x-telegram-bot-api-secret-token` for
+Telegram. A leak of one grants nothing in the others.
+
+Secrets never reach the browser, and this is **enforced rather than documented**:
+
+- the build **fails** if any client module imports a `*.server.ts` file
+- only `VITE_*` values are injected into the client bundle
+- `social_accounts` and `integrations` grant `authenticated` column-level SELECT
+  that excludes every token; only `service_role` can read them
+
+Verify on any build:
+
+```bash
+npm run build && grep -rl "SUPABASE_SERVICE_ROLE_KEY\|TELEGRAM_BOT_TOKEN" .output/public
+# expect no output
+```
+
+Verify a deployment end to end:
+
+```bash
+APP_URL=https://<app> AUTOMATION_SECRET=... ./scripts/smoke-automation.sh
+```
+
+---
+
+## Project layout
+
+```
+src/lib/agents.*        Marketing OS pipeline
+src/lib/creative/       Creative Studio
+src/lib/platforms/      channel contracts + registry
+src/lib/automation/     guard, schemas, approvals, Telegram
+src/routes/             dashboard + secured API routes
+supabase/migrations/    schema, RLS, grants
+infra/n8n/              self-hosted automation plane
+scripts/                infrastructure smoke test
+```
+
+---
+
+## Documentation
+
+| | |
+| --- | --- |
+| **[Architecture](docs/architecture.md)** | layers, request lifecycle, state machine, data model |
+| **[Deployment](docs/deployment.md)** | Supabase → Vercel → Telegram → smoke test |
+| **[Contributing rules](AGENTS.md)** | the invariants any change must preserve |
+| **[Phase plans](docs/plan/)** | how the system was designed |
+
+---
+
+<div align="center">
+<sub>Water, designed. · الماء، بتصميم</sub>
+</div>
