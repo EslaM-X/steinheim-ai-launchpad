@@ -34,6 +34,7 @@ const dict = {
   analytics: { ar: "التحليلات", en: "Analytics" },
   logs: { ar: "السجل", en: "Logs" },
   tests: { ar: "الاختبارات", en: "Tests" },
+  creative: { ar: "الاستوديو الإبداعي", en: "Creative Studio" },
 
   generateToday: { ar: "توليد محتوى اليوم", en: "Generate Today" },
   generating: { ar: "جارٍ التوليد…", en: "Generating…" },

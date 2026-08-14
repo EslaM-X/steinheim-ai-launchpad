@@ -14,6 +14,7 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedAnalyticsRouteImport } from './routes/_authenticated/analytics'
 import { Route as AuthenticatedCalendarRouteImport } from './routes/_authenticated/calendar'
+import { Route as AuthenticatedCreativeRouteImport } from './routes/_authenticated/creative'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedKnowledgeRouteImport } from './routes/_authenticated/knowledge'
 import { Route as AuthenticatedLogsRouteImport } from './routes/_authenticated/logs'
@@ -21,6 +22,8 @@ import { Route as AuthenticatedProductsRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedPublishRouteImport } from './routes/_authenticated/publish'
 import { Route as AuthenticatedTestsRouteImport } from './routes/_authenticated/tests'
 import { Route as AuthenticatedPostsPostIdRouteImport } from './routes/_authenticated/posts.$postId'
+import { Route as ApiPublicCreativeClaimRouteImport } from './routes/api/public/creative/claim'
+import { Route as ApiPublicCreativeCompleteRouteImport } from './routes/api/public/creative/complete'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -44,6 +47,11 @@ const AuthenticatedAnalyticsRoute = AuthenticatedAnalyticsRouteImport.update({
 const AuthenticatedCalendarRoute = AuthenticatedCalendarRouteImport.update({
   id: '/calendar',
   path: '/calendar',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedCreativeRoute = AuthenticatedCreativeRouteImport.update({
+  id: '/creative',
+  path: '/creative',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
@@ -82,12 +90,24 @@ const AuthenticatedPostsPostIdRoute =
     path: '/posts/$postId',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const ApiPublicCreativeClaimRoute = ApiPublicCreativeClaimRouteImport.update({
+  id: '/api/public/creative/claim',
+  path: '/api/public/creative/claim',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicCreativeCompleteRoute =
+  ApiPublicCreativeCompleteRouteImport.update({
+    id: '/api/public/creative/complete',
+    path: '/api/public/creative/complete',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/analytics': typeof AuthenticatedAnalyticsRoute
   '/calendar': typeof AuthenticatedCalendarRoute
+  '/creative': typeof AuthenticatedCreativeRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/knowledge': typeof AuthenticatedKnowledgeRoute
   '/logs': typeof AuthenticatedLogsRoute
@@ -95,12 +115,15 @@ export interface FileRoutesByFullPath {
   '/publish': typeof AuthenticatedPublishRoute
   '/tests': typeof AuthenticatedTestsRoute
   '/posts/$postId': typeof AuthenticatedPostsPostIdRoute
+  '/api/public/creative/claim': typeof ApiPublicCreativeClaimRoute
+  '/api/public/creative/complete': typeof ApiPublicCreativeCompleteRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/analytics': typeof AuthenticatedAnalyticsRoute
   '/calendar': typeof AuthenticatedCalendarRoute
+  '/creative': typeof AuthenticatedCreativeRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/knowledge': typeof AuthenticatedKnowledgeRoute
   '/logs': typeof AuthenticatedLogsRoute
@@ -108,6 +131,8 @@ export interface FileRoutesByTo {
   '/publish': typeof AuthenticatedPublishRoute
   '/tests': typeof AuthenticatedTestsRoute
   '/posts/$postId': typeof AuthenticatedPostsPostIdRoute
+  '/api/public/creative/claim': typeof ApiPublicCreativeClaimRoute
+  '/api/public/creative/complete': typeof ApiPublicCreativeCompleteRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -116,6 +141,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/_authenticated/analytics': typeof AuthenticatedAnalyticsRoute
   '/_authenticated/calendar': typeof AuthenticatedCalendarRoute
+  '/_authenticated/creative': typeof AuthenticatedCreativeRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/knowledge': typeof AuthenticatedKnowledgeRoute
   '/_authenticated/logs': typeof AuthenticatedLogsRoute
@@ -123,6 +149,8 @@ export interface FileRoutesById {
   '/_authenticated/publish': typeof AuthenticatedPublishRoute
   '/_authenticated/tests': typeof AuthenticatedTestsRoute
   '/_authenticated/posts/$postId': typeof AuthenticatedPostsPostIdRoute
+  '/api/public/creative/claim': typeof ApiPublicCreativeClaimRoute
+  '/api/public/creative/complete': typeof ApiPublicCreativeCompleteRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -131,6 +159,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/analytics'
     | '/calendar'
+    | '/creative'
     | '/dashboard'
     | '/knowledge'
     | '/logs'
@@ -138,12 +167,15 @@ export interface FileRouteTypes {
     | '/publish'
     | '/tests'
     | '/posts/$postId'
+    | '/api/public/creative/claim'
+    | '/api/public/creative/complete'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/auth'
     | '/analytics'
     | '/calendar'
+    | '/creative'
     | '/dashboard'
     | '/knowledge'
     | '/logs'
@@ -151,6 +183,8 @@ export interface FileRouteTypes {
     | '/publish'
     | '/tests'
     | '/posts/$postId'
+    | '/api/public/creative/claim'
+    | '/api/public/creative/complete'
   id:
     | '__root__'
     | '/'
@@ -158,6 +192,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/_authenticated/analytics'
     | '/_authenticated/calendar'
+    | '/_authenticated/creative'
     | '/_authenticated/dashboard'
     | '/_authenticated/knowledge'
     | '/_authenticated/logs'
@@ -165,12 +200,16 @@ export interface FileRouteTypes {
     | '/_authenticated/publish'
     | '/_authenticated/tests'
     | '/_authenticated/posts/$postId'
+    | '/api/public/creative/claim'
+    | '/api/public/creative/complete'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
+  ApiPublicCreativeClaimRoute: typeof ApiPublicCreativeClaimRoute
+  ApiPublicCreativeCompleteRoute: typeof ApiPublicCreativeCompleteRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -208,6 +247,13 @@ declare module '@tanstack/react-router' {
       path: '/calendar'
       fullPath: '/calendar'
       preLoaderRoute: typeof AuthenticatedCalendarRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/creative': {
+      id: '/_authenticated/creative'
+      path: '/creative'
+      fullPath: '/creative'
+      preLoaderRoute: typeof AuthenticatedCreativeRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/dashboard': {
@@ -259,12 +305,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPostsPostIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/api/public/creative/claim': {
+      id: '/api/public/creative/claim'
+      path: '/api/public/creative/claim'
+      fullPath: '/api/public/creative/claim'
+      preLoaderRoute: typeof ApiPublicCreativeClaimRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/creative/complete': {
+      id: '/api/public/creative/complete'
+      path: '/api/public/creative/complete'
+      fullPath: '/api/public/creative/complete'
+      preLoaderRoute: typeof ApiPublicCreativeCompleteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAnalyticsRoute: typeof AuthenticatedAnalyticsRoute
   AuthenticatedCalendarRoute: typeof AuthenticatedCalendarRoute
+  AuthenticatedCreativeRoute: typeof AuthenticatedCreativeRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedKnowledgeRoute: typeof AuthenticatedKnowledgeRoute
   AuthenticatedLogsRoute: typeof AuthenticatedLogsRoute
@@ -277,6 +338,7 @@ interface AuthenticatedRouteRouteChildren {
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAnalyticsRoute: AuthenticatedAnalyticsRoute,
   AuthenticatedCalendarRoute: AuthenticatedCalendarRoute,
+  AuthenticatedCreativeRoute: AuthenticatedCreativeRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedKnowledgeRoute: AuthenticatedKnowledgeRoute,
   AuthenticatedLogsRoute: AuthenticatedLogsRoute,
@@ -293,6 +355,8 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
+  ApiPublicCreativeClaimRoute: ApiPublicCreativeClaimRoute,
+  ApiPublicCreativeCompleteRoute: ApiPublicCreativeCompleteRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
