@@ -1,19 +1,15 @@
 import { NoObjectGeneratedError, Output, streamText } from "ai";
 import type { z } from "zod";
 
-import { createLovableAiGatewayProvider } from "./ai-gateway.server";
+import { createAiProvider, getApiKey } from "./ai-provider.server";
 
-export const MODEL = "google/gemini-3.6-flash";
+export { getApiKey };
 
-export function getApiKey() {
-  const key = process.env["LOVABLE_API_KEY"];
-  if (!key) throw new Error("Missing LOVABLE_API_KEY");
-  return key;
-}
+export const MODEL = process.env["AI_MODEL"] ?? "google/gemini-3.6-flash";
 
 export function getModel() {
-  const gateway = createLovableAiGatewayProvider(getApiKey(), undefined, { structuredOutputs: true });
-  return gateway(MODEL);
+  const provider = createAiProvider(getApiKey(), { structuredOutputs: true });
+  return provider(MODEL);
 }
 
 /** Surfaces the real gateway error instead of "No output generated". */

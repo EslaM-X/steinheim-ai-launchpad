@@ -1,0 +1,67 @@
+# n8n — self-hosted Community Edition (free forever, Sustainable Use License).
+# No n8n.io account, no 14-day trial: that limit belongs to n8n Cloud only.
+#
+#   cd infra/n8n
+#   cp .env.example .env      # then fill N8N_ENCRYPTION_KEY + passwords
+#   docker compose up -d
+#   open http://localhost:5678   (first launch = create the LOCAL owner account)
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - n8n_db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  n8n:
+    image: docker.n8n.io/n8nio/n8n:latest
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "5678:5678"
+    environment:
+      # --- persistence: Postgres instead of the default SQLite file ---
+      DB_TYPE: postgresdb
+      DB_POSTGRESDB_HOST: postgres
+      DB_POSTGRESDB_PORT: 5432
+      DB_POSTGRESDB_DATABASE: ${POSTGRES_DB}
+      DB_POSTGRESDB_USER: ${POSTGRES_USER}
+      DB_POSTGRESDB_PASSWORD: ${POSTGRES_PASSWORD}
+
+      # --- credential encryption: losing this key makes every stored credential unreadable ---
+      N8N_ENCRYPTION_KEY: ${N8N_ENCRYPTION_KEY}
+
+      # --- addressing: WEBHOOK_URL must be the URL Meta/LinkedIn/the app can reach ---
+      N8N_HOST: ${N8N_HOST:-localhost}
+      N8N_PORT: 5678
+      N8N_PROTOCOL: ${N8N_PROTOCOL:-http}
+      WEBHOOK_URL: ${WEBHOOK_URL:-http://localhost:5678/}
+
+      # --- Steinheim runs on Cairo time; the daily 09:00 trigger depends on this ---
+      GENERIC_TIMEZONE: Africa/Cairo
+      TZ: Africa/Cairo
+
+      # --- hardening + housekeeping ---
+      N8N_DIAGNOSTICS_ENABLED: "false"
+      N8N_RUNNERS_ENABLED: "true"
+      N8N_BLOCK_ENV_ACCESS_IN_NODE: "true"
+      N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS: "true"
+      EXECUTIONS_DATA_PRUNE: "true"
+      EXECUTIONS_DATA_MAX_AGE: "336" # keep 14 days of execution history
+    volumes:
+      - n8n_data:/home/node/.n8n
+
+volumes:
+  n8n_db:
+  n8n_data:

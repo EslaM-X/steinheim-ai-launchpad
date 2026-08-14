@@ -22,8 +22,13 @@ import { Route as AuthenticatedProductsRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedPublishRouteImport } from './routes/_authenticated/publish'
 import { Route as AuthenticatedTestsRouteImport } from './routes/_authenticated/tests'
 import { Route as AuthenticatedPostsPostIdRouteImport } from './routes/_authenticated/posts.$postId'
+import { Route as ApiPublicAutomationAnalyticsRouteImport } from './routes/api/public/automation/analytics'
+import { Route as ApiPublicAutomationApprovedRouteImport } from './routes/api/public/automation/approved'
+import { Route as ApiPublicAutomationGenerateTodayRouteImport } from './routes/api/public/automation/generate-today'
+import { Route as ApiPublicAutomationPublishedRouteImport } from './routes/api/public/automation/published'
 import { Route as ApiPublicCreativeClaimRouteImport } from './routes/api/public/creative/claim'
 import { Route as ApiPublicCreativeCompleteRouteImport } from './routes/api/public/creative/complete'
+import { Route as ApiPublicTelegramWebhookRouteImport } from './routes/api/public/telegram/webhook'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -90,6 +95,30 @@ const AuthenticatedPostsPostIdRoute =
     path: '/posts/$postId',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const ApiPublicAutomationAnalyticsRoute =
+  ApiPublicAutomationAnalyticsRouteImport.update({
+    id: '/api/public/automation/analytics',
+    path: '/api/public/automation/analytics',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicAutomationApprovedRoute =
+  ApiPublicAutomationApprovedRouteImport.update({
+    id: '/api/public/automation/approved',
+    path: '/api/public/automation/approved',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicAutomationGenerateTodayRoute =
+  ApiPublicAutomationGenerateTodayRouteImport.update({
+    id: '/api/public/automation/generate-today',
+    path: '/api/public/automation/generate-today',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicAutomationPublishedRoute =
+  ApiPublicAutomationPublishedRouteImport.update({
+    id: '/api/public/automation/published',
+    path: '/api/public/automation/published',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicCreativeClaimRoute = ApiPublicCreativeClaimRouteImport.update({
   id: '/api/public/creative/claim',
   path: '/api/public/creative/claim',
@@ -99,6 +128,12 @@ const ApiPublicCreativeCompleteRoute =
   ApiPublicCreativeCompleteRouteImport.update({
     id: '/api/public/creative/complete',
     path: '/api/public/creative/complete',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicTelegramWebhookRoute =
+  ApiPublicTelegramWebhookRouteImport.update({
+    id: '/api/public/telegram/webhook',
+    path: '/api/public/telegram/webhook',
     getParentRoute: () => rootRouteImport,
   } as any)
 
@@ -115,8 +150,13 @@ export interface FileRoutesByFullPath {
   '/publish': typeof AuthenticatedPublishRoute
   '/tests': typeof AuthenticatedTestsRoute
   '/posts/$postId': typeof AuthenticatedPostsPostIdRoute
+  '/api/public/automation/analytics': typeof ApiPublicAutomationAnalyticsRoute
+  '/api/public/automation/approved': typeof ApiPublicAutomationApprovedRoute
+  '/api/public/automation/generate-today': typeof ApiPublicAutomationGenerateTodayRoute
+  '/api/public/automation/published': typeof ApiPublicAutomationPublishedRoute
   '/api/public/creative/claim': typeof ApiPublicCreativeClaimRoute
   '/api/public/creative/complete': typeof ApiPublicCreativeCompleteRoute
+  '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -131,8 +171,13 @@ export interface FileRoutesByTo {
   '/publish': typeof AuthenticatedPublishRoute
   '/tests': typeof AuthenticatedTestsRoute
   '/posts/$postId': typeof AuthenticatedPostsPostIdRoute
+  '/api/public/automation/analytics': typeof ApiPublicAutomationAnalyticsRoute
+  '/api/public/automation/approved': typeof ApiPublicAutomationApprovedRoute
+  '/api/public/automation/generate-today': typeof ApiPublicAutomationGenerateTodayRoute
+  '/api/public/automation/published': typeof ApiPublicAutomationPublishedRoute
   '/api/public/creative/claim': typeof ApiPublicCreativeClaimRoute
   '/api/public/creative/complete': typeof ApiPublicCreativeCompleteRoute
+  '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -149,8 +194,13 @@ export interface FileRoutesById {
   '/_authenticated/publish': typeof AuthenticatedPublishRoute
   '/_authenticated/tests': typeof AuthenticatedTestsRoute
   '/_authenticated/posts/$postId': typeof AuthenticatedPostsPostIdRoute
+  '/api/public/automation/analytics': typeof ApiPublicAutomationAnalyticsRoute
+  '/api/public/automation/approved': typeof ApiPublicAutomationApprovedRoute
+  '/api/public/automation/generate-today': typeof ApiPublicAutomationGenerateTodayRoute
+  '/api/public/automation/published': typeof ApiPublicAutomationPublishedRoute
   '/api/public/creative/claim': typeof ApiPublicCreativeClaimRoute
   '/api/public/creative/complete': typeof ApiPublicCreativeCompleteRoute
+  '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -167,8 +217,13 @@ export interface FileRouteTypes {
     | '/publish'
     | '/tests'
     | '/posts/$postId'
+    | '/api/public/automation/analytics'
+    | '/api/public/automation/approved'
+    | '/api/public/automation/generate-today'
+    | '/api/public/automation/published'
     | '/api/public/creative/claim'
     | '/api/public/creative/complete'
+    | '/api/public/telegram/webhook'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -183,8 +238,13 @@ export interface FileRouteTypes {
     | '/publish'
     | '/tests'
     | '/posts/$postId'
+    | '/api/public/automation/analytics'
+    | '/api/public/automation/approved'
+    | '/api/public/automation/generate-today'
+    | '/api/public/automation/published'
     | '/api/public/creative/claim'
     | '/api/public/creative/complete'
+    | '/api/public/telegram/webhook'
   id:
     | '__root__'
     | '/'
@@ -200,16 +260,26 @@ export interface FileRouteTypes {
     | '/_authenticated/publish'
     | '/_authenticated/tests'
     | '/_authenticated/posts/$postId'
+    | '/api/public/automation/analytics'
+    | '/api/public/automation/approved'
+    | '/api/public/automation/generate-today'
+    | '/api/public/automation/published'
     | '/api/public/creative/claim'
     | '/api/public/creative/complete'
+    | '/api/public/telegram/webhook'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
+  ApiPublicAutomationAnalyticsRoute: typeof ApiPublicAutomationAnalyticsRoute
+  ApiPublicAutomationApprovedRoute: typeof ApiPublicAutomationApprovedRoute
+  ApiPublicAutomationGenerateTodayRoute: typeof ApiPublicAutomationGenerateTodayRoute
+  ApiPublicAutomationPublishedRoute: typeof ApiPublicAutomationPublishedRoute
   ApiPublicCreativeClaimRoute: typeof ApiPublicCreativeClaimRoute
   ApiPublicCreativeCompleteRoute: typeof ApiPublicCreativeCompleteRoute
+  ApiPublicTelegramWebhookRoute: typeof ApiPublicTelegramWebhookRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -305,6 +375,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPostsPostIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/api/public/automation/analytics': {
+      id: '/api/public/automation/analytics'
+      path: '/api/public/automation/analytics'
+      fullPath: '/api/public/automation/analytics'
+      preLoaderRoute: typeof ApiPublicAutomationAnalyticsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/automation/approved': {
+      id: '/api/public/automation/approved'
+      path: '/api/public/automation/approved'
+      fullPath: '/api/public/automation/approved'
+      preLoaderRoute: typeof ApiPublicAutomationApprovedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/automation/generate-today': {
+      id: '/api/public/automation/generate-today'
+      path: '/api/public/automation/generate-today'
+      fullPath: '/api/public/automation/generate-today'
+      preLoaderRoute: typeof ApiPublicAutomationGenerateTodayRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/automation/published': {
+      id: '/api/public/automation/published'
+      path: '/api/public/automation/published'
+      fullPath: '/api/public/automation/published'
+      preLoaderRoute: typeof ApiPublicAutomationPublishedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/creative/claim': {
       id: '/api/public/creative/claim'
       path: '/api/public/creative/claim'
@@ -317,6 +415,13 @@ declare module '@tanstack/react-router' {
       path: '/api/public/creative/complete'
       fullPath: '/api/public/creative/complete'
       preLoaderRoute: typeof ApiPublicCreativeCompleteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/telegram/webhook': {
+      id: '/api/public/telegram/webhook'
+      path: '/api/public/telegram/webhook'
+      fullPath: '/api/public/telegram/webhook'
+      preLoaderRoute: typeof ApiPublicTelegramWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -355,8 +460,13 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
+  ApiPublicAutomationAnalyticsRoute: ApiPublicAutomationAnalyticsRoute,
+  ApiPublicAutomationApprovedRoute: ApiPublicAutomationApprovedRoute,
+  ApiPublicAutomationGenerateTodayRoute: ApiPublicAutomationGenerateTodayRoute,
+  ApiPublicAutomationPublishedRoute: ApiPublicAutomationPublishedRoute,
   ApiPublicCreativeClaimRoute: ApiPublicCreativeClaimRoute,
   ApiPublicCreativeCompleteRoute: ApiPublicCreativeCompleteRoute,
+  ApiPublicTelegramWebhookRoute: ApiPublicTelegramWebhookRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

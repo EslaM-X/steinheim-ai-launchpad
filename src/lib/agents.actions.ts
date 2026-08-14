@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-import { generateGatewayImage } from "./ai-gateway.server";
+import { generateImage } from "./ai-provider.server";
 import { PLATFORM_RULES, brandSystemPrompt, genObject, genText, getApiKey, knowledgeBlock } from "./agents.server";
 import { accuracySchema, reviewSchema, type Platform, type PlatformCopy } from "./agents.schemas";
 import { loadKnowledge, runPlatformWriter, type Knowledge } from "./agents.pipeline";
@@ -141,7 +141,7 @@ export async function generateImageForPost(supabase: DB, postId: string) {
     post["image_prompt"] ||
     "Photorealistic premium German bathroom interior, brushed brass fixtures, stone surfaces, soft daylight, architectural composition, no text.";
 
-  const imageUrl = await generateGatewayImage(getApiKey(), `${prompt}. No text, no logos, no watermarks.`);
+  const imageUrl = await generateImage(getApiKey(), `${prompt}. No text, no logos, no watermarks.`);
 
   const { error } = await supabase.from("posts").update({ image_url: imageUrl }).eq("id", postId);
   if (error) throw new Error(error.message);

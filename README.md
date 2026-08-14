@@ -1,289 +1,93 @@
 # Steinheim AI Launchpad
 
-يلا نبدأ صح من أول مرة. هدفنا خلال أسبوعين يكون عندك AI Marketing System لشركة Steinheim يعمل بشكل شبه تلقائي.
-
-المرحلة 1 (اليوم الأول) - تجهيز البيئة
-
-أنشئ الحسابات التالية:
-
- ✅ n8n (يفضل Self-Hosted إذا عندك VPS، أو Cloud كبداية)
-
- ✅ Lovable.dev
-
- ✅ GitHub
-
- ✅ Supabase
-
- ✅ OpenAI API
-
- ✅ Meta Developers (Facebook + Instagram)
-
- ✅ LinkedIn Developer
-
-المرحلة 2 - بناء قاعدة المعرفة
-
-داخل Supabase سننشئ جداول مثل:
-
- المنتجات
-
- الفئات
-
- العملاء المستهدفون
-
- المشاريع
-
- صور المنتجات
-
- أفكار المحتوى
-
- المنشورات
-
- التحليلات
-
-سيعرف النظام كل شيء عن Steinheim حتى يكتب محتوى صحيح.
-
-المرحلة 3 - أول AI Agent
-
-سنبني Agent اسمه:
-
-Steinheim Content Strategist
-
-وظيفته:
-
- يختار موضوع اليوم.
-
- يحدد الهدف (بيع / توعية / علامة تجارية).
-
- يختار المنتج المناسب.
-
-المرحلة 4 - فريق الوكلاء
-
-بعد ذلك نضيف:
-
- 🔍 Research Agent
-
- ✍️ Copywriter Agent
-
- 🎨 Image Prompt Agent
-
- ✅ Reviewer Agent
-
- 📅 Publisher Agent
-
- 📊 Analytics Agent
-
-المرحلة 5 - لوحة التحكم
-
-باستخدام Lovable.dev نبني Dashboard فيها:
-
- المنتجات
-
- تقويم المحتوى
-
- زر "Generate Today"
-
- زر "Publish"
-
- الإحصائيات
-
- سجل جميع المنشورات
-
-المرحلة 6 - الأتمتة
-
-كل يوم الساعة 9 صباحًا:
-
- يبحث عن فكرة.
-
- يكتب منشور LinkedIn.
-
- يكتب منشور Facebook.
-
- يكتب Caption لـ Instagram.
-
- يقترح أو ينشئ صورة.
-
- يراجع المحتوى.
-
- ينشر.
-
- يحفظ النتائج ويقيس الأداء.
-
-المرحلة 7 - التطوير
-
-بعد نجاح النظام الأساسي نضيف:
-
- Chatbot للرد على العملاء.
-
- توليد فيديوهات قصيرة.
-
- إنشاء عروض أسعار تلقائيًا.
-
- متابعة الـ Leads.
-
- إرسال بريد إلكتروني للعملاء المحتملين.
-
- تقارير أسبوعية وشهرية للإدارة.
-
-نبدأ الآن بأول خطوة
-
-سنبدأ ببناء قاعدة المعرفة (Knowledge Base) لأنها أساس كل شيء. بعدها سنوصلها بـ n8n ثم نبني أول Agent. بهذه الطريقة سيكون النظام قابلًا للتوسع بسهولة بدلًا من إعادة بنائه لاحقًا.
-
-طيب هل اقدر استخدم دا https://github.com/n8n-io/n8n ولا لازم هسجل عن طريق موقعهم برضو واسبوعين مجانين وبس
-
-أيوه، تقدر تستخدم مستودع GitHub مباشرة، ولا أنت مضطر تعتمد على تجربة الأسبوعين في n8n Cloud.
-
-إذا استخدمت مستودع GitHub:
-
- ✅ مجاني بشكل دائم (Community Edition).
-
- ✅ تشغله على جهازك أو على VPS.
-
- ✅ لا يوجد حد 14 يوم.
-
- ✅ تملك بياناتك وWorkflows بالكامل.
-
-رابط المستودع الذي أرسلته مناسب:
-
-n8n GitHub Repository
-
-أنصحك بإيه؟
-
-بما أنك تريد بناء نظام كبير لـ Steinheim فيه AI Agents وMarketing وDashboard وSupabase، فلا أنصح بالاعتماد على النسخة السحابية التجريبية.
-
-ابدأ مباشرة بـ Self-Hosted:
-
- Docker (أفضل وأسهل).
-
- أو npm إذا أردت تشغيله محليًا.
-
- وبعدها اربطه مع:
-
- Supabase
-
- Lovable.dev
-
- OpenAI
-
- GitHub
-
-النسخة السحابية من n8n هي التي فيها تجربة 14 يومًا، وبعدها تحتاج اشتراك مدفوع للاستمرار. أما النسخة Self-Hosted فلا تخضع لهذا القيد.
-
-الخطة التي أقترحها لك
-
- تثبيت n8n بـ Docker.
-
- إنشاء مشروع GitHub خاص بالنظام.
-
- ربط Supabase.
-
- إنشاء أول AI Agent.
-
- بناء لوحة التحكم في Lovable.dev.
-
- تشغيل النظام 24/7 على VPS عندما يصبح جاهزًا.
-
-وأعتقد أننا نستطيع بناء منصة تسويق كاملة لـ Steinheim بهذه الأدوات، ثم بعد نجاحها نحولها إلى منتج SaaS تبيعه لشركات أخرى أيضًا.
-
-يعني كده مش هحتاج أنشأ حساب على N8n
-
-بالضبط. إذا اخترت النسخة Self-Hosted، فلن تحتاج إلى إنشاء حساب على موقع n8n.
-
-عند تثبيت n8n من GitHub أو باستخدام Docker:
-
- ✅ لا تحتاج حساب n8n Cloud.
-
- ✅ لا توجد فترة تجريبية 14 يومًا.
-
- ✅ تنشئ حساب محليًا داخل نسختك (اسم مستخدم وكلمة مرور لإدارة النظام).
-
- ✅ جميع الـ Workflows والبيانات تكون على جهازك أو السيرفر الخاص بك.
-
-أما إذا استخدمت n8n Cloud من موقعهم، فستحتاج إلى:
-
- إنشاء حساب.
-
- استخدام الفترة التجريبية.
-
- ثم الاشتراك إذا أردت الاستمرار.
-
-بما أنك تريد مشروعًا كبيرًا لـ Steinheim
-
-أنصحك أن نبدأ مباشرة بالنسخة Self-Hosted.
-
-أريد أن أعرف فقط:
-
- هل ستشغله على جهازك الشخصي (Windows) أثناء التطوير؟
-
- أم لديك VPS أو سيرفر تريد تثبيته عليه من البداية؟
-
-بناءً على إجابتك سأعطيك أسرع طريقة للتثبيت ونبدأ في بناء أول AI Agent.
-آه، ينفع تقنيًا تحول موبايل Android قديم إلى سيرفر وتشغّل عليه خدمات، لكن أنا لا أنصح أن نجعل الموبايل هو الـVPS الرئيسي لـ n8n لو هدفنا نظام Steinheim يشتغل 24/7 بشكل احترافي.
-
-الفكرة ممتازة للتجربة والتعلّم، لكن فيها مشاكل:
-
- 🔋 البطارية والاستهلاك المستمر.
-
- 🌡️ الحرارة مع التشغيل 24/7.
-
- 🌐 غالبًا أنت خلف CGNAT، وبالتالي الوصول للموبايل من الإنترنت ليس مباشرًا.
-
- 💤 Android قد يوقف التطبيقات في الخلفية.
-
- 💾 التخزين والـRAM محدودان.
-
- 🔄 إعادة التشغيل أو انقطاع الكهرباء قد يوقف النظام.
-
- 🔐 تعريض Android للإنترنت كسيرفر يحتاج إعداد أمني جيد.
-
-لكن نقدر نستفيد منه جدًا
-
-أقترح نعملها بهذا الشكل:
-
-الموبايل القديم = Development Server
-
-Android Phone
-     │
-     ├── Termux
-     ├── Ubuntu/Debian environment
-     ├── Node.js
-     ├── n8n
-     └── PostgreSQL / أدوات التجربة
-
-ونبني عليه النظام بالكامل ونختبر:
-
-n8n → AI Agents → Supabase → Lovable → APIs → Content Generation
-
-وبعد ما النظام يشتغل تمامًا، ننقله إلى VPS حقيقي.
-
-والأهم
-
-أنت لا تحتاج شراء VPS الآن.
-
-نقدر نبدأ بالموبايل بتكلفة شبه صفرية، ونبني أول نسخة من نظام Steinheim، وبعد ما نتأكد أن كل شيء يعمل، ننقله إلى VPS مناسب.
-
-ولو الموبايل قديم جدًا أو RAM أقل من 3–4GB، فالأفضل نستخدمه فقط للتجارب وليس لتشغيل كل الـAgents والـservices عليه.
-
-وأنا أقترح نبدأ الآن بالموبايل نفسه: نجهزه كسيرفر، ثم نثبت عليه n8n Self-Hosted، وبعدها نعمل أول Workflow لـ Steinheim.
-
-لو الموبايل معاك الآن، ابعتلي الموديل + إصدار Android + RAM، وأنا أقولك بالضبط هل ينفع ولا لأ، والطريقة الأنسب لتحويله لسيرفر.
-
-This project was built with [Lovable](https://lovable.dev).
-
-## Build with Lovable
-
-Continue developing this project in the [Lovable editor](https://lovable.dev/projects/4094afcd-5bf7-4eb5-8065-6402b599f28f).
-
-- **Ship faster**: describe what you want to build and Lovable handles the code.
-- **Stay in sync**: every change made in Lovable is committed straight to this repository.
-- **Full ownership**: this code is yours. Push to `main` on GitHub and your changes sync back into Lovable, ready for your next prompt.
-
-## Development
-
-Prefer working locally? You need Node.js and npm — [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating).
-
-```sh
-git clone <this-repository-url>
-cd <repository-name>
-npm i
+Marketing operating system for **Steinheim** (German luxury bathroom systems in Egypt). A verified
+product knowledge base drives a team of AI agents that plan, write, illustrate and quality-check
+daily content — and nothing reaches a social channel without a human approving it.
+
+## Architecture
+
+```text
+Truth Layer          verified products, projects, audiences, approved/forbidden claims
+      │
+Marketing OS         Strategist → Research → Platform Strategy → Writers → Accuracy → Gatekeeper
+      │
+Creative Studio      Director → Concepts → Storyboard → Shots → Assets (via an external GPU worker)
+      │
+Quality Gates        AI approval (score ≥ 85, zero unverified claims) → human approval
+      │
+Automation (n8n)     scheduling, publishing, metrics collection
+      │
+Channels             LinkedIn · Facebook · Instagram · TikTok · Telegram
+      │
+Analytics            canonical metrics feed the next day's strategy
+```
+
+Two rules the whole system is built around:
+
+1. **No unverified claim ships.** Writers may only use facts present in the Truth Layer; the
+   accuracy validator rejects anything else.
+2. **No publish without a human.** The AI recommends and scores; a person approves.
+
+## Stack
+
+TanStack Start (React 19, Vite) · Supabase (Postgres + Auth + Storage + RLS) · Vercel AI SDK
+against any OpenAI-compatible provider · Tailwind 4 · deployed on Vercel.
+
+## Setup
+
+```bash
+npm install
 npm run dev
 ```
+
+Environment variables:
+
+| Variable | Where | Purpose |
+| --- | --- | --- |
+| `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY` | client | browser Supabase client |
+| `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY` | server | SSR + auth middleware |
+| `SUPABASE_SERVICE_ROLE_KEY` | server | admin writes, bypasses RLS — never expose |
+| `AI_BASE_URL`, `AI_API_KEY` | server | OpenAI-compatible LLM endpoint |
+| `AI_MODEL`, `AI_IMAGE_MODEL` | server | optional model overrides |
+| `CREATIVE_MODE` | server | `mock` (no GPU, no credits) / `local` / `cloud` |
+| `CREATIVE_WORKER_SECRET` | server | shared secret for the GPU worker endpoints |
+
+## Commands
+
+```bash
+npm run dev        # dev server
+npm run typecheck  # tsc --noEmit
+npm run build      # production build
+npm run lint       # eslint
+```
+
+## Database
+
+Migrations live in `supabase/migrations/` and run in filename order via the Supabase CLI:
+
+```bash
+supabase db push
+```
+
+## Automation
+
+Self-hosted n8n (Community Edition — free, no account, no trial) lives in `infra/n8n/`:
+
+```bash
+cd infra/n8n && cp .env.example .env && docker compose up -d
+```
+
+## Docs
+
+- [`docs/deployment.md`](docs/deployment.md) — Supabase + Vercel runbook, env var scoping, Telegram setup, smoke test
+- [`docs/plan/`](docs/plan/) — phase plans
+
+## Automation API
+
+Four secret-authenticated endpoints under `/api/public/automation/` drive the daily
+cycle from n8n: `generate-today`, `approved`, `published`, `analytics`. Every request
+needs `x-automation-secret`, `x-automation-timestamp` and a single-use
+`x-automation-nonce`; retries should carry an `Idempotency-Key`. The GPU worker
+channel (`x-worker-secret`) is deliberately separate.
+
+Verify a deployment with `./scripts/smoke-automation.sh`.

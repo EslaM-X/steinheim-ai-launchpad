@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
-import { lovable } from "@/integrations/lovable/index";
 import { useI18n } from "@/lib/i18n";
 
 export const Route = createFileRoute("/auth")({
@@ -74,16 +73,15 @@ function AuthPage() {
     }
   }
 
+  // Requires the Google provider to be enabled in the Supabase project, with
+  // this origin listed under the project's redirect URLs.
   async function google() {
-    const result = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: window.location.origin,
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: { redirectTo: `${window.location.origin}/dashboard` },
     });
-    if (result.error) {
-      toast.error(result.error.message ?? "Google sign-in failed");
-      return;
-    }
-    if (result.redirected) return;
-    navigate({ to: "/dashboard" });
+    // On success the browser leaves for Google, so nothing below this runs.
+    if (error) toast.error(error.message || "Google sign-in failed");
   }
 
   if (!mounted) return null;

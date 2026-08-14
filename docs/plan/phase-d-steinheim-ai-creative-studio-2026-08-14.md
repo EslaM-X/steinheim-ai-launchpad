@@ -5,13 +5,13 @@
 ## معمارية الطبقات
 
 ```text
-LOVABLE  = Control Plane      (UI + Agents + Contracts)
+APP      = Control Plane      (UI + Agents + Contracts)
 SUPABASE = Truth + Assets     (schema + storage + RLS)
 WORKER   = Generation Plane   (ComfyUI / GPU، عبر job queue)
 n8n      = Automation Plane   (Phase E، لاحقًا)
 ```
 
-Lovable لا تشغّل توليد فيديو ثقيل. هي تكتب Job في قائمة انتظار، والـworker الخارجي يسحب الـjob ويرفع الناتج ويحدّث الحالة.
+التطبيق لا يشغّل توليد فيديو ثقيل. هو يكتب Job في قائمة انتظار، والـworker الخارجي يسحب الـjob ويرفع الناتج ويحدّث الحالة.
 
 ## D1 — قاعدة بيانات Creative Studio
 
@@ -45,7 +45,7 @@ Lovable لا تشغّل توليد فيديو ثقيل. هي تكتب Job في �
 
 - `POST /api/public/creative/claim` — worker يسحب job (بمفتاح سري + توقيع).
 - `POST /api/public/creative/complete` — يرفع الناتج ويحدّث `generation_jobs` و`creative_assets`.
-- في `mock` mode: Lovable تولّد placeholder assets فورًا وتكمل الـpipeline كاملة بدون GPU وبدون AI credits.
+- في `mock` mode: التطبيق يولّد placeholder assets فورًا ويكمل الـpipeline كاملة بدون GPU وبدون AI credits.
 
 ## D4 — صفحة `/creative`
 
