@@ -2,6 +2,8 @@
 
 # Steinheim AI Launchpad
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE) [![CI](https://github.com/EslaM-X/steinheim-ai-launchpad/actions/workflows/ci.yml/badge.svg)](https://github.com/EslaM-X/steinheim-ai-launchpad/actions)
+
 **A marketing operating system that cannot lie about the product.**
 
 A verified knowledge base drives a team of AI agents that plan, write, illustrate
