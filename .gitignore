@@ -16,6 +16,9 @@ dist-ssr
 .nitro
 *.local
 
+# Dependency lockfile (not committed)
+package-lock.json
+
 # Wrangler / Cloudflare
 .wrangler/
 .dev.vars
