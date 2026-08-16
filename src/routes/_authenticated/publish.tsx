@@ -16,12 +16,14 @@ export const Route = createFileRoute("/_authenticated/publish")({
       { title: "Approvals & publish queue — Steinheim AI Marketing" },
       {
         name: "description",
-        content: "AI-recommended Steinheim posts awaiting human approval, and the approved publish queue.",
+        content:
+          "AI-recommended Steinheim posts awaiting human approval, and the approved publish queue.",
       },
       { property: "og:title", content: "Approvals & publish queue — Steinheim AI Marketing" },
       {
         property: "og:description",
-        content: "AI-recommended Steinheim posts awaiting human approval, and the approved publish queue.",
+        content:
+          "AI-recommended Steinheim posts awaiting human approval, and the approved publish queue.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -30,7 +32,11 @@ export const Route = createFileRoute("/_authenticated/publish")({
   component: PublishPage,
 });
 
-type Post = PostRow & { ai_approved?: boolean; ai_recommendation?: string | null; is_test?: boolean };
+type Post = PostRow & {
+  ai_approved?: boolean;
+  ai_recommendation?: string | null;
+  is_test?: boolean;
+};
 
 function PublishPage() {
   const { t, lang } = useI18n();
@@ -49,7 +55,9 @@ function PublishPage() {
 
   const all = (posts.data ?? []) as Post[];
   const live = all.filter((p) => !p.is_test);
-  const awaiting = live.filter((p) => p.status === "ai_approved" || (p.ai_approved && p.status === "reviewed"));
+  const awaiting = live.filter(
+    (p) => p.status === "ai_approved" || (p.ai_approved && p.status === "reviewed"),
+  );
   const approved = live.filter((p) => p.status === "approved" || p.status === "published");
 
   const card = (post: Post, actions: boolean) => (
@@ -106,7 +114,9 @@ function PublishPage() {
       {posts.isLoading && <p className="text-sm text-muted-foreground">{t("loading")}</p>}
 
       <section className="space-y-3">
-        <h2 className="font-serif text-xl">AI approved — awaiting human approval ({awaiting.length})</h2>
+        <h2 className="font-serif text-xl">
+          AI approved — awaiting human approval ({awaiting.length})
+        </h2>
         {awaiting.length === 0 && !posts.isLoading && (
           <p className="text-sm text-muted-foreground">{t("noData")}</p>
         )}

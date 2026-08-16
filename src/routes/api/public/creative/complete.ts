@@ -36,7 +36,11 @@ export const Route = createFileRoute("/api/public/creative/complete")({
         if (body.status === "failed") {
           await supabaseAdmin
             .from("generation_jobs")
-            .update({ status: "failed", error: body.error ?? "worker failure", completed_at: new Date().toISOString() })
+            .update({
+              status: "failed",
+              error: body.error ?? "worker failure",
+              completed_at: new Date().toISOString(),
+            })
             .eq("id", job.id);
           return Response.json({ ok: true });
         }
@@ -58,7 +62,11 @@ export const Route = createFileRoute("/api/public/creative/complete")({
 
         await supabaseAdmin
           .from("generation_jobs")
-          .update({ status: "done", result_asset_id: asset?.id ?? null, completed_at: new Date().toISOString() })
+          .update({
+            status: "done",
+            result_asset_id: asset?.id ?? null,
+            completed_at: new Date().toISOString(),
+          })
           .eq("id", job.id);
 
         if (job.shot_id && asset) {

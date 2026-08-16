@@ -9,9 +9,15 @@ export const Route = createFileRoute("/_authenticated/analytics")({
   head: () => ({
     meta: [
       { title: "Analytics — Steinheim AI Marketing" },
-      { name: "description", content: "Reach and engagement performance for published Steinheim posts." },
+      {
+        name: "description",
+        content: "Reach and engagement performance for published Steinheim posts.",
+      },
       { property: "og:title", content: "Analytics — Steinheim AI Marketing" },
-      { property: "og:description", content: "Reach and engagement performance for published Steinheim posts." },
+      {
+        property: "og:description",
+        content: "Reach and engagement performance for published Steinheim posts.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],

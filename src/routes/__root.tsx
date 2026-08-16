@@ -78,13 +78,15 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { title: "Steinheim AI Marketing System" },
       {
         name: "description",
-        content: "Truth-checked AI marketing operations for Steinheim: knowledge base, content agents and publishing.",
+        content:
+          "Truth-checked AI marketing operations for Steinheim: knowledge base, content agents and publishing.",
       },
       { name: "author", content: "Steinheim" },
       { property: "og:title", content: "Steinheim AI Marketing System" },
       {
         property: "og:description",
-        content: "Truth-checked AI marketing operations for Steinheim: knowledge base, content agents and publishing.",
+        content:
+          "Truth-checked AI marketing operations for Steinheim: knowledge base, content agents and publishing.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },

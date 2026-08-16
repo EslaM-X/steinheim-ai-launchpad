@@ -17,7 +17,10 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
       { title: "Overview — Steinheim AI Marketing" },
       { name: "description", content: "Daily AI-generated content pipeline for Steinheim Egypt." },
       { property: "og:title", content: "Overview — Steinheim AI Marketing" },
-      { property: "og:description", content: "Daily AI-generated content pipeline for Steinheim Egypt." },
+      {
+        property: "og:description",
+        content: "Daily AI-generated content pipeline for Steinheim Egypt.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
@@ -55,7 +58,9 @@ function DashboardPage() {
     }),
     { impressions: 0, engagements: 0 },
   );
-  const rate = totals.impressions ? ((totals.engagements / totals.impressions) * 100).toFixed(1) : "—";
+  const rate = totals.impressions
+    ? ((totals.engagements / totals.impressions) * 100).toFixed(1)
+    : "—";
 
   const recent = (posts.data ?? []).slice(0, 8);
 

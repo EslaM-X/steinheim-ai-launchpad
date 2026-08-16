@@ -90,8 +90,8 @@ function TestsPage() {
         <div>
           <h1 className="font-serif text-3xl">Test harness</h1>
           <p className="text-sm text-muted-foreground">
-            Validated on {executed.length}/{all.length} scenarios · {passedCount} pass · avg score {avg} ·{" "}
-            {unverified} unverified claims
+            Validated on {executed.length}/{all.length} scenarios · {passedCount} pass · avg score{" "}
+            {avg} · {unverified} unverified claims
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -165,13 +165,16 @@ function TestsPage() {
                         <div className="space-y-1 text-xs">
                           <p className="text-muted-foreground">
                             unverified {run.unverified_count} · similarity{" "}
-                            {run.similarity_score?.toFixed?.(2) ?? "—"} · revisions {run.revisions} ·{" "}
-                            {run.penalties.map((p) => p.code).join(", ") || "no penalties"}
+                            {run.similarity_score?.toFixed?.(2) ?? "—"} · revisions {run.revisions}{" "}
+                            · {run.penalties.map((p) => p.code).join(", ") || "no penalties"}
                           </p>
                           {run.error && <p className="text-destructive">{run.error}</p>}
                           <ul className="space-y-0.5">
                             {run.checks.map((c) => (
-                              <li key={c.name} className={c.passed ? "text-muted-foreground" : "text-destructive"}>
+                              <li
+                                key={c.name}
+                                className={c.passed ? "text-muted-foreground" : "text-destructive"}
+                              >
                                 {c.passed ? "✓" : "✗"} {c.name} — {c.detail}
                               </li>
                             ))}

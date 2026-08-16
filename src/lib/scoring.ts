@@ -14,11 +14,18 @@ export const PENALTY_CODES = [
 
 export type PenaltyCode = (typeof PENALTY_CODES)[number];
 
-export const PENALTY_CATALOG: Record<PenaltyCode, { points: number; hardFail: boolean; label: string }> = {
+export const PENALTY_CATALOG: Record<
+  PenaltyCode,
+  { points: number; hardFail: boolean; label: string }
+> = {
   unverified_claim: { points: 0, hardFail: true, label: "Unverified factual claim" },
   wrong_sku: { points: 0, hardFail: true, label: "Wrong or invented product / SKU" },
   forbidden_claim: { points: 0, hardFail: true, label: "Forbidden brand claim" },
-  platform_mismatch: { points: 10, hardFail: false, label: "Post does not read native to its platform" },
+  platform_mismatch: {
+    points: 10,
+    hardFail: false,
+    label: "Post does not read native to its platform",
+  },
   generic_ai_tone: { points: 8, hardFail: false, label: "Generic / AI-sounding copy" },
   weak_cta: { points: 5, hardFail: false, label: "Weak or vague CTA" },
   poor_audience_relevance: { points: 10, hardFail: false, label: "Poor audience relevance" },
@@ -35,7 +42,12 @@ export function penaltyRulesPrompt(): string {
   ].join("\n");
 }
 
-export type ScoreBand = "exceptional" | "strong" | "pass_minor_revision" | "revision_required" | "fail";
+export type ScoreBand =
+  | "exceptional"
+  | "strong"
+  | "pass_minor_revision"
+  | "revision_required"
+  | "fail";
 
 export function scoreBand(score: number, hardFail: boolean): ScoreBand {
   if (hardFail) return "fail";
@@ -46,7 +58,12 @@ export function scoreBand(score: number, hardFail: boolean): ScoreBand {
   return "fail";
 }
 
-export type AppliedPenalty = { code: PenaltyCode; points: number; hard_fail: boolean; reason: string };
+export type AppliedPenalty = {
+  code: PenaltyCode;
+  points: number;
+  hard_fail: boolean;
+  reason: string;
+};
 
 export function applyPenalties(input: {
   components: Record<string, number>;
@@ -60,7 +77,12 @@ export function applyPenalties(input: {
     const meta = PENALTY_CATALOG[p.code as PenaltyCode];
     if (!meta || seen.has(p.code)) continue;
     seen.add(p.code);
-    applied.push({ code: p.code as PenaltyCode, points: meta.points, hard_fail: meta.hardFail, reason: p.reason });
+    applied.push({
+      code: p.code as PenaltyCode,
+      points: meta.points,
+      hard_fail: meta.hardFail,
+      reason: p.reason,
+    });
   }
   const deduction = applied.reduce((s, p) => s + p.points, 0);
   const score = Math.max(0, Math.min(100, Math.round(raw - deduction)));

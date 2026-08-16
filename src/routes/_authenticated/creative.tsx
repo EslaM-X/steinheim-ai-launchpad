@@ -154,7 +154,8 @@ function CreativeStudio() {
       <header className="space-y-1">
         <h1 className="font-serif text-3xl">Creative Studio</h1>
         <p className="text-sm text-muted-foreground">
-          من المنتج إلى الفكرة إلى الـStoryboard إلى نسخ المنصات — تحت الـTruth Layer والـGatekeeper.
+          من المنتج إلى الفكرة إلى الـStoryboard إلى نسخ المنصات — تحت الـTruth Layer
+          والـGatekeeper.
         </p>
       </header>
 
@@ -165,7 +166,10 @@ function CreativeStudio() {
               <CardContent className="space-y-3 pt-5">
                 <div className="space-y-1">
                   <Label>Name</Label>
-                  <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+                  <Input
+                    value={form.name}
+                    onChange={(e) => setForm({ ...form, name: e.target.value })}
+                  />
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <div className="space-y-1">
@@ -173,7 +177,9 @@ function CreativeStudio() {
                     <Input
                       type="number"
                       value={form.duration_seconds}
-                      onChange={(e) => setForm({ ...form, duration_seconds: Number(e.target.value) })}
+                      onChange={(e) =>
+                        setForm({ ...form, duration_seconds: Number(e.target.value) })
+                      }
                     />
                   </div>
                   <div className="space-y-1">
@@ -249,7 +255,11 @@ function CreativeStudio() {
                     ))}
                   </div>
                 </div>
-                <Button className="w-full" disabled={createMutation.isPending} onClick={() => createMutation.mutate()}>
+                <Button
+                  className="w-full"
+                  disabled={createMutation.isPending}
+                  onClick={() => createMutation.mutate()}
+                >
                   {createMutation.isPending ? "Creating…" : "Create campaign"}
                 </Button>
               </CardContent>
@@ -279,7 +289,9 @@ function CreativeStudio() {
         </div>
 
         <div className="space-y-8">
-          {!campaign && <p className="text-sm text-muted-foreground">اختر أو أنشئ campaign للبدء.</p>}
+          {!campaign && (
+            <p className="text-sm text-muted-foreground">اختر أو أنشئ campaign للبدء.</p>
+          )}
 
           {campaign && (
             <>
@@ -331,7 +343,14 @@ function CreativeStudio() {
 
               <Section title="Concepts">
                 <div className="flex gap-2">
-                  <Button onClick={() => run(() => genConcepts({ data: { campaignId: campaign.id } }), "Concepts ready")}>
+                  <Button
+                    onClick={() =>
+                      run(
+                        () => genConcepts({ data: { campaignId: campaign.id } }),
+                        "Concepts ready",
+                      )
+                    }
+                  >
                     Generate concepts
                   </Button>
                 </div>
@@ -346,12 +365,19 @@ function CreativeStudio() {
                           {c.selected && <Badge>selected</Badge>}
                         </div>
                         <p className="text-sm">{c.big_idea}</p>
-                        <p className="whitespace-pre-line text-xs text-muted-foreground">{c.script_ar}</p>
+                        <p className="whitespace-pre-line text-xs text-muted-foreground">
+                          {c.script_ar}
+                        </p>
                         <p className="text-xs text-muted-foreground">{c.why_it_works}</p>
                         <Button
                           size="sm"
                           variant="secondary"
-                          onClick={() => run(() => pickConcept({ data: { conceptId: c.id } }), "Storyboard built")}
+                          onClick={() =>
+                            run(
+                              () => pickConcept({ data: { conceptId: c.id } }),
+                              "Storyboard built",
+                            )
+                          }
                         >
                           Select & build storyboard
                         </Button>
@@ -375,7 +401,9 @@ function CreativeStudio() {
                       key={a}
                       size="sm"
                       variant="outline"
-                      onClick={() => run(() => action({ data: { campaignId: campaign.id, action: a } }), label)}
+                      onClick={() =>
+                        run(() => action({ data: { campaignId: campaign.id, action: a } }), label)
+                      }
                     >
                       {label}
                     </Button>
@@ -386,7 +414,9 @@ function CreativeStudio() {
                     <Card key={s.id}>
                       <CardContent className="space-y-2 pt-5 text-xs">
                         <div className="flex items-center justify-between">
-                          <p className="font-serif text-base">SHOT {String(s.shot_number).padStart(2, "0")}</p>
+                          <p className="font-serif text-base">
+                            SHOT {String(s.shot_number).padStart(2, "0")}
+                          </p>
                           <Badge variant="outline">
                             {s.start_second}s · {s.duration_seconds}s
                           </Badge>
@@ -412,7 +442,9 @@ function CreativeStudio() {
                           <Button
                             size="sm"
                             variant="ghost"
-                            onClick={() => run(() => regenShot({ data: { shotId: s.id } }), "Shot regenerated")}
+                            onClick={() =>
+                              run(() => regenShot({ data: { shotId: s.id } }), "Shot regenerated")
+                            }
                           >
                             Regenerate shot
                           </Button>
@@ -421,20 +453,29 @@ function CreativeStudio() {
                     </Card>
                   ))}
                   {!storyboard.data?.shots?.length && (
-                    <p className="text-xs text-muted-foreground">اختر concept لبناء الـstoryboard.</p>
+                    <p className="text-xs text-muted-foreground">
+                      اختر concept لبناء الـstoryboard.
+                    </p>
                   )}
                 </div>
               </Section>
 
               <Section title="Creative Gatekeeper">
                 <div className="flex flex-wrap gap-2">
-                  <Button onClick={() => run(() => runReview({ data: { campaignId: campaign.id } }), "Review complete")}>
+                  <Button
+                    onClick={() =>
+                      run(() => runReview({ data: { campaignId: campaign.id } }), "Review complete")
+                    }
+                  >
                     Run creative review
                   </Button>
                   <Button
                     variant="secondary"
                     onClick={() =>
-                      run(() => approve({ data: { campaignId: campaign.id, approve: true } }), "Approved")
+                      run(
+                        () => approve({ data: { campaignId: campaign.id, approve: true } }),
+                        "Approved",
+                      )
                     }
                   >
                     Human approve
@@ -442,7 +483,10 @@ function CreativeStudio() {
                   <Button
                     variant="ghost"
                     onClick={() =>
-                      run(() => approve({ data: { campaignId: campaign.id, approve: false } }), "Sent back")
+                      run(
+                        () => approve({ data: { campaignId: campaign.id, approve: false } }),
+                        "Sent back",
+                      )
                     }
                   >
                     Request revision
@@ -455,7 +499,9 @@ function CreativeStudio() {
                         <Badge>{review.data.band}</Badge>
                         <span>Final {review.data.final_score}/100</span>
                         <span>AI artifact {review.data.ai_artifact_score}/100</span>
-                        {review.data.human_approved_at && <Badge variant="outline">human approved</Badge>}
+                        {review.data.human_approved_at && (
+                          <Badge variant="outline">human approved</Badge>
+                        )}
                       </div>
                       <div className="grid grid-cols-2 gap-x-6 md:grid-cols-4">
                         {Object.entries(review.data.breakdown ?? {})

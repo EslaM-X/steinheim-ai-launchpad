@@ -12,7 +12,12 @@ import {
   productFactsBlock,
   referenceImagesBlock,
 } from "./agents.server";
-import { SIMILARITY_LIMIT, contentFingerprint, fingerprintTerms, maxSimilarity } from "./originality";
+import {
+  SIMILARITY_LIMIT,
+  contentFingerprint,
+  fingerprintTerms,
+  maxSimilarity,
+} from "./originality";
 import { applyPenalties, penaltyRulesPrompt, scoreBand } from "./scoring";
 import {
   CONTENT_TYPES,
@@ -79,7 +84,9 @@ export async function loadKnowledge(supabase: DB) {
       .eq("is_active", true),
     supabase
       .from("product_images")
-      .select("product_id, image_url, alt_text, image_type, angle, finish, background, visual_notes, is_primary")
+      .select(
+        "product_id, image_url, alt_text, image_type, angle, finish, background, visual_notes, is_primary",
+      )
       .eq("approved_for_ai", true)
       .eq("verified", true),
     supabase
@@ -131,9 +138,7 @@ export type Knowledge = Awaited<ReturnType<typeof loadKnowledge>>;
 
 export function findProduct(kb: Knowledge, sku: string | null) {
   if (!sku) return null;
-  return (
-    (kb.products as Array<Record<string, unknown>>).find((p) => p["sku"] === sku) ?? null
-  );
+  return (kb.products as Array<Record<string, unknown>>).find((p) => p["sku"] === sku) ?? null;
 }
 
 export function findAudience(kb: Knowledge, name: string | null) {
@@ -188,7 +193,9 @@ async function strategistAttempt(
       knowledgeBlock(kb),
       `RECENT CONTENT TYPES (avoid repeating): ${kb.recentTypes.slice(0, 5).join(", ") || "none"}`,
       `RECENT STRATEGIC ANGLES (must not be re-used or paraphrased): ${kb.recentAngles.slice(0, 12).join(" | ") || "none"}`,
-      avoid.length ? `REJECTED THIS SESSION for being too close to a previous idea: ${avoid.join(" | ")}` : "",
+      avoid.length
+        ? `REJECTED THIS SESSION for being too close to a previous idea: ${avoid.join(" | ")}`
+        : "",
       brief?.content_type ? `MANDATORY content_type: ${brief.content_type}` : "",
       brief?.audience_name ? `MANDATORY target audience name: ${brief.audience_name}` : "",
       brief?.product_sku ? `MANDATORY featured product SKU: ${brief.product_sku}` : "",
@@ -211,13 +218,17 @@ export async function runStrategist(
   const started = Date.now();
   const avoid: string[] = [];
   let strategy = await strategistAttempt(kb, brief, avoid);
-  let terms = fingerprintTerms([strategy.strategic_angle, strategy.big_idea, strategy.topic_en].join(" "));
+  let terms = fingerprintTerms(
+    [strategy.strategic_angle, strategy.big_idea, strategy.topic_en].join(" "),
+  );
   let sim = maxSimilarity(terms, kb.recentFingerprints);
 
   for (let attempt = 0; attempt < 2 && sim > SIMILARITY_LIMIT; attempt += 1) {
     avoid.push(strategy.strategic_angle || strategy.big_idea);
     strategy = await strategistAttempt(kb, brief, avoid);
-    terms = fingerprintTerms([strategy.strategic_angle, strategy.big_idea, strategy.topic_en].join(" "));
+    terms = fingerprintTerms(
+      [strategy.strategic_angle, strategy.big_idea, strategy.topic_en].join(" "),
+    );
     sim = maxSimilarity(terms, kb.recentFingerprints);
   }
 
@@ -433,7 +444,14 @@ export async function runAccuracyValidator(
       "List every unverified claim and every wrong fact, quoting the exact phrase. Then give short notes.",
     ].join("\n"),
   });
-  await logRun(supabase, "accuracy_validator", { sku: strategy.product_sku }, report, started, ideaId);
+  await logRun(
+    supabase,
+    "accuracy_validator",
+    { sku: strategy.product_sku },
+    report,
+    started,
+    ideaId,
+  );
   return report;
 }
 
@@ -553,7 +571,10 @@ export async function generateTodayPipeline(
         runPlatformWriter(supabase, kb, strategy, research, directionMap[p], p, feedback?.[p]),
       ),
     );
-    return Object.fromEntries(PLATFORMS.map((p, i) => [p, results[i]!])) as Record<Platform, PlatformCopy>;
+    return Object.fromEntries(PLATFORMS.map((p, i) => [p, results[i]!])) as Record<
+      Platform,
+      PlatformCopy
+    >;
   };
 
   let copies = await write();
@@ -568,7 +589,9 @@ export async function generateTodayPipeline(
       review.applied_penalties.length
         ? `Penalties: ${review.applied_penalties.map((x) => `${x.code} (${x.reason})`).join("; ")}`
         : "",
-      review.blocking_reason ? `Strongest argument against publishing: ${review.blocking_reason}` : "",
+      review.blocking_reason
+        ? `Strongest argument against publishing: ${review.blocking_reason}`
+        : "",
       review.hard_fail ? `HARD FAIL: ${review.hard_fail_reasons.join("; ")}` : "",
       `Platform differentiation: ${review.platform_differentiation}`,
       review.notes,
@@ -600,7 +623,11 @@ export async function generateTodayPipeline(
       content_format: strategy.content_format,
       funnel_stage: strategy.funnel_stage,
       strategic_angle: strategy.strategic_angle || strategy.angle,
-      content_fingerprint: contentFingerprint([strategy.strategic_angle, strategy.big_idea, strategy.topic_en]),
+      content_fingerprint: contentFingerprint([
+        strategy.strategic_angle,
+        strategy.big_idea,
+        strategy.topic_en,
+      ]),
       fingerprint_terms: strategy.fingerprint_terms,
       similarity_score: strategy.similarity_score,
       research_notes: [
@@ -608,7 +635,8 @@ export async function generateTodayPipeline(
         "",
         "CLAIMS:",
         ...research.claims.map(
-          (c) => `- [${c.verified ? "verified" : "unverified"}] ${c.claim} (${c.source_type}${c.source_id ? `:${c.source_id}` : ""}, ${c.source_confidence})`,
+          (c) =>
+            `- [${c.verified ? "verified" : "unverified"}] ${c.claim} (${c.source_type}${c.source_id ? `:${c.source_id}` : ""}, ${c.source_confidence})`,
         ),
         "",
         `Objection: ${research.objection_to_answer}`,
@@ -708,4 +736,3 @@ export async function generateTodayPipeline(
     aiApproved: passed,
   };
 }
-

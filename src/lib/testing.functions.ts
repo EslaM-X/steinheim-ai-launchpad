@@ -21,7 +21,9 @@ export const runTestScenario = createServerFn({ method: "POST" })
 export const runTestSuite = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) =>
-    z.object({ suite: z.enum(["matrix", "red_team"]), onlyPending: z.boolean().default(false) }).parse(input),
+    z
+      .object({ suite: z.enum(["matrix", "red_team"]), onlyPending: z.boolean().default(false) })
+      .parse(input),
   )
   .handler(async ({ data, context }) => {
     const { runSuite } = await import("./testing.server");

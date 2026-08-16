@@ -17,7 +17,11 @@ import {
 type DB = SupabaseClient<any, "public", any>;
 
 async function getCampaign(supabase: DB, campaignId: string) {
-  const { data, error } = await supabase.from("campaigns").select("*").eq("id", campaignId).single();
+  const { data, error } = await supabase
+    .from("campaigns")
+    .select("*")
+    .eq("id", campaignId)
+    .single();
   if (error) throw new Error(error.message);
   return data;
 }
@@ -38,7 +42,11 @@ async function enqueue(
       shot_id: shot?.id ?? null,
       kind,
       mode,
-      payload: { prompt: shot?.prompt ?? null, camera: shot?.camera ?? null, lighting: shot?.lighting ?? null },
+      payload: {
+        prompt: shot?.prompt ?? null,
+        camera: shot?.camera ?? null,
+        lighting: shot?.lighting ?? null,
+      },
       status: mode === "mock" ? "done" : "queued",
     })
     .select("id")
@@ -150,7 +158,10 @@ export async function selectConcept(supabase: DB, conceptId: string) {
   if (error) throw new Error(error.message);
   const campaign = await getCampaign(supabase, concept.campaign_id);
 
-  await supabase.from("creative_concepts").update({ selected: false }).eq("campaign_id", campaign.id);
+  await supabase
+    .from("creative_concepts")
+    .update({ selected: false })
+    .eq("campaign_id", campaign.id);
   await supabase.from("creative_concepts").update({ selected: true }).eq("id", conceptId);
 
   const { product, images } = await productTruth(supabase, campaign.product_id);
@@ -195,7 +206,10 @@ export async function selectConcept(supabase: DB, conceptId: string) {
       status: "pending",
     };
   });
-  const { data: shotRows, error: shotError } = await supabase.from("shots").insert(rows).select("*");
+  const { data: shotRows, error: shotError } = await supabase
+    .from("shots")
+    .insert(rows)
+    .select("*");
   if (shotError) throw new Error(shotError.message);
 
   for (const shot of shotRows) {
@@ -218,7 +232,13 @@ export async function regenerateShot(supabase: DB, shotId: string) {
   if (error) throw new Error(error.message);
   const campaign = await getCampaign(supabase, (shot as any).storyboards.campaign_id);
   const { images } = await productTruth(supabase, campaign.product_id);
-  await enqueue(supabase, campaign, shot, shot.workflow === "i2v" ? "i2v" : "image", images[0]?.image_url ?? null);
+  await enqueue(
+    supabase,
+    campaign,
+    shot,
+    shot.workflow === "i2v" ? "i2v" : "image",
+    images[0]?.image_url ?? null,
+  );
   return { ok: true };
 }
 
@@ -266,7 +286,10 @@ export async function applyCreativeAction(
   }
 
   if (!storyboard) throw new Error("Select a concept first — there is no storyboard yet.");
-  const { data: shots } = await supabase.from("shots").select("*").eq("storyboard_id", storyboard.id);
+  const { data: shots } = await supabase
+    .from("shots")
+    .select("*")
+    .eq("storyboard_id", storyboard.id);
 
   if (action === "cinematic") {
     for (const s of shots ?? []) {
@@ -288,7 +311,9 @@ export async function applyCreativeAction(
     for (const s of shots ?? []) {
       await supabase
         .from("shots")
-        .update({ audio_note: `${s.audio_note ?? ""} · Egyptian Arabic VO, refined delivery`.trim() })
+        .update({
+          audio_note: `${s.audio_note ?? ""} · Egyptian Arabic VO, refined delivery`.trim(),
+        })
         .eq("id", s.id);
     }
     return { ok: true };
@@ -331,7 +356,11 @@ export async function reviewCampaign(supabase: DB, campaignId: string) {
   const finalScore = creativeFinalScore(review);
   const band = reviewBand(review, finalScore);
 
-  await supabase.from("creative_reviews").delete().eq("campaign_id", campaignId).eq("scope", "campaign");
+  await supabase
+    .from("creative_reviews")
+    .delete()
+    .eq("campaign_id", campaignId)
+    .eq("scope", "campaign");
   const { data, error } = await supabase
     .from("creative_reviews")
     .insert({
@@ -354,7 +383,12 @@ export async function reviewCampaign(supabase: DB, campaignId: string) {
   return data;
 }
 
-export async function humanApproveCampaign(supabase: DB, userId: string, campaignId: string, approve: boolean) {
+export async function humanApproveCampaign(
+  supabase: DB,
+  userId: string,
+  campaignId: string,
+  approve: boolean,
+) {
   const { data: review, error } = await supabase
     .from("creative_reviews")
     .select("*")

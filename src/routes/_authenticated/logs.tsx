@@ -10,9 +10,15 @@ export const Route = createFileRoute("/_authenticated/logs")({
   head: () => ({
     meta: [
       { title: "Agent logs — Steinheim AI Marketing" },
-      { name: "description", content: "Execution history for every Steinheim AI marketing agent run." },
+      {
+        name: "description",
+        content: "Execution history for every Steinheim AI marketing agent run.",
+      },
       { property: "og:title", content: "Agent logs — Steinheim AI Marketing" },
-      { property: "og:description", content: "Execution history for every Steinheim AI marketing agent run." },
+      {
+        property: "og:description",
+        content: "Execution history for every Steinheim AI marketing agent run.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
@@ -36,7 +42,9 @@ function LogsPage() {
           <Card key={run.id}>
             <CardContent className="flex flex-wrap items-center justify-between gap-3 p-4 text-sm">
               <span className="font-medium capitalize">{run.agent}</span>
-              <Badge variant={run.status === "error" ? "destructive" : "secondary"}>{run.status}</Badge>
+              <Badge variant={run.status === "error" ? "destructive" : "secondary"}>
+                {run.status}
+              </Badge>
               <span className="text-xs text-muted-foreground">
                 {new Date(run.created_at).toLocaleString()}
               </span>

@@ -15,7 +15,8 @@ export const Route = createFileRoute("/auth")({
       { title: "Sign in — Steinheim AI Marketing System" },
       {
         name: "description",
-        content: "Team access to the Steinheim AI marketing system: knowledge base, content calendar and publishing.",
+        content:
+          "Team access to the Steinheim AI marketing system: knowledge base, content calendar and publishing.",
       },
       { property: "og:title", content: "Sign in — Steinheim AI Marketing System" },
       {

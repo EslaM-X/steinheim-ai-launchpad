@@ -22,8 +22,13 @@ export async function runScenario(
 ) {
   const started = Date.now();
   try {
-    const result = await generateTodayPipeline(supabase, userId as string, scenario.brief, { isTest: true });
-    const { checks, passed } = evaluateScenario(scenario.expected, result as unknown as PipelineResult);
+    const result = await generateTodayPipeline(supabase, userId as string, scenario.brief, {
+      isTest: true,
+    });
+    const { checks, passed } = evaluateScenario(
+      scenario.expected,
+      result as unknown as PipelineResult,
+    );
     const row = {
       scenario_id: scenario.id,
       scenario_key: scenario.key,
@@ -63,7 +68,12 @@ export async function runScenario(
   }
 }
 
-export async function runSuite(supabase: DB, userId: string | null, suite: string, onlyPending: boolean) {
+export async function runSuite(
+  supabase: DB,
+  userId: string | null,
+  suite: string,
+  onlyPending: boolean,
+) {
   const { data, error } = await supabase
     .from("test_scenarios")
     .select("id, key, suite, name, brief, expected")
@@ -74,7 +84,10 @@ export async function runSuite(supabase: DB, userId: string | null, suite: strin
   let scenarios = (data ?? []) as ScenarioRow[];
 
   if (onlyPending) {
-    const { data: done } = await supabase.from("test_runs").select("scenario_key").eq("passed", true);
+    const { data: done } = await supabase
+      .from("test_runs")
+      .select("scenario_key")
+      .eq("passed", true);
     const passedKeys = new Set((done ?? []).map((d: { scenario_key: string }) => d.scenario_key));
     scenarios = scenarios.filter((s) => !passedKeys.has(s.key));
   }
@@ -85,5 +98,10 @@ export async function runSuite(supabase: DB, userId: string | null, suite: strin
     // Sequential on purpose: each run must see the previous run's angles for originality.
     results.push(await runScenario(supabase, userId, scenario, batchId));
   }
-  return { batchId, total: results.length, passed: results.filter((r) => r.passed).length, results };
+  return {
+    batchId,
+    total: results.length,
+    passed: results.filter((r) => r.passed).length,
+    results,
+  };
 }

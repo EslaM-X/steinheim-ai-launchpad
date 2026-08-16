@@ -19,7 +19,8 @@ function describeStreamError(error: unknown, streamError: unknown): Error {
     const anyErr = source as Error & { statusCode?: number; responseBody?: string };
     const status = anyErr.statusCode;
     const detail = anyErr.responseBody ? ` — ${String(anyErr.responseBody).slice(0, 300)}` : "";
-    if (status === 402) return new Error("AI credits exhausted (402). Top up the AI workspace credits and retry.");
+    if (status === 402)
+      return new Error("AI credits exhausted (402). Top up the AI workspace credits and retry.");
     if (status === 429) return new Error("AI gateway rate limit (429). Wait a moment and retry.");
     return new Error(`${source.message}${status ? ` (HTTP ${status})` : ""}${detail}`);
   }
@@ -103,7 +104,9 @@ export function brandSystemPrompt(brand: Brand | null) {
     `Positioning: ${brand.positioning ?? ""}`,
     brand.brand_story ? `Brand story: ${brand.brand_story}` : "",
     brand.mission ? `Mission: ${brand.mission}` : "",
-    brand.competitive_positioning ? `Competitive positioning: ${brand.competitive_positioning}` : "",
+    brand.competitive_positioning
+      ? `Competitive positioning: ${brand.competitive_positioning}`
+      : "",
     `Tone of voice: ${brand.tone_of_voice ?? ""}`,
     `Values: ${list(brand.values_list)}`,
     `Key messages: ${list(brand.key_messages)}`,
@@ -147,7 +150,13 @@ export function knowledgeBlock(input: {
 
 /** The claim registry is the single source of truth for anything factual. */
 export function claimsBlock(
-  claims: Array<{ id: string; claim_text: string; entity_label: string | null; source_tier: number; approved_for: string[] }>,
+  claims: Array<{
+    id: string;
+    claim_text: string;
+    entity_label: string | null;
+    source_tier: number;
+    approved_for: string[];
+  }>,
   platform?: string,
 ) {
   const usable = platform
@@ -162,7 +171,10 @@ export function claimsBlock(
 
 export function audienceBlock(audience: Record<string, unknown> | null) {
   if (!audience) return "TARGET AUDIENCE: general Steinheim audience in Egypt.";
-  return ["TARGET AUDIENCE (Truth Layer — write for this person only):", JSON.stringify(audience)].join("\n");
+  return [
+    "TARGET AUDIENCE (Truth Layer — write for this person only):",
+    JSON.stringify(audience),
+  ].join("\n");
 }
 
 /** Hard rules every writing agent inherits: no invented facts, ever. */
@@ -209,8 +221,11 @@ export const PLATFORM_RULES: Record<string, string> = {
 };
 
 export function productFactsBlock(product: Record<string, unknown> | null) {
-  if (!product) return "FEATURED PRODUCT: none — write about a design principle only, with no product-specific claims.";
-  return ["FEATURED PRODUCT (the ONLY source of product facts):", JSON.stringify(product)].join("\n");
+  if (!product)
+    return "FEATURED PRODUCT: none — write about a design principle only, with no product-specific claims.";
+  return ["FEATURED PRODUCT (the ONLY source of product facts):", JSON.stringify(product)].join(
+    "\n",
+  );
 }
 
 export function referenceImagesBlock(images: Array<Record<string, unknown>>) {
@@ -220,4 +235,3 @@ export function referenceImagesBlock(images: Array<Record<string, unknown>>) {
     JSON.stringify(images),
   ].join("\n");
 }
-

@@ -33,8 +33,15 @@ export async function productTruth(supabase: DB, productId: string | null) {
   if (!productId) return { product: null, images: [] as any[], claims: [] as any[] };
   const [{ data: product }, { data: images }, { data: claims }] = await Promise.all([
     supabase.from("products").select("*").eq("id", productId).maybeSingle(),
-    supabase.from("product_images").select("*").eq("product_id", productId).eq("approved_for_ai", true),
-    supabase.from("claims").select("id, claim_text, entity_label, source_tier, approved_for").eq("entity_id", productId),
+    supabase
+      .from("product_images")
+      .select("*")
+      .eq("product_id", productId)
+      .eq("approved_for_ai", true),
+    supabase
+      .from("claims")
+      .select("id, claim_text, entity_label, source_tier, approved_for")
+      .eq("entity_id", productId),
   ]);
   return { product: product ?? null, images: images ?? [], claims: claims ?? [] };
 }
@@ -83,7 +90,13 @@ export async function creativeDirectorBrief(supabase: DB, campaign: any) {
     directions: campaign.directions,
     positioning: b?.positioning ?? null,
     tone: b?.tone_of_voice ?? null,
-    product: product ? { name: product.official_name || product.name, sku: product.sku, finishes: product.finishes } : null,
+    product: product
+      ? {
+          name: product.official_name || product.name,
+          sku: product.sku,
+          finishes: product.finishes,
+        }
+      : null,
     usable_claims: claims.length,
   };
 }
@@ -163,7 +176,13 @@ export async function generateStoryboard(
 
 /* ------------------------- Creative Gatekeeper (D8) ------------------------ */
 
-const CRINGE_TERMS = ["german-made", "made in germany", "german engineering", "ألماني الصنع", "صناعة ألمانية"];
+const CRINGE_TERMS = [
+  "german-made",
+  "made in germany",
+  "german engineering",
+  "ألماني الصنع",
+  "صناعة ألمانية",
+];
 
 /** Deterministic gatekeeper: 16 axes, AI-artifact score, hard-fail on forbidden claims. */
 export function reviewCreative(input: {
@@ -172,17 +191,26 @@ export function reviewCreative(input: {
   product: any | null;
   forbidden: string[];
 }): CreativeReview {
-  const text = [input.concept?.script_ar, input.concept?.script_en, input.concept?.big_idea, ...input.shots.map((s) => s.prompt)]
+  const text = [
+    input.concept?.script_ar,
+    input.concept?.script_en,
+    input.concept?.big_idea,
+    ...input.shots.map((s) => s.prompt),
+  ]
     .filter(Boolean)
     .join(" ")
     .toLowerCase();
 
   const hardFailReasons: string[] = [];
   for (const term of [...CRINGE_TERMS, ...(input.forbidden ?? [])]) {
-    if (term && text.includes(term.toLowerCase())) hardFailReasons.push(`Forbidden claim used: "${term}"`);
+    if (term && text.includes(term.toLowerCase()))
+      hardFailReasons.push(`Forbidden claim used: "${term}"`);
   }
   const shotsWithoutProduct = input.shots.filter(
-    (s) => !String(s.prompt || "").toLowerCase().includes("geometry"),
+    (s) =>
+      !String(s.prompt || "")
+        .toLowerCase()
+        .includes("geometry"),
   ).length;
   if (input.product && shotsWithoutProduct === input.shots.length && input.shots.length > 0) {
     hardFailReasons.push("No shot is anchored to the official product geometry.");
@@ -209,7 +237,9 @@ export function reviewCreative(input: {
     cta_quality: 9,
   };
   const scored = Object.entries(axes).filter(([k]) => k !== "ai_artifact_score");
-  const raw = Math.round((scored.reduce((a, [, v]) => a + (v as number), 0) / (scored.length * 10)) * 100);
+  const raw = Math.round(
+    (scored.reduce((a, [, v]) => a + (v as number), 0) / (scored.length * 10)) * 100,
+  );
   const final = hardFailReasons.length ? Math.min(raw, 40) : artifact < 80 ? raw - 10 : raw;
   return {
     ...axes,

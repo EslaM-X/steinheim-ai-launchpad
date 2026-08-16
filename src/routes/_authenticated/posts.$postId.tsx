@@ -20,9 +20,15 @@ export const Route = createFileRoute("/_authenticated/posts/$postId")({
   head: () => ({
     meta: [
       { title: "Post editor — Steinheim AI Marketing" },
-      { name: "description", content: "Edit, review and approve a generated Steinheim social post." },
+      {
+        name: "description",
+        content: "Edit, review and approve a generated Steinheim social post.",
+      },
       { property: "og:title", content: "Post editor — Steinheim AI Marketing" },
-      { property: "og:description", content: "Edit, review and approve a generated Steinheim social post." },
+      {
+        property: "og:description",
+        content: "Edit, review and approve a generated Steinheim social post.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
@@ -113,14 +119,30 @@ function PostEditor() {
           </div>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button variant="outline" disabled={agent.isPending} onClick={() => agent.mutate("regen")}>
+          <Button
+            variant="outline"
+            disabled={agent.isPending}
+            onClick={() => agent.mutate("regen")}
+          >
             <RefreshCw className="size-4" /> {t("regenerate")}
           </Button>
-          <Button variant="outline" disabled={agent.isPending} onClick={() => agent.mutate("review")}>
+          <Button
+            variant="outline"
+            disabled={agent.isPending}
+            onClick={() => agent.mutate("review")}
+          >
             <ShieldCheck className="size-4" /> {t("review")}
           </Button>
-          <Button variant="outline" disabled={agent.isPending} onClick={() => agent.mutate("image")}>
-            {agent.isPending ? <Loader2 className="size-4 animate-spin" /> : <ImageIcon className="size-4" />}
+          <Button
+            variant="outline"
+            disabled={agent.isPending}
+            onClick={() => agent.mutate("image")}
+          >
+            {agent.isPending ? (
+              <Loader2 className="size-4 animate-spin" />
+            ) : (
+              <ImageIcon className="size-4" />
+            )}
             {t("generateImage")}
           </Button>
         </div>

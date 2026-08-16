@@ -17,9 +17,15 @@ export const Route = createFileRoute("/_authenticated/products")({
   head: () => ({
     meta: [
       { title: "Products — Steinheim AI Marketing" },
-      { name: "description", content: "The Steinheim product catalogue that feeds every AI-written post." },
+      {
+        name: "description",
+        content: "The Steinheim product catalogue that feeds every AI-written post.",
+      },
       { property: "og:title", content: "Products — Steinheim AI Marketing" },
-      { property: "og:description", content: "The Steinheim product catalogue that feeds every AI-written post." },
+      {
+        property: "og:description",
+        content: "The Steinheim product catalogue that feeds every AI-written post.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
@@ -46,7 +52,10 @@ function ProductsPage() {
         name_ar: nameAr || null,
         category_id: categoryId || null,
         description: description || null,
-        features: features.split("\n").map((f) => f.trim()).filter(Boolean),
+        features: features
+          .split("\n")
+          .map((f) => f.trim())
+          .filter(Boolean),
       });
       if (error) throw new Error(error.message);
     },
@@ -131,13 +140,21 @@ function ProductsPage() {
             </div>
             <div className="space-y-2">
               <Label>{t("description")}</Label>
-              <Textarea rows={3} value={description} onChange={(e) => setDescription(e.target.value)} />
+              <Textarea
+                rows={3}
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+              />
             </div>
             <div className="space-y-2">
               <Label>{t("keyFeatures")}</Label>
               <Textarea rows={4} value={features} onChange={(e) => setFeatures(e.target.value)} />
             </div>
-            <Button className="w-full" disabled={!name || create.isPending} onClick={() => create.mutate()}>
+            <Button
+              className="w-full"
+              disabled={!name || create.isPending}
+              onClick={() => create.mutate()}
+            >
               {t("save")}
             </Button>
           </CardContent>

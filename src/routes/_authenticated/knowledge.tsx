@@ -9,9 +9,15 @@ export const Route = createFileRoute("/_authenticated/knowledge")({
   head: () => ({
     meta: [
       { title: "Knowledge base — Steinheim AI Marketing" },
-      { name: "description", content: "Brand voice, audiences and reference projects powering the agents." },
+      {
+        name: "description",
+        content: "Brand voice, audiences and reference projects powering the agents.",
+      },
       { property: "og:title", content: "Knowledge base — Steinheim AI Marketing" },
-      { property: "og:description", content: "Brand voice, audiences and reference projects powering the agents." },
+      {
+        property: "og:description",
+        content: "Brand voice, audiences and reference projects powering the agents.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
@@ -52,8 +58,12 @@ function KnowledgePage() {
           <CardContent className="space-y-3">
             {audiences.data?.map((a) => (
               <div key={a.id} className="rounded-sm border border-border p-3">
-                <p className="text-sm font-medium">{lang === "ar" ? (a.name_ar ?? a.name) : a.name}</p>
-                <p className="mt-1 text-xs text-muted-foreground">{a.pain_points ?? a.description}</p>
+                <p className="text-sm font-medium">
+                  {lang === "ar" ? (a.name_ar ?? a.name) : a.name}
+                </p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {a.pain_points ?? a.description}
+                </p>
               </div>
             ))}
           </CardContent>

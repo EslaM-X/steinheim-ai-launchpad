@@ -12,7 +12,10 @@ export const campaignsQuery = queryOptions({
   queryKey: ["campaigns"],
   queryFn: () =>
     unwrap<any[]>(
-      supabase.from("campaigns").select("*, products(name, official_name, sku)").order("created_at", { ascending: false }),
+      supabase
+        .from("campaigns")
+        .select("*, products(name, official_name, sku)")
+        .order("created_at", { ascending: false }),
     ),
 });
 
@@ -70,7 +73,13 @@ export const adVariantsQuery = (campaignId: string | null) =>
     queryKey: ["ad-variants", campaignId],
     enabled: !!campaignId,
     queryFn: () =>
-      unwrap<any[]>(supabase.from("ad_variants").select("*").eq("campaign_id", campaignId!).order("variant_key")),
+      unwrap<any[]>(
+        supabase
+          .from("ad_variants")
+          .select("*")
+          .eq("campaign_id", campaignId!)
+          .order("variant_key"),
+      ),
   });
 
 export const referencesQuery = (campaignId: string | null) =>

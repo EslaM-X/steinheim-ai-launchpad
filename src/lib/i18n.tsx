@@ -11,7 +11,10 @@ import {
 export type Lang = "ar" | "en";
 
 const dict = {
-  catalogueSub: { ar: "كتالوج Steinheim الذي يغذي كل منشور", en: "The catalogue that feeds every post" },
+  catalogueSub: {
+    ar: "كتالوج Steinheim الذي يغذي كل منشور",
+    en: "The catalogue that feeds every post",
+  },
   addProduct: { ar: "إضافة منتج", en: "Add product" },
   name: { ar: "الاسم", en: "Name" },
   nameAr: { ar: "الاسم بالعربية", en: "Arabic name" },

@@ -12,9 +12,15 @@ export const Route = createFileRoute("/_authenticated/calendar")({
   head: () => ({
     meta: [
       { title: "Content calendar — Steinheim AI Marketing" },
-      { name: "description", content: "Plan and track every scheduled Steinheim post across platforms." },
+      {
+        name: "description",
+        content: "Plan and track every scheduled Steinheim post across platforms.",
+      },
       { property: "og:title", content: "Content calendar — Steinheim AI Marketing" },
-      { property: "og:description", content: "Plan and track every scheduled Steinheim post across platforms." },
+      {
+        property: "og:description",
+        content: "Plan and track every scheduled Steinheim post across platforms.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
@@ -32,7 +38,10 @@ function CalendarPage() {
   const rows = (posts.data ?? []).filter((p) => filter === "all" || p.status === filter);
 
   const grouped = rows.reduce<Record<string, typeof rows>>((acc, post) => {
-    const key = (post.scheduled_at ?? post.content_ideas?.planned_date ?? post.created_at).slice(0, 10);
+    const key = (post.scheduled_at ?? post.content_ideas?.planned_date ?? post.created_at).slice(
+      0,
+      10,
+    );
     (acc[key] ??= []).push(post);
     return acc;
   }, {});
@@ -80,8 +89,9 @@ function CalendarPage() {
                         <Badge variant="secondary">{post.status}</Badge>
                       </div>
                       <p className="text-sm font-medium">
-                        {(lang === "ar" ? post.content_ideas?.topic_ar : post.content_ideas?.topic) ??
-                          post.content_ideas?.topic}
+                        {(lang === "ar"
+                          ? post.content_ideas?.topic_ar
+                          : post.content_ideas?.topic) ?? post.content_ideas?.topic}
                       </p>
                       <p className="line-clamp-3 text-xs text-muted-foreground">
                         {lang === "ar" ? post.body_ar : post.body_en}

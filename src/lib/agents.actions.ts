@@ -1,7 +1,14 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { generateImage } from "./ai-provider.server";
-import { PLATFORM_RULES, brandSystemPrompt, genObject, genText, getApiKey, knowledgeBlock } from "./agents.server";
+import {
+  PLATFORM_RULES,
+  brandSystemPrompt,
+  genObject,
+  genText,
+  getApiKey,
+  knowledgeBlock,
+} from "./agents.server";
 import { accuracySchema, reviewSchema, type Platform, type PlatformCopy } from "./agents.schemas";
 import { loadKnowledge, runPlatformWriter, type Knowledge } from "./agents.pipeline";
 
@@ -83,7 +90,8 @@ export async function reviewSinglePost(supabase: DB, postId: string) {
   const platform = (post["platform"] as Platform) ?? "linkedin";
   const idea = post["content_ideas"] ?? {};
   const sku = idea?.products?.sku ?? null;
-  const product = (kb.products as Array<Record<string, unknown>>).find((p) => p["sku"] === sku) ?? null;
+  const product =
+    (kb.products as Array<Record<string, unknown>>).find((p) => p["sku"] === sku) ?? null;
 
   const accuracy = await genObject({
     schema: accuracySchema,
@@ -133,7 +141,6 @@ export async function reviewSinglePost(supabase: DB, postId: string) {
   return review;
 }
 
-
 export async function generateImageForPost(supabase: DB, postId: string) {
   const started = Date.now();
   const post = await getPostWithIdea(supabase, postId);
@@ -163,7 +170,9 @@ export async function runAnalyticsAgent(supabase: DB) {
   const kb = await loadKnowledge(supabase);
   const { data } = await supabase
     .from("posts")
-    .select("platform, body_en, published_at, post_analytics(impressions, engagements, clicks, leads)")
+    .select(
+      "platform, body_en, published_at, post_analytics(impressions, engagements, clicks, leads)",
+    )
     .eq("status", "published")
     .order("published_at", { ascending: false })
     .limit(30);

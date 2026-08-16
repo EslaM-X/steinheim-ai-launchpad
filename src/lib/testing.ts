@@ -48,9 +48,13 @@ const NOT_AVAILABLE_HINTS = [
   "غير محدد",
 ];
 
-export function evaluateScenario(expected: Expected, r: PipelineResult): { checks: Check[]; passed: boolean } {
+export function evaluateScenario(
+  expected: Expected,
+  r: PipelineResult,
+): { checks: Check[]; passed: boolean } {
   const checks: Check[] = [];
-  const add = (name: string, passed: boolean, detail: string) => checks.push({ name, passed, detail });
+  const add = (name: string, passed: boolean, detail: string) =>
+    checks.push({ name, passed, detail });
 
   if (expected.expected_content_type) {
     add(

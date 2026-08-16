@@ -106,5 +106,10 @@ export const approveCampaignFn = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { humanApproveCampaign } = await import("./creative/pipeline.server");
-    return humanApproveCampaign(context.supabase as never, context.userId, data.campaignId, data.approve);
+    return humanApproveCampaign(
+      context.supabase as never,
+      context.userId,
+      data.campaignId,
+      data.approve,
+    );
   });
