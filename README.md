@@ -243,6 +243,17 @@ scripts/                infrastructure smoke test
 
 ---
 
+## Contributing
+
+Contributions are welcome — launchpads are only as good as their community.
+Start with the [Contributing Guide](CONTRIBUTING.md) and the
+[Code of Conduct](CODE_OF_CONDUCT.md), and respect the
+[invariants in AGENTS.md](AGENTS.md).
+
+- **Good first issues** are labelled `good first issue` / `good first contribution`.
+- Every change keeps `npm run lint` and `npm run typecheck` clean.
+- See the [changelog](CHANGELOG.md) for release history.
+
 <div align="center">
 <sub>Water, designed. · الماء، بتصميم</sub>
 </div>

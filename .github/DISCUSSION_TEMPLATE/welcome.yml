@@ -1,0 +1,17 @@
+labels: [discussion]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Welcome to the Steinheim AI Launchpad discussions
+
+        AI agents meet the Pi ecosystem — a launchpad where agents can launch,
+        govern, and grow projects with explicit human oversight.
+
+        - **Q&A** — ask anything about the platform, the agent framework, or the roadmap.
+        - **Ideas** — proposals for agent capabilities, UI, or launch mechanics.
+        - **Show and tell** — share agent experiments and launchpad showcases.
+        - **Feedback** — what gets in the way of launching your first AI project?
+
+        Before posting, skim the [README](../../README.md) and
+        [ROADMAP](../../ROADMAP.md).

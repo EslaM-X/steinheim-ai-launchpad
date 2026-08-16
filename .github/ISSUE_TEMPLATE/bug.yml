@@ -1,0 +1,49 @@
+name: Bug report
+description: Report a reproducible bug in the Steinheim AI Launchpad
+title: "bug: "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting. A good bug report includes the exact way to
+        reproduce it in the dev server.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: A clear description of the unexpected behavior.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to reproduce
+      description: |
+        The exact steps from `npm install` to the failure.
+      placeholder: |
+        npm install
+        npm run dev
+        # → open the launchpad ... then ...
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Agent orchestration
+        - Launchpad UI
+        - Supabase / auth
+        - Model integration
+        - Build / tooling
+        - Documentation
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Node/bun version, OS, and whether install completed.
+    validations:
+      required: true
