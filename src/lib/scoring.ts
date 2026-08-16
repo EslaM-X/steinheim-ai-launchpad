@@ -43,11 +43,7 @@ export function penaltyRulesPrompt(): string {
 }
 
 export type ScoreBand =
-  | "exceptional"
-  | "strong"
-  | "pass_minor_revision"
-  | "revision_required"
-  | "fail";
+  "exceptional" | "strong" | "pass_minor_revision" | "revision_required" | "fail";
 
 export function scoreBand(score: number, hardFail: boolean): ScoreBand {
   if (hardFail) return "fail";
