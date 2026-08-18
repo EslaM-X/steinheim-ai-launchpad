@@ -16,12 +16,12 @@ import { categoriesQuery, productsQuery } from "@/lib/queries";
 export const Route = createFileRoute("/_authenticated/products")({
   head: () => ({
     meta: [
-      { title: "Products — Steinheim AI Marketing" },
+      { title: "Products — Steinheim" },
       {
         name: "description",
         content: "The Steinheim product catalogue that feeds every AI-written post.",
       },
-      { property: "og:title", content: "Products — Steinheim AI Marketing" },
+      { property: "og:title", content: "Products — Steinheim" },
       {
         property: "og:description",
         content: "The Steinheim product catalogue that feeds every AI-written post.",

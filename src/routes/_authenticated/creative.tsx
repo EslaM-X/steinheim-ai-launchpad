@@ -37,13 +37,13 @@ const PLATFORMS = ["instagram", "facebook", "tiktok", "youtube", "linkedin"];
 export const Route = createFileRoute("/_authenticated/creative")({
   head: () => ({
     meta: [
-      { title: "Creative Studio — Steinheim AI Marketing" },
+      { title: "Creative Studio — Steinheim" },
       {
         name: "description",
         content:
           "Plan, direct and review Steinheim ad campaigns: briefs, concepts, storyboards, shots and creative quality gates.",
       },
-      { property: "og:title", content: "Creative Studio — Steinheim AI Marketing" },
+      { property: "og:title", content: "Creative Studio — Steinheim" },
       {
         property: "og:description",
         content: "From product truth to concept, storyboard, shots and platform ad variants.",

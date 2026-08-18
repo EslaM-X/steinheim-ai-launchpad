@@ -19,12 +19,12 @@ import { postQuery } from "@/lib/queries";
 export const Route = createFileRoute("/_authenticated/posts/$postId")({
   head: () => ({
     meta: [
-      { title: "Post editor — Steinheim AI Marketing" },
+      { title: "Post Editor — Steinheim" },
       {
         name: "description",
         content: "Edit, review and approve a generated Steinheim social post.",
       },
-      { property: "og:title", content: "Post editor — Steinheim AI Marketing" },
+      { property: "og:title", content: "Post Editor — Steinheim" },
       {
         property: "og:description",
         content: "Edit, review and approve a generated Steinheim social post.",

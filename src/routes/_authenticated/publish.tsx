@@ -13,13 +13,13 @@ import { setHumanApproval } from "@/lib/testing.functions";
 export const Route = createFileRoute("/_authenticated/publish")({
   head: () => ({
     meta: [
-      { title: "Approvals & publish queue — Steinheim AI Marketing" },
+      { title: "Approval Queue — Steinheim" },
       {
         name: "description",
         content:
           "AI-recommended Steinheim posts awaiting human approval, and the approved publish queue.",
       },
-      { property: "og:title", content: "Approvals & publish queue — Steinheim AI Marketing" },
+      { property: "og:title", content: "Approval Queue — Steinheim" },
       {
         property: "og:description",
         content:

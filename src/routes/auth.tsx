@@ -12,13 +12,13 @@ export const Route = createFileRoute("/auth")({
   ssr: false,
   head: () => ({
     meta: [
-      { title: "Sign in — Steinheim AI Marketing System" },
+      { title: "Sign in — Steinheim" },
       {
         name: "description",
         content:
           "Team access to the Steinheim AI marketing system: knowledge base, content calendar and publishing.",
       },
-      { property: "og:title", content: "Sign in — Steinheim AI Marketing System" },
+      { property: "og:title", content: "Sign in — Steinheim" },
       {
         property: "og:description",
         content: "Team access to the Steinheim AI marketing system.",

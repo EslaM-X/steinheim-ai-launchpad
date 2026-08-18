@@ -8,12 +8,12 @@ import { analyticsQuery } from "@/lib/queries";
 export const Route = createFileRoute("/_authenticated/analytics")({
   head: () => ({
     meta: [
-      { title: "Analytics — Steinheim AI Marketing" },
+      { title: "Performance — Steinheim" },
       {
         name: "description",
         content: "Reach and engagement performance for published Steinheim posts.",
       },
-      { property: "og:title", content: "Analytics — Steinheim AI Marketing" },
+      { property: "og:title", content: "Performance — Steinheim" },
       {
         property: "og:description",
         content: "Reach and engagement performance for published Steinheim posts.",

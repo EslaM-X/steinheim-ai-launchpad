@@ -78,18 +78,13 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "Steinheim — Marketing Intelligence" },
 
-      // One sentence that says what the system refuses to do, because that is
-      // what makes it different from every other AI content tool.
+      // One description tag carrying both languages. Two tags sharing a `name`
+      // are invalid HTML and the router keeps only one, so the Arabic was
+      // silently dropped when they were separate.
       {
         name: "description",
         content:
-          "The marketing operating system for Steinheim. A verified product knowledge base drives a team of AI agents that plan, write and quality-check daily content — every claim traced to a fact, every post approved by a person.",
-      },
-      {
-        name: "description",
-        lang: "ar",
-        content:
-          "نظام التشغيل التسويقي لعلامة Steinheim. قاعدة معرفة موثّقة تقود فريقًا من وكلاء الذكاء الاصطناعي يخطّطون ويكتبون ويراجعون محتوى كل يوم — كل معلومة مسنودة بمصدر، وكل منشور يعتمده إنسان.",
+          "The marketing operating system for Steinheim — a verified product knowledge base driving AI agents that plan, write and quality-check daily content. Every claim traced to a fact, every post approved by a person. نظام التشغيل التسويقي لعلامة Steinheim — قاعدة معرفة موثّقة تقود وكلاء ذكاء اصطناعي يخطّطون ويكتبون ويراجعون محتوى كل يوم. كل معلومة مسنودة بمصدر، وكل منشور يعتمده إنسان.",
       },
       {
         name: "keywords",

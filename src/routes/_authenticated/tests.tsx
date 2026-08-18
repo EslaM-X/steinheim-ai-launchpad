@@ -14,12 +14,12 @@ import { runTestScenario, runTestSuite } from "@/lib/testing.functions";
 export const Route = createFileRoute("/_authenticated/tests")({
   head: () => ({
     meta: [
-      { title: "Test harness — Steinheim AI Marketing" },
+      { title: "Quality Tests — Steinheim" },
       {
         name: "description",
         content: "Scenario matrix and red-team results for the Steinheim AI content pipeline.",
       },
-      { property: "og:title", content: "Test harness — Steinheim AI Marketing" },
+      { property: "og:title", content: "Quality Tests — Steinheim" },
       {
         property: "og:description",
         content: "Scenario matrix and red-team results for the Steinheim AI content pipeline.",

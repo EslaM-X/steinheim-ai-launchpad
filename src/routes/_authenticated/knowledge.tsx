@@ -8,12 +8,12 @@ import { audiencesQuery, brandQuery, projectsQuery } from "@/lib/queries";
 export const Route = createFileRoute("/_authenticated/knowledge")({
   head: () => ({
     meta: [
-      { title: "Knowledge base — Steinheim AI Marketing" },
+      { title: "Brand Constitution — Steinheim" },
       {
         name: "description",
         content: "Brand voice, audiences and reference projects powering the agents.",
       },
-      { property: "og:title", content: "Knowledge base — Steinheim AI Marketing" },
+      { property: "og:title", content: "Brand Constitution — Steinheim" },
       {
         property: "og:description",
         content: "Brand voice, audiences and reference projects powering the agents.",

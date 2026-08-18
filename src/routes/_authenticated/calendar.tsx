@@ -11,12 +11,12 @@ import { postsQuery } from "@/lib/queries";
 export const Route = createFileRoute("/_authenticated/calendar")({
   head: () => ({
     meta: [
-      { title: "Content calendar — Steinheim AI Marketing" },
+      { title: "Calendar — Steinheim" },
       {
         name: "description",
         content: "Plan and track every scheduled Steinheim post across platforms.",
       },
-      { property: "og:title", content: "Content calendar — Steinheim AI Marketing" },
+      { property: "og:title", content: "Calendar — Steinheim" },
       {
         property: "og:description",
         content: "Plan and track every scheduled Steinheim post across platforms.",

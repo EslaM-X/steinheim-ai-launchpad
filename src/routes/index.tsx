@@ -3,13 +3,13 @@ import { createFileRoute, redirect } from "@tanstack/react-router";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Steinheim AI Marketing System" },
+      { title: "Steinheim — Marketing Intelligence" },
       {
         name: "description",
         content:
           "AI-powered marketing workspace for Steinheim Egypt: knowledge base, daily content generation and publishing.",
       },
-      { property: "og:title", content: "Steinheim AI Marketing System" },
+      { property: "og:title", content: "Steinheim — Marketing Intelligence" },
       {
         property: "og:description",
         content: "AI-powered marketing workspace for Steinheim Egypt.",

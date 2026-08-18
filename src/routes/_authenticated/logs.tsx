@@ -9,12 +9,12 @@ import { runsQuery } from "@/lib/queries";
 export const Route = createFileRoute("/_authenticated/logs")({
   head: () => ({
     meta: [
-      { title: "Agent logs — Steinheim AI Marketing" },
+      { title: "Activity Log — Steinheim" },
       {
         name: "description",
         content: "Execution history for every Steinheim AI marketing agent run.",
       },
-      { property: "og:title", content: "Agent logs — Steinheim AI Marketing" },
+      { property: "og:title", content: "Activity Log — Steinheim" },
       {
         property: "og:description",
         content: "Execution history for every Steinheim AI marketing agent run.",
