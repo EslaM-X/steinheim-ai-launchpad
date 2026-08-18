@@ -128,13 +128,30 @@ fi
 if [ -n "${TELEGRAM_CHAT_ID:-}" ]; then
   ok "chat id $TELEGRAM_CHAT_ID (telegram user ${TELEGRAM_USER_ID:-unknown})"
 
-  APPROVER=$(curl -s "$REST/profiles?select=id&limit=1" \
-    -H "apikey: $SUPABASE_SERVICE_ROLE_KEY" \
-    -H "Authorization: Bearer $SUPABASE_SERVICE_ROLE_KEY" | jget "j[0] ? j[0].id : ''")
-  if [ -n "$APPROVER" ]; then
-    ok "approvals will be attributed to Supabase user $APPROVER"
+  # Who may approve is a permission, not a lookup. Picking "the first profile"
+  # would attribute a publishing decision to whoever happens to sort first.
+  APPROVER="${SUPABASE_APPROVER_USER_ID:-}"
+  TG_APPROVER="${TELEGRAM_APPROVER_USER_ID:-${TELEGRAM_USER_ID:-}}"
+
+  if [ -z "$APPROVER" ]; then
+    echo "   Sign in to the app once, then choose your user:"
+    curl -s "$REST/profiles?select=id,display_name&limit=10" \
+      -H "apikey: $SUPABASE_SERVICE_ROLE_KEY" \
+      -H "Authorization: Bearer $SUPABASE_SERVICE_ROLE_KEY" \
+      | jget "JSON.stringify(j, null, 1)" | sed 's/^/     /'
+    die "set SUPABASE_APPROVER_USER_ID in .env.golive — an approval must name a real person"
+  elif [ -z "$TG_APPROVER" ]; then
+    die "set TELEGRAM_APPROVER_USER_ID in .env.golive"
   else
-    warn "no row in profiles — sign in to the app once, then re-run to authorise approvals"
+    # Verify the uuid exists rather than trusting the paste.
+    FOUND=$(curl -s "$REST/profiles?select=id&id=eq.$APPROVER" \
+      -H "apikey: $SUPABASE_SERVICE_ROLE_KEY" \
+      -H "Authorization: Bearer $SUPABASE_SERVICE_ROLE_KEY" | jget "j[0] ? j[0].id : ''")
+    if [ "$FOUND" = "$APPROVER" ]; then
+      ok "Telegram user $TG_APPROVER may approve as Supabase user $APPROVER"
+    else
+      die "SUPABASE_APPROVER_USER_ID $APPROVER is not a profile in this project"
+    fi
   fi
 
   curl -s -X POST "$REST/integrations" \
@@ -142,7 +159,7 @@ if [ -n "${TELEGRAM_CHAT_ID:-}" ]; then
     -H "Authorization: Bearer $SUPABASE_SERVICE_ROLE_KEY" \
     -H "Content-Type: application/json" \
     -H "Prefer: resolution=merge-duplicates" \
-    -d "{\"kind\":\"telegram\",\"name\":\"command-centre\",\"external_id\":\"$TELEGRAM_CHAT_ID\",\"status\":\"active\",\"config\":{\"approvers\":{\"${TELEGRAM_USER_ID:-0}\":\"$APPROVER\"}}}" \
+    -d "{\"kind\":\"telegram\",\"name\":\"command-centre\",\"external_id\":\"$TELEGRAM_CHAT_ID\",\"status\":\"active\",\"config\":{\"approvers\":{\"$TG_APPROVER\":\"$APPROVER\"}}}" \
     -o /dev/null
   ok "integrations row upserted"
 else
@@ -186,8 +203,10 @@ else
     die "smoke test failed — do not wire n8n on top of this yet"
   fi
 
-  step "4 · First real generation"
-  OUT=$(curl -s -X POST "${APP_URL%/}/api/public/automation/generate-today" \
+  step "4 · Verification run"
+  echo "   Runs the full pipeline and marks the output as a test, so nothing"
+  echo "   produced by this first run can reach a channel."
+  OUT=$(curl -s -X POST "${APP_URL%/}/api/public/automation/generate-today?mode=verification" \
     -H "x-automation-secret: $AUTOMATION_SECRET" \
     -H "x-automation-timestamp: $(date +%s)" \
     -H "x-automation-nonce: golive-$(date +%s)-$RANDOM" \
@@ -195,6 +214,12 @@ else
   TOPIC=$(echo "$OUT" | jget "j.topic")
   if [ -n "$TOPIC" ]; then
     ok "generated: $TOPIC — score $(echo "$OUT" | jget 'j.score')/100, unverified claims $(echo "$OUT" | jget 'j.unverifiedClaims')"
+    MODE=$(echo "$OUT" | jget "j.mode")
+    if [ "$MODE" = "verification" ]; then
+      ok "marked as a verification run — excluded from every publish queue"
+    else
+      die "expected a verification run, got '$MODE' — this output could be published"
+    fi
   else
     die "generation failed: $(echo "$OUT" | head -c 200)"
   fi
@@ -206,7 +231,10 @@ fi
 
 echo
 if [ $FAILED -eq 0 ]; then
-  echo "🟢 Done. Send /pending to @$BOT to approve today's content."
+  echo "🟢 Environment verified. Nothing has been staged for publishing."
+  echo "   Review the verification run in the dashboard, then run a production"
+  echo "   cycle when you are ready:"
+  echo "     POST /api/public/automation/generate-today   (no mode parameter)"
 else
   echo "🔴 Finished with the failures listed above."
   exit 1

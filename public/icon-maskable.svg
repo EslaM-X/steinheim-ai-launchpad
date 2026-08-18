@@ -1,7 +1,19 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Steinheim">
-  <rect width="512" height="512" fill="#080808"/>
-  <text x="256" y="292" font-family="Cormorant Garamond, Georgia, serif" font-size="196"
-        font-weight="500" fill="#F7F5F0" text-anchor="middle">S</text>
-  <path d="M164 336c46-14 76-14 104-5s58 9 104-5" fill="none" stroke="#B7A27A"
-        stroke-width="8" stroke-linecap="round"/>
+  <!--
+    Maskable: the mark is pulled into the safe zone (the middle 80%) so a
+    circular or squircle crop never clips it.
+  -->
+  <rect width="512" height="512" fill="#080808" />
+  <g fill="none" stroke-linecap="round">
+    <path
+      d="M152 240 C 194 214, 236 214, 266 229 S 338 262, 380 235"
+      stroke="#F7F5F0"
+      stroke-width="16"
+    />
+    <path
+      d="M152 292 C 194 266, 236 266, 266 281 S 338 314, 380 287"
+      stroke="#B7A27A"
+      stroke-width="11"
+    />
+  </g>
 </svg>

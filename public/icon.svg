@@ -1,7 +1,20 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Steinheim">
-  <rect width="512" height="512" fill="#080808"/>
-  <text x="256" y="300" font-family="Cormorant Garamond, Georgia, serif" font-size="248"
-        font-weight="500" fill="#F7F5F0" text-anchor="middle">S</text>
-  <path d="M120 356c60-18 100-18 136-6s76 12 136-6" fill="none" stroke="#B7A27A"
-        stroke-width="10" stroke-linecap="round"/>
+  <!--
+    Pure geometry, no text: an icon that depends on a font renders differently
+    on every machine that lacks it. The mark is the double wave from the
+    Steinheim wordmark, which stays legible down to a taskbar.
+  -->
+  <rect width="512" height="512" fill="#080808" />
+  <g fill="none" stroke-linecap="round">
+    <path
+      d="M104 232 C 160 198, 216 198, 256 218 S 352 262, 408 226"
+      stroke="#F7F5F0"
+      stroke-width="20"
+    />
+    <path
+      d="M104 300 C 160 266, 216 266, 256 286 S 352 330, 408 294"
+      stroke="#B7A27A"
+      stroke-width="14"
+    />
+  </g>
 </svg>
