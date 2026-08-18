@@ -76,28 +76,72 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Steinheim AI Marketing System" },
+      { title: "Steinheim — Marketing Intelligence" },
+
+      // One sentence that says what the system refuses to do, because that is
+      // what makes it different from every other AI content tool.
       {
         name: "description",
         content:
-          "Truth-checked AI marketing operations for Steinheim: knowledge base, content agents and publishing.",
+          "The marketing operating system for Steinheim. A verified product knowledge base drives a team of AI agents that plan, write and quality-check daily content — every claim traced to a fact, every post approved by a person.",
+      },
+      {
+        name: "description",
+        lang: "ar",
+        content:
+          "نظام التشغيل التسويقي لعلامة Steinheim. قاعدة معرفة موثّقة تقود فريقًا من وكلاء الذكاء الاصطناعي يخطّطون ويكتبون ويراجعون محتوى كل يوم — كل معلومة مسنودة بمصدر، وكل منشور يعتمده إنسان.",
+      },
+      {
+        name: "keywords",
+        content:
+          "Steinheim, marketing intelligence, luxury bathroom systems, German engineering, AI marketing, content governance, Egypt",
       },
       { name: "author", content: "Steinheim" },
-      { property: "og:title", content: "Steinheim AI Marketing System" },
+      { name: "application-name", content: "Steinheim" },
+      { name: "apple-mobile-web-app-title", content: "Steinheim" },
+      { name: "apple-mobile-web-app-capable", content: "yes" },
+      { name: "apple-mobile-web-app-status-bar-style", content: "black-translucent" },
+      { name: "mobile-web-app-capable", content: "yes" },
+      // Obsidian in both themes: the chrome around the app is always the brand.
+      { name: "theme-color", content: "#080808" },
+      { name: "color-scheme", content: "light dark" },
+      { name: "format-detection", content: "telephone=no" },
+      // The dashboard is private; nothing here belongs in a search index.
+      { name: "robots", content: "noindex, nofollow" },
+
+      { property: "og:site_name", content: "Steinheim" },
+      { property: "og:title", content: "Steinheim — Marketing Intelligence" },
       {
         property: "og:description",
         content:
-          "Truth-checked AI marketing operations for Steinheim: knowledge base, content agents and publishing.",
+          "A marketing operating system that cannot lie about the product. Verified truth, AI agents, human approval.",
       },
       { property: "og:type", content: "website" },
+      { property: "og:locale", content: "en_GB" },
+      { property: "og:locale:alternate", content: "ar_EG" },
+      { property: "og:image", content: "/og-image.svg" },
+      { property: "og:image:alt", content: "Steinheim — Marketing Intelligence" },
+      { property: "og:image:width", content: "1200" },
+      { property: "og:image:height", content: "630" },
+
       { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: "Steinheim — Marketing Intelligence" },
+      {
+        name: "twitter:description",
+        content:
+          "A marketing operating system that cannot lie about the product. Verified truth, AI agents, human approval.",
+      },
+      { name: "twitter:image", content: "/og-image.svg" },
     ],
     links: [
       {
         rel: "stylesheet",
         href: appCss,
       },
-      { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
+      { rel: "icon", href: "/favicon.svg", type: "image/svg+xml" },
+      { rel: "alternate icon", href: "/favicon.ico", type: "image/x-icon" },
+      { rel: "apple-touch-icon", href: "/icon.svg" },
+      { rel: "mask-icon", href: "/favicon.svg", color: "#080808" },
       { rel: "manifest", href: "/manifest.webmanifest" },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },

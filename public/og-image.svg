@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" role="img" aria-label="Steinheim Marketing Intelligence">
+  <rect width="1200" height="630" fill="#080808"/>
+  <text x="600" y="292" font-family="Cormorant Garamond, Georgia, serif" font-size="104"
+        font-weight="500" fill="#F7F5F0" text-anchor="middle" letter-spacing="2">Steinheim</text>
+  <g fill="none" stroke-linecap="round">
+    <path d="M470 336 C 520 320, 570 320, 600 330 S 680 350, 730 332" stroke="#F7F5F0" stroke-width="5"/>
+    <path d="M470 356 C 520 340, 570 340, 600 350 S 680 370, 730 352" stroke="#B7A27A" stroke-width="4"/>
+  </g>
+  <text x="600" y="424" font-family="Inter, system-ui, sans-serif" font-size="21"
+        fill="#9B9890" text-anchor="middle" letter-spacing="7">MARKETING INTELLIGENCE</text>
+  <text x="600" y="486" font-family="Inter, system-ui, sans-serif" font-size="19"
+        fill="#6E6B65" text-anchor="middle">A marketing operating system that cannot lie about the product</text>
+</svg>
