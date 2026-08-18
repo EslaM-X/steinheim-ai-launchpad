@@ -20,6 +20,26 @@ not work. Start those applications today so the clock runs while you use Telegra
 
 ---
 
+## The short path
+
+Everything below except creating the accounts is automated. Fill in one file and
+run one command:
+
+```bash
+cp .env.golive.example .env.golive   # paste your keys
+./scripts/go-live.sh
+```
+
+It links Supabase, applies the migrations, verifies that tokens are not readable
+with the public key, registers the Telegram bot and its approver, runs the smoke
+test, triggers the first generation and prepares the n8n workflows — stopping at
+the first thing that is actually wrong. It is safe to re-run.
+
+The rest of this document is what that script does, in case you want to do it by
+hand or something fails.
+
+---
+
 ## 1 · Supabase — ~10 min
 
 Create the project, then:

@@ -38,3 +38,6 @@ package-lock.json
 
 # generated from the workflow templates, contains real ids
 infra/n8n/workflows/ready/
+
+# filled-in go-live secrets
+.env.golive

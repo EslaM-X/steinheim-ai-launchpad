@@ -124,7 +124,13 @@ Self-hosted automation — n8n Community Edition, free with no account and no tr
 cd infra/n8n && cp .env.example .env && docker compose up -d
 ```
 
-Full deployment path in **[docs/deployment.md](docs/deployment.md)**.
+Go live — one file of keys, one command:
+
+```bash
+cp .env.golive.example .env.golive && ./scripts/go-live.sh
+```
+
+Full deployment path in **[docs/go-live.md](docs/go-live.md)** and **[docs/deployment.md](docs/deployment.md)**.
 
 ---
 
