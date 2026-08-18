@@ -1,0 +1,121 @@
+{
+  "name": "W02 — Publish queue (Telegram channel)",
+  "nodes": [
+    {
+      "parameters": { "rule": { "interval": [{ "field": "minutes", "minutesInterval": 15 }] } },
+      "id": "w02-cron",
+      "name": "Every 15 min",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [-220, 0]
+    },
+    {
+      "parameters": {
+        "url": "__APP_URL__/api/public/automation/approved?claim=true&channel=telegram&limit=5",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "x-automation-timestamp", "value": "={{ Date.now() }}" },
+            { "name": "x-automation-nonce", "value": "={{ $execution.id }}-{{ Date.now() }}" }
+          ]
+        },
+        "options": { "response": { "response": { "neverError": true, "fullResponse": true } } }
+      },
+      "id": "w02-claim",
+      "name": "Claim approved posts",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [0, 0],
+      "credentials": { "httpHeaderAuth": { "id": "REPLACE_WITH_CREDENTIAL_ID", "name": "Steinheim automation secret" } }
+    },
+    {
+      "parameters": { "fieldToSplitOut": "body.posts", "options": {} },
+      "id": "w02-split",
+      "name": "One item per post",
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [220, 0]
+    },
+    {
+      "parameters": {
+        "chatId": "__TELEGRAM_CHANNEL_ID__",
+        "text": "={{ $json.body_ar || $json.body_en }}{{ ($json.hashtags || []).length ? '\n\n' + $json.hashtags.join(' ') : '' }}",
+        "additionalFields": { "parse_mode": "HTML" }
+      },
+      "id": "w02-publish",
+      "name": "Publish to channel",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [440, 0],
+      "onError": "continueErrorOutput",
+      "credentials": { "telegramApi": { "id": "REPLACE_WITH_CREDENTIAL_ID", "name": "Steinheim bot" } }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "__APP_URL__/api/public/automation/published",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "x-automation-timestamp", "value": "={{ Date.now() }}" },
+            { "name": "x-automation-nonce", "value": "={{ $execution.id }}-{{ $itemIndex }}-{{ Date.now() }}" },
+            { "name": "idempotency-key", "value": "=publish-{{ $('One item per post').item.json.id }}" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ postId: $('One item per post').item.json.id, platform: 'telegram', outcome: 'published', platformPostId: String($json.result.message_id) }) }}",
+        "options": { "response": { "response": { "neverError": true, "fullResponse": true } } }
+      },
+      "id": "w02-record",
+      "name": "Record published",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [680, -110],
+      "credentials": { "httpHeaderAuth": { "id": "REPLACE_WITH_CREDENTIAL_ID", "name": "Steinheim automation secret" } }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "__APP_URL__/api/public/automation/published",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "x-automation-timestamp", "value": "={{ Date.now() }}" },
+            { "name": "x-automation-nonce", "value": "={{ $execution.id }}-err-{{ $itemIndex }}-{{ Date.now() }}" },
+            { "name": "idempotency-key", "value": "=unknown-{{ $('One item per post').item.json.id }}" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ postId: $('One item per post').item.json.id, platform: 'telegram', outcome: 'unknown', error: String($json.error || 'no confirmation from Telegram').slice(0, 500) }) }}",
+        "options": { "response": { "response": { "neverError": true, "fullResponse": true } } }
+      },
+      "id": "w02-unknown",
+      "name": "Record UNKNOWN (never failed)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [680, 110],
+      "credentials": { "httpHeaderAuth": { "id": "REPLACE_WITH_CREDENTIAL_ID", "name": "Steinheim automation secret" } }
+    }
+  ],
+  "connections": {
+    "Every 15 min": { "main": [[{ "node": "Claim approved posts", "type": "main", "index": 0 }]] },
+    "Claim approved posts": { "main": [[{ "node": "One item per post", "type": "main", "index": 0 }]] },
+    "One item per post": { "main": [[{ "node": "Publish to channel", "type": "main", "index": 0 }]] },
+    "Publish to channel": {
+      "main": [
+        [{ "node": "Record published", "type": "main", "index": 0 }],
+        [{ "node": "Record UNKNOWN (never failed)", "type": "main", "index": 0 }]
+      ]
+    }
+  },
+  "settings": { "executionOrder": "v1", "timezone": "Africa/Cairo" },
+  "pinData": {}
+}

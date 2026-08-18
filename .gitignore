@@ -35,3 +35,6 @@ package-lock.json
 *.sw?
 
 .env
+
+# generated from the workflow templates, contains real ids
+infra/n8n/workflows/ready/

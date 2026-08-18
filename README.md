@@ -236,6 +236,7 @@ scripts/                infrastructure smoke test
 
 | | |
 | --- | --- |
+| **[Go-live checklist](docs/go-live.md)** | the shortest path from a fresh clone to a working loop |
 | **[Architecture](docs/architecture.md)** | layers, request lifecycle, state machine, data model |
 | **[Deployment](docs/deployment.md)** | Supabase → Vercel → Telegram → smoke test |
 | **[Contributing rules](AGENTS.md)** | the invariants any change must preserve |
