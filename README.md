@@ -137,6 +137,7 @@ Full deployment path in **[docs/deployment.md](docs/deployment.md)**.
 | `SUPABASE_SERVICE_ROLE_KEY` | **server only** | admin writes, bypasses RLS |
 | `AI_BASE_URL` `AI_API_KEY` | **server only** | any OpenAI-compatible endpoint |
 | `AI_MODEL` `AI_IMAGE_MODEL` | server | optional overrides |
+| `AI_STREAMING` | server | set to `false` for providers that reject streaming with structured outputs |
 | `AUTOMATION_SECRET` | **server only** | n8n credential |
 | `TELEGRAM_BOT_TOKEN` `TELEGRAM_WEBHOOK_SECRET` | **server only** | command centre |
 | `CREATIVE_MODE` `CREATIVE_WORKER_SECRET` | server | GPU worker channel |

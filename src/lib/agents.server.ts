@@ -1,4 +1,4 @@
-import { NoObjectGeneratedError, Output, streamText } from "ai";
+import { NoObjectGeneratedError, Output, generateObject, generateText, streamText } from "ai";
 import type { z } from "zod";
 
 import { createAiProvider, getApiKey } from "./ai-provider.server";
@@ -27,12 +27,38 @@ function describeStreamError(error: unknown, streamError: unknown): Error {
   return new Error(String(source));
 }
 
+/**
+ * Some providers reject streaming and structured outputs in the same request —
+ * Groq documents exactly this. Setting AI_STREAMING=false switches both helpers
+ * to a single non-streaming call, same inputs and same output type.
+ *
+ * Streaming stays the default: a long generation behind a gateway with an idle
+ * timeout dies without it.
+ */
+function streamingDisabled() {
+  return process.env["AI_STREAMING"] === "false";
+}
+
 /** Structured generation over a streaming request (safe for long calls). */
 export async function genObject<T extends z.ZodType>(args: {
   schema: T;
   system: string;
   prompt: string;
 }): Promise<z.infer<T>> {
+  if (streamingDisabled()) {
+    try {
+      const { object } = await generateObject({
+        model: getModel(),
+        schema: args.schema,
+        system: args.system,
+        prompt: args.prompt,
+      });
+      return object as z.infer<T>;
+    } catch (error) {
+      throw describeStreamError(error, undefined);
+    }
+  }
+
   let streamError: unknown;
   try {
     const result = streamText({
@@ -61,6 +87,19 @@ export async function genObject<T extends z.ZodType>(args: {
 }
 
 export async function genText(args: { system: string; prompt: string }) {
+  if (streamingDisabled()) {
+    try {
+      const { text } = await generateText({
+        model: getModel(),
+        system: args.system,
+        prompt: args.prompt,
+      });
+      return text;
+    } catch (error) {
+      throw describeStreamError(error, undefined);
+    }
+  }
+
   let streamError: unknown;
   try {
     const result = streamText({
