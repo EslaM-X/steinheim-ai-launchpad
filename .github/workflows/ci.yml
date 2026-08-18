@@ -14,7 +14,10 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-      - run: npm install
+      # `npm ci` installs the committed lockfile exactly. `npm install` floats
+      # transitive versions, which is how a TanStack core got split into two
+      # chunks that imported each other and crashed every request in production.
+      - run: npm ci
       - run: npm run typecheck
       - run: npm run lint
       - run: npm run build

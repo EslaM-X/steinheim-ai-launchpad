@@ -24,8 +24,6 @@ export default defineConfig(async ({ command, mode }) => {
           specifiers: ["server-only"],
         },
       },
-      // Redirect the bundled server entry to src/server.ts (our SSR error wrapper).
-      server: { entry: "server" },
     }),
   ];
 
@@ -50,7 +48,10 @@ export default defineConfig(async ({ command, mode }) => {
     server: { port: 8080 },
     resolve: {
       alias: { "@": `${process.cwd()}/src` },
-      // A second copy of React or the query client breaks hooks and the cache.
+      // A second copy of any of these breaks at runtime rather than at build:
+      // React duplicates break hooks, and a duplicated TanStack Start core gets
+      // split into two chunks that import each other, so a top-level call runs
+      // before the binding it needs is initialised.
       dedupe: [
         "react",
         "react-dom",
@@ -58,6 +59,14 @@ export default defineConfig(async ({ command, mode }) => {
         "react/jsx-dev-runtime",
         "@tanstack/react-query",
         "@tanstack/query-core",
+        "@tanstack/react-router",
+        "@tanstack/router-core",
+        "@tanstack/react-start",
+        "@tanstack/start-client-core",
+        "@tanstack/start-server-core",
+        "@tanstack/history",
+        "@tanstack/store",
+        "@tanstack/react-store",
       ],
     },
     optimizeDeps: {
