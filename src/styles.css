@@ -5,20 +5,27 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
- * Design system definition.
+ * ─────────────────────────────────────────────────────────────────────────────
+ * STEINHEIM DESIGN SYSTEM v1
+ * ─────────────────────────────────────────────────────────────────────────────
  *
- * The @theme inline block maps CSS custom properties to Tailwind utility
- * classes (e.g. --color-primary -> bg-primary, text-primary).
+ * The brand is quiet, architectural and warm. The interface earns its luxury
+ * from typography, whitespace and restraint — never from gradients or glow.
  *
- * The :root and .dark blocks define the actual color values using oklch.
- * All colors MUST use oklch format.
+ *   Obsidian    navigation, brand surfaces
+ *   Porcelain   the workspace: warm, never pure white
+ *   Forest      intelligence, success, the primary action
+ *   Champagne   used sparingly. When it appears, it means "this matters".
  *
- * To add a new semantic color:
- * 1. Add the variable to :root (light value) and .dark (dark value)
- * 2. Register it in @theme inline as --color-<name>: var(--<name>)
+ * The semantic names below (primary, card, muted…) are consumed by every UI
+ * component, so their VALUES change here and their NAMES never do.
+ *
+ * All colors are oklch. Adding one means: add to :root, add to .dark, register
+ * in @theme inline as --color-<name>.
  */
 
 @theme inline {
+  /* Radius — large surfaces breathe, controls stay crisp. */
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -26,6 +33,7 @@
   --radius-2xl: calc(var(--radius) + 8px);
   --radius-3xl: calc(var(--radius) + 12px);
   --radius-4xl: calc(var(--radius) + 16px);
+
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -59,79 +67,156 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+
+  /* Brand palette, addressable directly when semantics do not fit. */
+  --color-obsidian: var(--obsidian);
+  --color-charcoal: var(--charcoal);
+  --color-porcelain: var(--porcelain);
+  --color-ivory: var(--ivory);
+  --color-stone: var(--stone);
+  --color-forest: var(--forest);
+  --color-forest-soft: var(--forest-soft);
+  --color-champagne: var(--champagne);
+
+  /* Status — used by health, publishing state and validation surfaces. */
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-info: var(--info);
+  --color-unknown: var(--unknown);
 }
 
 :root {
-  --radius: 0.25rem;
-  --background: oklch(0.985 0.003 90);
-  --foreground: oklch(0.22 0.008 70);
+  --radius: 0.75rem;
+
+  /* ── brand constants: identical in both themes ─────────────────────────── */
+  --obsidian: oklch(0.09 0 0);
+  --charcoal: oklch(0.16 0 0);
+  --porcelain: oklch(0.968 0.006 85);
+  --ivory: oklch(0.945 0.009 85);
+  --stone: oklch(0.865 0.014 85);
+  --forest: oklch(0.32 0.048 158);
+  --forest-soft: oklch(0.45 0.045 158);
+  --champagne: oklch(0.7 0.048 82);
+
+  /* ── light: porcelain workspace, obsidian navigation ───────────────────── */
+  --background: var(--porcelain);
+  --foreground: oklch(0.2 0.006 70);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.22 0.008 70);
+  --card-foreground: oklch(0.2 0.006 70);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.22 0.008 70);
-  --primary: oklch(0.24 0.008 70);
-  --primary-foreground: oklch(0.985 0.003 90);
-  --secondary: oklch(0.955 0.005 85);
+  --popover-foreground: oklch(0.2 0.006 70);
+  --primary: var(--forest);
+  --primary-foreground: var(--porcelain);
+  --secondary: var(--ivory);
   --secondary-foreground: oklch(0.28 0.008 70);
-  --muted: oklch(0.955 0.005 85);
-  --muted-foreground: oklch(0.52 0.01 75);
-  --accent: oklch(0.72 0.075 78);
-  --accent-foreground: oklch(0.2 0.01 70);
-  --destructive: oklch(0.55 0.19 27);
-  --destructive-foreground: oklch(0.985 0.003 90);
-  --border: oklch(0.9 0.006 85);
-  --input: oklch(0.9 0.006 85);
-  --ring: oklch(0.72 0.075 78);
-  --chart-1: oklch(0.72 0.075 78);
-  --chart-2: oklch(0.45 0.02 70);
-  --chart-3: oklch(0.62 0.05 210);
-  --chart-4: oklch(0.78 0.04 140);
-  --chart-5: oklch(0.35 0.01 70);
-  --sidebar: oklch(0.22 0.008 70);
-  --sidebar-foreground: oklch(0.93 0.004 85);
-  --sidebar-primary: oklch(0.72 0.075 78);
-  --sidebar-primary-foreground: oklch(0.18 0.008 70);
-  --sidebar-accent: oklch(0.28 0.008 70);
+  --muted: var(--ivory);
+  --muted-foreground: oklch(0.52 0.009 80);
+  --accent: var(--champagne);
+  --accent-foreground: oklch(0.18 0.006 70);
+  --destructive: oklch(0.52 0.17 27);
+  --destructive-foreground: var(--porcelain);
+  --border: oklch(0.895 0.008 85);
+  --input: oklch(0.895 0.008 85);
+  --ring: var(--champagne);
+
+  --success: oklch(0.45 0.09 155);
+  --warning: oklch(0.68 0.11 70);
+  --info: oklch(0.52 0.06 240);
+  --unknown: oklch(0.6 0.02 80);
+
+  --chart-1: var(--forest);
+  --chart-2: var(--champagne);
+  --chart-3: oklch(0.55 0.03 200);
+  --chart-4: var(--stone);
+  --chart-5: oklch(0.42 0.01 70);
+
+  --sidebar: var(--obsidian);
+  --sidebar-foreground: oklch(0.9 0.004 85);
+  --sidebar-primary: var(--champagne);
+  --sidebar-primary-foreground: var(--obsidian);
+  --sidebar-accent: oklch(0.2 0.004 70);
   --sidebar-accent-foreground: oklch(0.97 0.003 85);
-  --sidebar-border: oklch(0.32 0.008 70);
-  --sidebar-ring: oklch(0.72 0.075 78);
-  --font-display: "Cormorant Garamond", "Noto Kufi Arabic", serif;
+  --sidebar-border: oklch(1 0 0 / 9%);
+  --sidebar-ring: var(--champagne);
+
+  /* ── typography ────────────────────────────────────────────────────────── */
+  --font-display: "Cormorant Garamond", "Noto Kufi Arabic", Georgia, serif;
   --font-body: "Inter", "IBM Plex Sans Arabic", system-ui, sans-serif;
+
+  /* ── motion: quiet. Fast enough to feel instant, slow enough to feel made ─ */
+  --motion-micro: 140ms;
+  --motion-control: 200ms;
+  --motion-panel: 240ms;
+  --motion-page: 300ms;
+  --ease-standard: cubic-bezier(0.32, 0.72, 0, 1);
+  --ease-exit: cubic-bezier(0.4, 0, 1, 1);
+
+  /* ── elevation: borders carry structure, shadows only lift ─────────────── */
+  --elevation-raised: 0 1px 2px oklch(0.2 0.006 70 / 4%);
+  --elevation-overlay:
+    0 12px 32px -12px oklch(0.2 0.006 70 / 18%), 0 2px 8px -4px oklch(0.2 0.006 70 / 10%);
+
+  /* ── density: the same screens for an executive and an operator ────────── */
+  --density-row: 3rem;
+  --density-gap: 1.5rem;
+  --density-pad: 1.5rem;
 }
 
 .dark {
-  --background: oklch(0.18 0.006 70);
-  --foreground: oklch(0.96 0.003 85);
-  --card: oklch(0.22 0.008 70);
-  --card-foreground: oklch(0.96 0.003 85);
-  --popover: oklch(0.22 0.008 70);
-  --popover-foreground: oklch(0.96 0.003 85);
-  --primary: oklch(0.93 0.004 85);
-  --primary-foreground: oklch(0.2 0.008 70);
-  --secondary: oklch(0.27 0.008 70);
-  --secondary-foreground: oklch(0.96 0.003 85);
-  --muted: oklch(0.27 0.008 70);
-  --muted-foreground: oklch(0.7 0.01 80);
-  --accent: oklch(0.72 0.075 78);
-  --accent-foreground: oklch(0.18 0.008 70);
-  --destructive: oklch(0.63 0.18 25);
-  --destructive-foreground: oklch(0.98 0.003 85);
-  --border: oklch(1 0 0 / 12%);
-  --input: oklch(1 0 0 / 16%);
-  --ring: oklch(0.72 0.075 78);
-  --chart-1: oklch(0.72 0.075 78);
-  --chart-2: oklch(0.8 0.01 85);
-  --chart-3: oklch(0.65 0.08 210);
-  --chart-4: oklch(0.75 0.06 140);
-  --chart-5: oklch(0.55 0.01 70);
-  --sidebar: oklch(0.15 0.006 70);
-  --sidebar-foreground: oklch(0.93 0.004 85);
-  --sidebar-primary: oklch(0.72 0.075 78);
-  --sidebar-primary-foreground: oklch(0.16 0.008 70);
-  --sidebar-accent: oklch(0.24 0.008 70);
+  --background: var(--obsidian);
+  --foreground: oklch(0.95 0.003 85);
+  --card: oklch(0.13 0.002 70);
+  --card-foreground: oklch(0.95 0.003 85);
+  --popover: oklch(0.15 0.002 70);
+  --popover-foreground: oklch(0.95 0.003 85);
+  --primary: oklch(0.55 0.07 158);
+  --primary-foreground: oklch(0.97 0.003 85);
+  --secondary: oklch(0.19 0.003 70);
+  --secondary-foreground: oklch(0.95 0.003 85);
+  --muted: oklch(0.19 0.003 70);
+  --muted-foreground: oklch(0.68 0.008 82);
+  --accent: var(--champagne);
+  --accent-foreground: var(--obsidian);
+  --destructive: oklch(0.6 0.17 25);
+  --destructive-foreground: oklch(0.97 0.003 85);
+  --border: oklch(1 0 0 / 11%);
+  --input: oklch(1 0 0 / 14%);
+  --ring: var(--champagne);
+
+  --success: oklch(0.62 0.1 155);
+  --warning: oklch(0.75 0.11 72);
+  --info: oklch(0.66 0.07 240);
+  --unknown: oklch(0.66 0.02 80);
+
+  --chart-1: oklch(0.55 0.07 158);
+  --chart-2: var(--champagne);
+  --chart-3: oklch(0.62 0.05 205);
+  --chart-4: oklch(0.5 0.012 85);
+  --chart-5: oklch(0.75 0.008 85);
+
+  --sidebar: oklch(0.06 0 0);
+  --sidebar-foreground: oklch(0.9 0.004 85);
+  --sidebar-primary: var(--champagne);
+  --sidebar-primary-foreground: var(--obsidian);
+  --sidebar-accent: oklch(0.16 0.002 70);
   --sidebar-accent-foreground: oklch(0.97 0.003 85);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.72 0.075 78);
+  --sidebar-border: oklch(1 0 0 / 8%);
+
+  --elevation-raised: 0 1px 2px oklch(0 0 0 / 40%);
+  --elevation-overlay: 0 16px 40px -12px oklch(0 0 0 / 70%), 0 2px 8px -4px oklch(0 0 0 / 50%);
+}
+
+/* Density scales spacing, never type size — an operator reads the same words. */
+[data-density="compact"] {
+  --density-row: 2.5rem;
+  --density-gap: 1rem;
+  --density-pad: 1rem;
+}
+
+[data-density="dense"] {
+  --density-row: 2rem;
+  --density-gap: 0.75rem;
+  --density-pad: 0.75rem;
 }
 
 @theme inline {
@@ -149,21 +234,101 @@
     color: var(--color-foreground);
     font-family: var(--font-body);
     -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
   }
 
+  /* Serif is the brand voice; it belongs to headings, never to the interface. */
   h1,
   h2,
   h3 {
     font-family: var(--font-display);
-    letter-spacing: -0.01em;
+    letter-spacing: -0.015em;
+    font-weight: 500;
   }
 
-  [dir="rtl"] body {
-    font-family: var(--font-body);
+  /* Arabic display type needs its own face — Cormorant has no Arabic. */
+  [lang="ar"] h1,
+  [lang="ar"] h2,
+  [lang="ar"] h3 {
+    font-family: "Noto Kufi Arabic", var(--font-body);
+    letter-spacing: 0;
+  }
+
+  /* One visible focus treatment everywhere, in the one colour that means "here". */
+  :focus-visible {
+    outline: 2px solid var(--color-ring);
+    outline-offset: 2px;
+    border-radius: var(--radius-sm);
+  }
+
+  ::selection {
+    background: var(--color-champagne);
+    color: var(--color-obsidian);
+  }
+
+  /* Respect the operating system. Windows "reduce motion" reaches us here. */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
   }
 }
+
+/* ── brand utilities ─────────────────────────────────────────────────────── */
 
 @utility tracking-brand {
   letter-spacing: 0.18em;
 }
 
+/** Section label: the small uppercase line that opens a region. */
+@utility label-section {
+  font-size: 0.6875rem;
+  line-height: 1;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--color-muted-foreground);
+}
+
+/** Editorial number — for the one figure a screen is actually about. */
+@utility numeral-display {
+  font-family: var(--font-display);
+  font-weight: 500;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+}
+
+/** Tabular figures keep columns from dancing as values update. */
+@utility numeral-tabular {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+/** Surface: the quiet card. Border carries the structure, not shadow. */
+@utility surface {
+  background-color: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--elevation-raised);
+}
+
+/** Reserved for overlays only — palette, dialogs, floating panels. */
+@utility surface-overlay {
+  background-color: color-mix(in oklab, var(--color-popover) 92%, transparent);
+  backdrop-filter: blur(20px) saturate(1.4);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--elevation-overlay);
+}
+
+@utility density-gap {
+  gap: var(--density-gap);
+}
+
+@utility density-pad {
+  padding: var(--density-pad);
+}

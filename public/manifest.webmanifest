@@ -1,0 +1,25 @@
+{
+  "id": "/",
+  "name": "Steinheim Marketing Intelligence",
+  "short_name": "Steinheim",
+  "description": "Truth-checked marketing operations for Steinheim.",
+  "start_url": "/dashboard",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone"],
+  "orientation": "any",
+  "background_color": "#080808",
+  "theme_color": "#080808",
+  "lang": "en",
+  "dir": "auto",
+  "categories": ["business", "productivity"],
+  "icons": [
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "/icon-maskable.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Approval queue", "short_name": "Approvals", "url": "/publish" },
+    { "name": "Creative Studio", "short_name": "Creative", "url": "/creative" },
+    { "name": "Performance", "short_name": "Performance", "url": "/analytics" }
+  ]
+}
