@@ -99,45 +99,45 @@
   --champagne: oklch(0.7 0.048 82);
 
   /* ── light: porcelain workspace, obsidian navigation ───────────────────── */
-  --background: var(--porcelain);
+  --background: oklch(0.968 0.006 85);
   --foreground: oklch(0.2 0.006 70);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.2 0.006 70);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.2 0.006 70);
-  --primary: var(--forest);
-  --primary-foreground: var(--porcelain);
-  --secondary: var(--ivory);
+  --primary: oklch(0.32 0.048 158);
+  --primary-foreground: oklch(0.968 0.006 85);
+  --secondary: oklch(0.945 0.009 85);
   --secondary-foreground: oklch(0.28 0.008 70);
-  --muted: var(--ivory);
+  --muted: oklch(0.945 0.009 85);
   --muted-foreground: oklch(0.52 0.009 80);
-  --accent: var(--champagne);
+  --accent: oklch(0.7 0.048 82);
   --accent-foreground: oklch(0.18 0.006 70);
   --destructive: oklch(0.52 0.17 27);
-  --destructive-foreground: var(--porcelain);
+  --destructive-foreground: oklch(0.968 0.006 85);
   --border: oklch(0.895 0.008 85);
   --input: oklch(0.895 0.008 85);
-  --ring: var(--champagne);
+  --ring: oklch(0.7 0.048 82);
 
   --success: oklch(0.45 0.09 155);
   --warning: oklch(0.68 0.11 70);
   --info: oklch(0.52 0.06 240);
   --unknown: oklch(0.6 0.02 80);
 
-  --chart-1: var(--forest);
-  --chart-2: var(--champagne);
+  --chart-1: oklch(0.32 0.048 158);
+  --chart-2: oklch(0.7 0.048 82);
   --chart-3: oklch(0.55 0.03 200);
-  --chart-4: var(--stone);
+  --chart-4: oklch(0.865 0.014 85);
   --chart-5: oklch(0.42 0.01 70);
 
-  --sidebar: var(--obsidian);
+  --sidebar: oklch(0.09 0 0);
   --sidebar-foreground: oklch(0.9 0.004 85);
-  --sidebar-primary: var(--champagne);
-  --sidebar-primary-foreground: var(--obsidian);
+  --sidebar-primary: oklch(0.7 0.048 82);
+  --sidebar-primary-foreground: oklch(0.09 0 0);
   --sidebar-accent: oklch(0.2 0.004 70);
   --sidebar-accent-foreground: oklch(0.97 0.003 85);
   --sidebar-border: oklch(1 0 0 / 9%);
-  --sidebar-ring: var(--champagne);
+  --sidebar-ring: oklch(0.7 0.048 82);
 
   /* ── typography ────────────────────────────────────────────────────────── */
   --font-display: "Cormorant Garamond", "Noto Kufi Arabic", Georgia, serif;
@@ -163,7 +163,10 @@
 }
 
 .dark {
-  --background: var(--obsidian);
+  /* Literal values only. A custom property whose value is `var(--other)` does
+     not re-resolve against this block, so referencing the brand constants here
+     silently left half the palette on its light value. */
+  --background: oklch(0.09 0 0);
   --foreground: oklch(0.95 0.003 85);
   --card: oklch(0.13 0.002 70);
   --card-foreground: oklch(0.95 0.003 85);
@@ -175,13 +178,13 @@
   --secondary-foreground: oklch(0.95 0.003 85);
   --muted: oklch(0.19 0.003 70);
   --muted-foreground: oklch(0.68 0.008 82);
-  --accent: var(--champagne);
-  --accent-foreground: var(--obsidian);
+  --accent: oklch(0.7 0.048 82);
+  --accent-foreground: oklch(0.09 0 0);
   --destructive: oklch(0.6 0.17 25);
   --destructive-foreground: oklch(0.97 0.003 85);
   --border: oklch(1 0 0 / 11%);
   --input: oklch(1 0 0 / 14%);
-  --ring: var(--champagne);
+  --ring: oklch(0.7 0.048 82);
 
   --success: oklch(0.62 0.1 155);
   --warning: oklch(0.75 0.11 72);
@@ -189,15 +192,15 @@
   --unknown: oklch(0.66 0.02 80);
 
   --chart-1: oklch(0.55 0.07 158);
-  --chart-2: var(--champagne);
+  --chart-2: oklch(0.7 0.048 82);
   --chart-3: oklch(0.62 0.05 205);
   --chart-4: oklch(0.5 0.012 85);
   --chart-5: oklch(0.75 0.008 85);
 
   --sidebar: oklch(0.06 0 0);
   --sidebar-foreground: oklch(0.9 0.004 85);
-  --sidebar-primary: var(--champagne);
-  --sidebar-primary-foreground: var(--obsidian);
+  --sidebar-primary: oklch(0.7 0.048 82);
+  --sidebar-primary-foreground: oklch(0.09 0 0);
   --sidebar-accent: oklch(0.16 0.002 70);
   --sidebar-accent-foreground: oklch(0.97 0.003 85);
   --sidebar-border: oklch(1 0 0 / 8%);
@@ -331,4 +334,85 @@
 
 @utility density-pad {
   padding: var(--density-pad);
+}
+
+/* ── brand motion ─────────────────────────────────────────────────────────
+ * Water, and nothing else. Each drift shifts by exactly one wavelength so the
+ * loop has no visible seam, and the durations are deliberately long: motion
+ * that draws attention to itself is the opposite of quiet luxury.
+ * The reduced-motion rule above disables all of it.
+ */
+
+@keyframes steinheim-drift {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(-33.333%, 0, 0);
+  }
+}
+
+@keyframes steinheim-rise {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 12px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+/* The rule under the wordmark draws itself once — a gesture, not a loop. */
+@keyframes steinheim-draw {
+  from {
+    stroke-dashoffset: 260;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes steinheim-breathe {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@utility steinheim-drift-slow {
+  animation: steinheim-drift 38s linear infinite;
+}
+
+@utility steinheim-drift-mid {
+  animation: steinheim-drift 26s linear infinite;
+}
+
+@utility steinheim-drift-fast {
+  animation: steinheim-drift 17s linear infinite;
+}
+
+@utility steinheim-rise {
+  animation: steinheim-rise 900ms var(--ease-standard) both;
+}
+
+@utility steinheim-rise-delayed {
+  animation: steinheim-rise 900ms var(--ease-standard) 260ms both;
+}
+
+@utility steinheim-draw {
+  stroke-dasharray: 260;
+  animation: steinheim-draw 1400ms var(--ease-standard) 200ms both;
+}
+
+@utility steinheim-breathe {
+  animation: steinheim-breathe 6s ease-in-out infinite;
+}
+
+/** Staggered entrance for a short list of form controls. */
+@utility steinheim-stagger {
+  animation: steinheim-rise 700ms var(--ease-standard) both;
 }
