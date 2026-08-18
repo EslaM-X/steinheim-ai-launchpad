@@ -41,3 +41,6 @@ infra/n8n/workflows/ready/
 
 # filled-in go-live secrets
 .env.golive
+
+# generated env bundle for the Vercel dashboard
+.env.vercel
