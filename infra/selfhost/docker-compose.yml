@@ -27,6 +27,11 @@ services:
       TELEGRAM_WEBHOOK_SECRET: ${TELEGRAM_WEBHOOK_SECRET}
       CREATIVE_MODE: ${CREATIVE_MODE:-mock}
       CREATIVE_WORKER_SECRET: ${CREATIVE_WORKER_SECRET}
+      # Where long work runs. Same process when everything is on this box; set
+      # to this box's address when the front end is hosted elsewhere, so a
+      # request ceiling over there can never cut a sync short.
+      WORKER_URL: ${WORKER_URL:-http://localhost:3000}
+      APP_URL: ${APP_URL:-http://localhost:3000}
     healthcheck:
       test: ["CMD", "node", "-e", "fetch('http://localhost:3000/auth').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
       interval: 30s
@@ -74,7 +79,33 @@ services:
       EXECUTIONS_DATA_MAX_AGE: "336"
     volumes:
       - n8n_data:/home/node/.n8n
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:5678/healthz || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  # Publishes the app without opening a single inbound port: cloudflared dials
+  # out to Cloudflare and traffic arrives back down that connection. The server
+  # can keep its firewall closed.
+  #
+  # Optional — the stack runs without it. Start it with:
+  #   docker compose --profile tunnel up -d
+  # after putting a named-tunnel token in TUNNEL_TOKEN. Use a hostname that is
+  # NOT the company website: steinheim-eg.com is the live shop and the
+  # catalogue this system reads as its source of truth.
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    restart: unless-stopped
+    profiles: ["tunnel"]
+    depends_on:
+      app:
+        condition: service_healthy
+    command: tunnel --no-autoupdate run --token ${TUNNEL_TOKEN}
 
 volumes:
+  # Named volumes, so n8n's workflows and credentials and Postgres' data
+  # outlive `docker compose down`. Only `down -v` removes them.
   n8n_db:
   n8n_data:

@@ -1,0 +1,34 @@
+# Netlify hosts the presentation layer only.
+#
+# Pages here are fast — the dashboard renders in single-digit milliseconds
+# because it reads Supabase and nothing else. What must never run here is the
+# long work: a catalogue sync takes minutes and a generation run was measured at
+# 3m57s, against a synchronous function limit of 60 seconds that no plan raises.
+#
+# So the UI triggers work on the Node box (WORKER_URL) and follows it by polling
+# the jobs table. Both calls are sub-second. Leave WORKER_URL unset and the app
+# falls back to itself, which is correct on the self-hosted box and wrong here.
+
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  NITRO_PRESET = "netlify"
+  NODE_VERSION = "22"
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    X-Frame-Options = "DENY"
+
+# Secrets belong in the Netlify UI's environment variables, never in this file
+# and never in the repository. The set this layer needs is deliberately small:
+#   SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, VITE_SUPABASE_URL,
+#   VITE_SUPABASE_PUBLISHABLE_KEY, WORKER_URL, AUTOMATION_SECRET
+#
+# SUPABASE_SERVICE_ROLE_KEY is NOT in that list and must not be added: nothing
+# on the presentation layer needs to bypass row-level security, and a key that
+# does has no business on a public CDN edge.

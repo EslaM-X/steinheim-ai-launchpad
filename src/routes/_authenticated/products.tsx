@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { useI18n } from "@/lib/i18n";
-import { catalogSourceStatus, syncSteinheimCatalog } from "@/lib/catalog.functions";
+import { catalogSourceStatus, getJob, startCatalogSync } from "@/lib/catalog.functions";
 import { categoriesQuery, productsQuery } from "@/lib/queries";
 
 export const Route = createFileRoute("/_authenticated/products")({
@@ -45,33 +45,64 @@ function ProductsPage() {
     queryFn: () => catalogSourceStatus(),
   });
 
-  // The sync opens one page per product, so it is slow by nature. The button
-  // stays disabled for the whole run rather than letting a second click start
-  // a competing pass over the same catalogue.
-  const sync = useMutation({
-    mutationFn: () => syncSteinheimCatalog(),
-    onSuccess: (r) => {
-      const parts = [
-        `${r.scanned} ${lang === "ar" ? "منتج" : "products"}`,
-        `+${r.created}`,
-        `~${r.updated}`,
-        `=${r.unchanged}`,
-      ];
-      if (r.archived) parts.push(`${lang === "ar" ? "مؤرشف" : "archived"} ${r.archived}`);
+  // The id of the run being watched. It is the only thing the page needs to
+  // survive a reload: the work itself lives on the worker, not in this tab.
+  const [jobId, setJobId] = useState<string | null>(null);
+
+  const job = useQuery({
+    queryKey: ["job", jobId],
+    queryFn: () => getJob({ data: { jobId: jobId! } }),
+    enabled: Boolean(jobId),
+    // Polling stops the moment the job reaches a terminal state, so a finished
+    // run does not keep the page talking to the server forever.
+    refetchInterval: (q) => {
+      const s = q.state.data?.status;
+      return s === "running" || s === "queued" ? 1500 : false;
+    },
+  });
+
+  const active = job.data?.status === "running" || job.data?.status === "queued";
+  const busy = Boolean(jobId) && (job.isPending || active);
+
+  useEffect(() => {
+    const d = job.data;
+    if (!d || d.status === "running" || d.status === "queued") return;
+    if (d.status === "succeeded") {
+      const r = d.result ? (JSON.parse(d.result) as Record<string, number>) : null;
       toast.success(lang === "ar" ? "تمت مزامنة الكتالوج" : "Catalogue synced", {
-        description: `${parts.join(" · ")} — ${r.claimsWritten} claims`,
+        description: r
+          ? `${r["scanned"]} ${lang === "ar" ? "منتج" : "products"} · +${r["created"]} ~${r["updated"]} =${r["unchanged"]} — ${r["claimsWritten"]} claims`
+          : undefined,
       });
-      if (r.failed.length) {
-        toast.warning(
-          lang === "ar" ? `${r.failed.length} منتج لم يُقرأ` : `${r.failed.length} products failed`,
-          { description: r.failed.slice(0, 3).join(" · ") },
-        );
-      }
       void qc.invalidateQueries({ queryKey: ["products"] });
       void source.refetch();
+    } else {
+      toast.error(
+        d.status === "interrupted"
+          ? lang === "ar"
+            ? "توقفت المزامنة"
+            : "Sync was cut short"
+          : lang === "ar"
+            ? "فشلت المزامنة"
+            : "Sync failed",
+        { description: d.error ?? undefined },
+      );
+    }
+    setJobId(null);
+  }, [job.data, lang, qc, source]);
+
+  const start = useMutation({
+    mutationFn: () => startCatalogSync(),
+    onSuccess: (r) => {
+      setJobId(r.jobId);
+      if (r.alreadyRunning) {
+        toast.info(lang === "ar" ? "المزامنة شغالة بالفعل" : "A sync is already running", {
+          description: lang === "ar" ? "بنتابع نفس التشغيلة." : "Following the run in progress.",
+        });
+      }
     },
     onError: (e) =>
-      toast.error(lang === "ar" ? "فشلت المزامنة" : "Sync failed", {
+      toast.error(lang === "ar" ? "تعذّر بدء المزامنة" : "Could not start the sync", {
         description: e instanceof Error ? e.message : String(e),
       }),
   });
@@ -115,21 +146,23 @@ function ProductsPage() {
           <p className="mt-1 text-sm text-muted-foreground">{t("catalogueSub")}</p>
         </div>
         <div className="flex flex-col items-start gap-1 sm:items-end">
-          <Button onClick={() => sync.mutate()} disabled={sync.isPending}>
-            {sync.isPending
+          <Button onClick={() => start.mutate()} disabled={start.isPending || busy}>
+            {busy || start.isPending
               ? lang === "ar"
-                ? "جارٍ قراءة الموقع الرسمي…"
-                : "Reading the official site…"
+                ? "جارٍ المزامنة…"
+                : "Syncing…"
               : lang === "ar"
                 ? "مزامنة كتالوج Steinheim"
                 : "Sync Steinheim Catalog"}
           </Button>
           <p className="text-xs text-muted-foreground">
-            {source.data?.lastSyncAt
-              ? `${lang === "ar" ? "آخر مزامنة" : "Last synced"} ${new Date(source.data.lastSyncAt).toLocaleString(lang === "ar" ? "ar-EG" : "en-GB")}`
-              : lang === "ar"
-                ? "لم تتم أي مزامنة بعد"
-                : "Never synced"}
+            {busy && job.data
+              ? `${job.data.phase ?? "…"}${job.data.total ? ` — ${job.data.done}/${job.data.total}` : ""}`
+              : source.data?.lastSyncAt
+                ? `${lang === "ar" ? "آخر مزامنة" : "Last synced"} ${new Date(source.data.lastSyncAt).toLocaleString(lang === "ar" ? "ar-EG" : "en-GB")}`
+                : lang === "ar"
+                  ? "لم تتم أي مزامنة بعد"
+                  : "Never synced"}
           </p>
         </div>
       </div>

@@ -248,7 +248,15 @@ export interface SyncSummary {
  */
 export async function syncCatalog(
   supabase: DB,
-  options?: { limit?: number },
+  options?: {
+    limit?: number;
+    /**
+     * Called as each product is read. Reporting is the job runner's concern,
+     * not the connector's, so this stays an optional hook rather than a
+     * dependency on the jobs table.
+     */
+    onProgress?: (progress: { phase: string; done: number; total: number }) => void | Promise<void>;
+  },
 ): Promise<SyncSummary> {
   const { data: source } = await supabase
     .from("catalog_sources")
@@ -258,6 +266,7 @@ export async function syncCatalog(
   if (!source) throw new Error("catalog source 'steinheim-official' is not configured");
 
   const baseUrl = String(source.base_url).replace(/\/+$/, "");
+  await options?.onProgress?.({ phase: "Reading the catalogue index", done: 0, total: 0 });
   const listing = await fetchText(`${baseUrl}${source.catalog_path}`);
   let slugs = extractSlugs(listing);
   if (options?.limit) slugs = slugs.slice(0, options.limit);
@@ -273,7 +282,14 @@ export async function syncCatalog(
     archived: 0,
   };
 
+  let done = 0;
   for (const slug of slugs) {
+    await options?.onProgress?.({
+      phase: `Reading ${slug}`,
+      done,
+      total: slugs.length,
+    });
+    done += 1;
     try {
       const product = await fetchProduct(baseUrl, slug);
 
@@ -377,6 +393,12 @@ export async function syncCatalog(
   // slugs.length is part of the guard on purpose: an empty listing (a site
   // outage, a moved catalogue path) would otherwise archive the whole
   // catalogue in one pass.
+  await options?.onProgress?.({
+    phase: "Writing changes",
+    done: slugs.length,
+    total: slugs.length,
+  });
+
   if (!options?.limit && summary.failed.length === 0 && slugs.length > 0) {
     const { data: archived } = await supabase
       .from("products")

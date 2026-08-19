@@ -181,3 +181,59 @@ and run `cloudflared tunnel create`. Then set `APP_URL` and re-run
 Nothing about the tunnel weakens the automation endpoints: they answer `401`
 through it exactly as they do locally, because the guard checks the shared
 secret rather than the network the request arrived on.
+
+## Splitting the front end from the work
+
+The measurements decide the shape. Every page in this app renders in single
+digit milliseconds — the dashboard reads Supabase and nothing else. Three
+operations do not: a catalogue sync takes minutes, and a generation run was
+measured at 3m57s.
+
+Netlify caps a synchronous function at **60 seconds**, fixed, on every plan.
+That is comfortable for the pages and impossible for the work. So the two are
+separated rather than compromised:
+
+|                                        | runs on        | why                                                             |
+| -------------------------------------- | -------------- | --------------------------------------------------------------- |
+| Pages, auth, reading data              | Netlify        | fast, CDN, HTTPS, free, reachable from anywhere                 |
+| Catalogue sync, generation, publishing | the Docker box | minutes-long, and nothing there cuts a request short            |
+| n8n, its Postgres                      | the Docker box | already has to exist; reaches the app over the internal network |
+
+The join is `WORKER_URL`. The UI's sync button calls the worker to _start_ a
+job and gets an id back in about two seconds; it then polls the `jobs` table
+for progress. Both halves are sub-second, so the presentation layer never comes
+near its ceiling.
+
+Leave `WORKER_URL` unset and the app calls itself, which is correct when the
+whole stack is on one box and wrong on Netlify — set it there.
+
+### What the jobs table buys
+
+Before this, a sync held an HTTP request open for its whole duration. That
+worked on a Node process and failed the user: closing the tab killed the run,
+and a reload had no way to discover whether it had finished.
+
+Now the request creates a row and returns. The worker writes progress into it,
+the browser reads it, and the run is indifferent to what the browser does next.
+Three properties follow, each verified against the live stack:
+
+- **One sync at a time.** A unique partial index on `(kind) WHERE status IN
+('queued','running')` means a second trigger — button or schedule — attaches
+  to the run in flight instead of racing it. The synchronous endpoint answers
+  `409` with the id of the run that already owns the slot.
+- **A killed worker is visible.** The job heartbeats every 20 seconds. A
+  `running` row whose heartbeat has gone stale belongs to a process that died,
+  and `reap_dead_jobs()` marks it `interrupted` before the next run starts —
+  otherwise a crash would hold the single-active slot forever.
+- **Progress is real.** `phase`, `progress_done` and `progress_total` are
+  written as each product is read, so the button shows `Reading up-basin-mixer
+— 10/26` rather than a spinner.
+
+### Deploying the presentation layer
+
+`netlify.toml` is committed: `NITRO_PRESET=netlify`, publish `dist`. The
+environment variables that layer needs are deliberately few — Supabase URL and
+publishable key, `WORKER_URL`, `AUTOMATION_SECRET`. `SUPABASE_SERVICE_ROLE_KEY`
+is not among them and must not be added: nothing on the presentation layer
+needs to bypass row-level security, and a key that does has no business on a
+public edge.
