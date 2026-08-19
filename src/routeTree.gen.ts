@@ -24,6 +24,7 @@ import { Route as AuthenticatedTestsRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedPostsPostIdRouteImport } from './routes/_authenticated/posts.$postId'
 import { Route as ApiPublicAutomationAnalyticsRouteImport } from './routes/api/public/automation/analytics'
 import { Route as ApiPublicAutomationApprovedRouteImport } from './routes/api/public/automation/approved'
+import { Route as ApiPublicAutomationCatalogSyncRouteImport } from './routes/api/public/automation/catalog-sync'
 import { Route as ApiPublicAutomationGenerateTodayRouteImport } from './routes/api/public/automation/generate-today'
 import { Route as ApiPublicAutomationPublishedRouteImport } from './routes/api/public/automation/published'
 import { Route as ApiPublicCreativeClaimRouteImport } from './routes/api/public/creative/claim'
@@ -107,6 +108,12 @@ const ApiPublicAutomationApprovedRoute =
     path: '/api/public/automation/approved',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicAutomationCatalogSyncRoute =
+  ApiPublicAutomationCatalogSyncRouteImport.update({
+    id: '/api/public/automation/catalog-sync',
+    path: '/api/public/automation/catalog-sync',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicAutomationGenerateTodayRoute =
   ApiPublicAutomationGenerateTodayRouteImport.update({
     id: '/api/public/automation/generate-today',
@@ -152,6 +159,7 @@ export interface FileRoutesByFullPath {
   '/posts/$postId': typeof AuthenticatedPostsPostIdRoute
   '/api/public/automation/analytics': typeof ApiPublicAutomationAnalyticsRoute
   '/api/public/automation/approved': typeof ApiPublicAutomationApprovedRoute
+  '/api/public/automation/catalog-sync': typeof ApiPublicAutomationCatalogSyncRoute
   '/api/public/automation/generate-today': typeof ApiPublicAutomationGenerateTodayRoute
   '/api/public/automation/published': typeof ApiPublicAutomationPublishedRoute
   '/api/public/creative/claim': typeof ApiPublicCreativeClaimRoute
@@ -173,6 +181,7 @@ export interface FileRoutesByTo {
   '/posts/$postId': typeof AuthenticatedPostsPostIdRoute
   '/api/public/automation/analytics': typeof ApiPublicAutomationAnalyticsRoute
   '/api/public/automation/approved': typeof ApiPublicAutomationApprovedRoute
+  '/api/public/automation/catalog-sync': typeof ApiPublicAutomationCatalogSyncRoute
   '/api/public/automation/generate-today': typeof ApiPublicAutomationGenerateTodayRoute
   '/api/public/automation/published': typeof ApiPublicAutomationPublishedRoute
   '/api/public/creative/claim': typeof ApiPublicCreativeClaimRoute
@@ -196,6 +205,7 @@ export interface FileRoutesById {
   '/_authenticated/posts/$postId': typeof AuthenticatedPostsPostIdRoute
   '/api/public/automation/analytics': typeof ApiPublicAutomationAnalyticsRoute
   '/api/public/automation/approved': typeof ApiPublicAutomationApprovedRoute
+  '/api/public/automation/catalog-sync': typeof ApiPublicAutomationCatalogSyncRoute
   '/api/public/automation/generate-today': typeof ApiPublicAutomationGenerateTodayRoute
   '/api/public/automation/published': typeof ApiPublicAutomationPublishedRoute
   '/api/public/creative/claim': typeof ApiPublicCreativeClaimRoute
@@ -219,6 +229,7 @@ export interface FileRouteTypes {
     | '/posts/$postId'
     | '/api/public/automation/analytics'
     | '/api/public/automation/approved'
+    | '/api/public/automation/catalog-sync'
     | '/api/public/automation/generate-today'
     | '/api/public/automation/published'
     | '/api/public/creative/claim'
@@ -240,6 +251,7 @@ export interface FileRouteTypes {
     | '/posts/$postId'
     | '/api/public/automation/analytics'
     | '/api/public/automation/approved'
+    | '/api/public/automation/catalog-sync'
     | '/api/public/automation/generate-today'
     | '/api/public/automation/published'
     | '/api/public/creative/claim'
@@ -262,6 +274,7 @@ export interface FileRouteTypes {
     | '/_authenticated/posts/$postId'
     | '/api/public/automation/analytics'
     | '/api/public/automation/approved'
+    | '/api/public/automation/catalog-sync'
     | '/api/public/automation/generate-today'
     | '/api/public/automation/published'
     | '/api/public/creative/claim'
@@ -275,6 +288,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   ApiPublicAutomationAnalyticsRoute: typeof ApiPublicAutomationAnalyticsRoute
   ApiPublicAutomationApprovedRoute: typeof ApiPublicAutomationApprovedRoute
+  ApiPublicAutomationCatalogSyncRoute: typeof ApiPublicAutomationCatalogSyncRoute
   ApiPublicAutomationGenerateTodayRoute: typeof ApiPublicAutomationGenerateTodayRoute
   ApiPublicAutomationPublishedRoute: typeof ApiPublicAutomationPublishedRoute
   ApiPublicCreativeClaimRoute: typeof ApiPublicCreativeClaimRoute
@@ -389,6 +403,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicAutomationApprovedRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/automation/catalog-sync': {
+      id: '/api/public/automation/catalog-sync'
+      path: '/api/public/automation/catalog-sync'
+      fullPath: '/api/public/automation/catalog-sync'
+      preLoaderRoute: typeof ApiPublicAutomationCatalogSyncRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/automation/generate-today': {
       id: '/api/public/automation/generate-today'
       path: '/api/public/automation/generate-today'
@@ -462,6 +483,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   ApiPublicAutomationAnalyticsRoute: ApiPublicAutomationAnalyticsRoute,
   ApiPublicAutomationApprovedRoute: ApiPublicAutomationApprovedRoute,
+  ApiPublicAutomationCatalogSyncRoute: ApiPublicAutomationCatalogSyncRoute,
   ApiPublicAutomationGenerateTodayRoute: ApiPublicAutomationGenerateTodayRoute,
   ApiPublicAutomationPublishedRoute: ApiPublicAutomationPublishedRoute,
   ApiPublicCreativeClaimRoute: ApiPublicCreativeClaimRoute,
