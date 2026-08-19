@@ -416,3 +416,60 @@
 @utility steinheim-stagger {
   animation: steinheim-rise 700ms var(--ease-standard) both;
 }
+
+/* ── ambient water ────────────────────────────────────────────────────────
+ * The application layer, deliberately near-invisible. Opacities are low enough
+ * that the currents read as depth in the surface rather than as objects on it,
+ * which is why they survive both a porcelain and an obsidian ground.
+ */
+
+@keyframes steinheim-current {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(-33.333%, 0, 0);
+  }
+}
+
+/* A drop lands, the ring widens once and fades. No repeat: a looping ripple
+   with no drop above it looks like a defect. */
+@keyframes steinheim-ripple {
+  0% {
+    width: 0;
+    height: 0;
+    opacity: 0;
+    transform: translate(-50%, -50%);
+  }
+  12% {
+    opacity: 0.9;
+  }
+  100% {
+    width: 320px;
+    height: 320px;
+    opacity: 0;
+    transform: translate(-50%, -50%);
+  }
+}
+
+@utility steinheim-current-a {
+  animation: steinheim-current 90s linear infinite;
+}
+
+@utility steinheim-current-b {
+  animation: steinheim-current 140s linear infinite reverse;
+}
+
+@utility steinheim-ripple {
+  animation: steinheim-ripple 4s var(--ease-standard) forwards;
+}
+
+/* The ambient layer is atmosphere in light and depth in dark; the currents are
+   nearly transparent by day so porcelain stays porcelain. */
+:root {
+  --ambient-strength: 0.05;
+}
+
+.dark {
+  --ambient-strength: 0.16;
+}

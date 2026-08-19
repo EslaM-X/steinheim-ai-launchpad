@@ -2,6 +2,7 @@ import { Link, useNavigate } from "@tanstack/react-router";
 import { Languages, LogOut, Menu, Moon, PanelLeft, Search, Sun, X } from "lucide-react";
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 
+import { AmbientWater } from "@/components/AmbientWater";
 import { CommandPalette } from "@/components/CommandPalette";
 import { InstallPrompt } from "@/components/InstallPrompt";
 import { supabase } from "@/integrations/supabase/client";
@@ -139,7 +140,8 @@ export function AppShell({ children }: { children: ReactNode }) {
   );
 
   return (
-    <div dir={dir} className="flex min-h-screen bg-background text-foreground">
+    <div dir={dir} className="relative flex min-h-screen bg-background text-foreground">
+      <AmbientWater />
       {/* Desktop rail */}
       <aside
         className={cn(
