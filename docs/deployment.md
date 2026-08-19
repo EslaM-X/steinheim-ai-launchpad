@@ -19,10 +19,10 @@ supabase link --project-ref <ref> && supabase db push
 
 The two newest must both apply cleanly:
 
-| Migration | Brings |
-| --- | --- |
-| `20260814200000_phase_e2_social_core.sql` | `social_accounts`, `integrations`, publish columns, canonical analytics |
-| `20260814210000_phase_e6_automation_api.sql` | `automation_requests` — nonce, idempotency, rate-limit window |
+| Migration                                    | Brings                                                                  |
+| -------------------------------------------- | ----------------------------------------------------------------------- |
+| `20260814200000_phase_e2_social_core.sql`    | `social_accounts`, `integrations`, publish columns, canonical analytics |
+| `20260814210000_phase_e6_automation_api.sql` | `automation_requests` — nonce, idempotency, rate-limit window           |
 
 4. Verify the security posture before trusting it:
 
@@ -46,22 +46,22 @@ where table_name = 'social_accounts' and grantee = 'authenticated';
 Import the repo. The build is `npm run build`; Nitro detects Vercel from the CI
 environment and selects its preset on its own.
 
-| Variable | Scope | Notes |
-| --- | --- | --- |
-| `VITE_SUPABASE_URL` | client + server | public by design |
-| `VITE_SUPABASE_PUBLISHABLE_KEY` | client + server | public by design |
-| `SUPABASE_URL` | server | same URL, read by SSR |
-| `SUPABASE_PUBLISHABLE_KEY` | server | same key, read by SSR |
-| `SUPABASE_SERVICE_ROLE_KEY` | **server only** | bypasses RLS |
-| `AI_BASE_URL`, `AI_API_KEY` | **server only** | OpenAI-compatible endpoint |
-| `AI_MODEL`, `AI_IMAGE_MODEL` | server | optional overrides |
-| `AUTOMATION_SECRET` | **server only** | n8n credential |
-| `AUTOMATION_RATE_LIMIT` | server | optional, defaults to 60/min |
-| `AUTOMATION_USER_ID` | server | optional; author of automated runs |
-| `TELEGRAM_BOT_TOKEN` | **server only** | |
-| `TELEGRAM_WEBHOOK_SECRET` | **server only** | |
-| `CREATIVE_MODE` | server | `mock` until a GPU worker exists |
-| `CREATIVE_WORKER_SECRET` | **server only** | separate from `AUTOMATION_SECRET` |
+| Variable                        | Scope           | Notes                              |
+| ------------------------------- | --------------- | ---------------------------------- |
+| `VITE_SUPABASE_URL`             | client + server | public by design                   |
+| `VITE_SUPABASE_PUBLISHABLE_KEY` | client + server | public by design                   |
+| `SUPABASE_URL`                  | server          | same URL, read by SSR              |
+| `SUPABASE_PUBLISHABLE_KEY`      | server          | same key, read by SSR              |
+| `SUPABASE_SERVICE_ROLE_KEY`     | **server only** | bypasses RLS                       |
+| `AI_BASE_URL`, `AI_API_KEY`     | **server only** | OpenAI-compatible endpoint         |
+| `AI_MODEL`, `AI_IMAGE_MODEL`    | server          | optional overrides                 |
+| `AUTOMATION_SECRET`             | **server only** | n8n credential                     |
+| `AUTOMATION_RATE_LIMIT`         | server          | optional, defaults to 60/min       |
+| `AUTOMATION_USER_ID`            | server          | optional; author of automated runs |
+| `TELEGRAM_BOT_TOKEN`            | **server only** |                                    |
+| `TELEGRAM_WEBHOOK_SECRET`       | **server only** |                                    |
+| `CREATIVE_MODE`                 | server          | `mock` until a GPU worker exists   |
+| `CREATIVE_WORKER_SECRET`        | **server only** | separate from `AUTOMATION_SECRET`  |
 
 **Never prefix a secret with `VITE_`.** That prefix is exactly what puts a value in
 the browser bundle. Two things already enforce this:
@@ -119,7 +119,6 @@ reads; it never calls `generate-today`, which would spend AI credits.
 W01 stays deliberately small: cron → `generate-today` → check → Telegram notify.
 Publishing is a separate workflow. Do not merge them.
 
-
 ---
 
 ## If Vercel is not an option
@@ -127,12 +126,12 @@ Publishing is a separate workflow. Do not merge them.
 Nothing in this application depends on Vercel. Nitro builds the same source for
 several targets, all verified from this repository:
 
-| Target | Builds | Suits this app? |
-| --- | --- | --- |
-| `node-server` | ✅ | **yes** — no request timeout |
-| `cloudflare-module` | ✅ | pages yes, generation no |
-| `netlify` | ✅ | pages yes, generation no |
-| `static` | ❌ | it is an SSR app with server routes |
+| Target              | Builds | Suits this app?                     |
+| ------------------- | ------ | ----------------------------------- |
+| `node-server`       | ✅     | **yes** — no request timeout        |
+| `cloudflare-module` | ✅     | pages yes, generation no            |
+| `netlify`           | ✅     | pages yes, generation no            |
+| `static`            | ❌     | it is an SSR app with server routes |
 
 The constraint that decides it: **a generation run measured 3m57s end to end.**
 Cloudflare Workers and Netlify Functions cut a request long before that, so the
@@ -153,3 +152,32 @@ the automation secret never crosses the public internet on that hop.
 
 Point a domain at `:3000` behind any reverse proxy for TLS, then set `APP_URL`
 and re-run `./scripts/go-live.sh` to move the Telegram webhook across.
+
+## Reaching the app from somewhere else
+
+Until a domain points at the box, the app is only on `localhost` — a colleague
+on another network cannot open it at all. `scripts/tunnel.sh` publishes the
+running process on a public HTTPS address:
+
+```bash
+scripts/tunnel.sh
+```
+
+It prints the address, checks that `/auth` answers through it, and re-registers
+the Telegram webhook, which stores an absolute URL and would otherwise keep
+pointing at a tunnel that no longer exists.
+
+The address is issued per run and changes on every restart. That is the price of
+a tunnel that needs no Cloudflare account and no DNS change — and no DNS change
+is the point: `steinheim-eg.com` is the live company website and the catalogue
+this system reads as its source of truth. Repointing it at a laptop would take
+the shop down and empty the Truth Layer in the same move.
+
+For an address that survives restarts, create a Cloudflare account, add a domain
+that is _not_ the company site (a subdomain such as `ops.example.com` is enough),
+and run `cloudflared tunnel create`. Then set `APP_URL` and re-run
+`./scripts/go-live.sh`.
+
+Nothing about the tunnel weakens the automation endpoints: they answer `401`
+through it exactly as they do locally, because the guard checks the shared
+secret rather than the network the request arrived on.
