@@ -118,3 +118,38 @@ reads; it never calls `generate-today`, which would spend AI credits.
 
 W01 stays deliberately small: cron → `generate-today` → check → Telegram notify.
 Publishing is a separate workflow. Do not merge them.
+
+
+---
+
+## If Vercel is not an option
+
+Nothing in this application depends on Vercel. Nitro builds the same source for
+several targets, all verified from this repository:
+
+| Target | Builds | Suits this app? |
+| --- | --- | --- |
+| `node-server` | ✅ | **yes** — no request timeout |
+| `cloudflare-module` | ✅ | pages yes, generation no |
+| `netlify` | ✅ | pages yes, generation no |
+| `static` | ❌ | it is an SSR app with server routes |
+
+The constraint that decides it: **a generation run measured 3m57s end to end.**
+Cloudflare Workers and Netlify Functions cut a request long before that, so the
+daily cycle would fail on both while the dashboard looked fine. A plain Node
+process has no such ceiling.
+
+So the recommended home is the machine that already has to exist for n8n:
+
+```bash
+cd infra/selfhost
+cp .env.selfhost.example .env      # same values as the Vercel dashboard
+docker compose up -d --build
+```
+
+That brings up the app on `:3000`, n8n on `:5678`, and Postgres for n8n's own
+state. n8n reaches the app at `http://app:3000` over the internal network, so
+the automation secret never crosses the public internet on that hop.
+
+Point a domain at `:3000` behind any reverse proxy for TLS, then set `APP_URL`
+and re-run `./scripts/go-live.sh` to move the Telegram webhook across.

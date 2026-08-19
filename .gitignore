@@ -43,3 +43,5 @@ infra/n8n/workflows/ready/
 
 # generated env bundle for the Vercel dashboard
 .env.vercel
+
+infra/selfhost/.env
