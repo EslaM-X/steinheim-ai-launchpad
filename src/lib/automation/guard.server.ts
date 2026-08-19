@@ -64,6 +64,31 @@ export interface AutomationContext {
  * outcome so a retry with the same idempotency key replays it instead of
  * repeating the work.
  */
+/**
+ * Turns anything a handler can throw into a readable line.
+ *
+ * Provider SDKs reject with plain objects rather than Errors, and String() on
+ * one of those yields "[object Object]" — a 500 that tells the operator nothing
+ * about what actually broke.
+ */
+function describeError(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  if (typeof error === "string") return error;
+  if (error && typeof error === "object") {
+    const record = error as Record<string, unknown>;
+    for (const key of ["message", "error", "detail", "description"]) {
+      const value = record[key];
+      if (typeof value === "string" && value) return value;
+    }
+    try {
+      return JSON.stringify(error).slice(0, 500);
+    } catch {
+      return "Unserialisable error";
+    }
+  }
+  return "Internal error";
+}
+
 export async function withAutomationGuard(
   request: Request,
   endpoint: string,
@@ -75,7 +100,7 @@ export async function withAutomationGuard(
     // Without this, a throw here (a missing service-role key, a dead database)
     // escapes to the SSR error page and n8n receives HTML instead of JSON.
     console.error(`[automation:${endpoint}] request failed`, error);
-    return json({ error: error instanceof Error ? error.message : "Internal error" }, 500);
+    return json({ error: describeError(error) }, 500);
   }
 }
 
@@ -176,7 +201,8 @@ async function runGuarded(
       .json()
       .catch(() => null);
   } catch (error) {
-    payload = { error: error instanceof Error ? error.message : "Internal error" };
+    console.error(`[automation:${endpoint}] handler threw`, error);
+    payload = { error: describeError(error) };
     response = json(payload, 500);
     status = 500;
   }

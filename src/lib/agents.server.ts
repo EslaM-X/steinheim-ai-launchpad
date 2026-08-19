@@ -24,6 +24,25 @@ function describeStreamError(error: unknown, streamError: unknown): Error {
     if (status === 429) return new Error("AI gateway rate limit (429). Wait a moment and retry.");
     return new Error(`${source.message}${status ? ` (HTTP ${status})` : ""}${detail}`);
   }
+  // Gateways reject with plain objects as often as with Errors. String() on one
+  // of those is "[object Object]", which turns a diagnosable failure into a
+  // mystery, so the object is unwrapped before it is stringified.
+  if (source && typeof source === "object") {
+    const record = source as Record<string, unknown>;
+    for (const key of ["message", "error", "detail", "reason"]) {
+      const value = record[key];
+      if (typeof value === "string" && value) return new Error(value);
+      if (value && typeof value === "object") {
+        const nested = (value as Record<string, unknown>)["message"];
+        if (typeof nested === "string" && nested) return new Error(nested);
+      }
+    }
+    try {
+      return new Error(JSON.stringify(source).slice(0, 500));
+    } catch {
+      return new Error("The AI gateway returned an error that could not be read.");
+    }
+  }
   return new Error(String(source));
 }
 

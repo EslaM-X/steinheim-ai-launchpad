@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { useI18n } from "@/lib/i18n";
+import { catalogSourceStatus, syncSteinheimCatalog } from "@/lib/catalog.functions";
 import { categoriesQuery, productsQuery } from "@/lib/queries";
 
 export const Route = createFileRoute("/_authenticated/products")({
@@ -38,6 +39,42 @@ function ProductsPage() {
   const qc = useQueryClient();
   const products = useQuery(productsQuery);
   const categories = useQuery(categoriesQuery);
+
+  const source = useQuery({
+    queryKey: ["catalog-source"],
+    queryFn: () => catalogSourceStatus(),
+  });
+
+  // The sync opens one page per product, so it is slow by nature. The button
+  // stays disabled for the whole run rather than letting a second click start
+  // a competing pass over the same catalogue.
+  const sync = useMutation({
+    mutationFn: () => syncSteinheimCatalog(),
+    onSuccess: (r) => {
+      const parts = [
+        `${r.scanned} ${lang === "ar" ? "منتج" : "products"}`,
+        `+${r.created}`,
+        `~${r.updated}`,
+        `=${r.unchanged}`,
+      ];
+      if (r.archived) parts.push(`${lang === "ar" ? "مؤرشف" : "archived"} ${r.archived}`);
+      toast.success(lang === "ar" ? "تمت مزامنة الكتالوج" : "Catalogue synced", {
+        description: `${parts.join(" · ")} — ${r.claimsWritten} claims`,
+      });
+      if (r.failed.length) {
+        toast.warning(
+          lang === "ar" ? `${r.failed.length} منتج لم يُقرأ` : `${r.failed.length} products failed`,
+          { description: r.failed.slice(0, 3).join(" · ") },
+        );
+      }
+      void qc.invalidateQueries({ queryKey: ["products"] });
+      void source.refetch();
+    },
+    onError: (e) =>
+      toast.error(lang === "ar" ? "فشلت المزامنة" : "Sync failed", {
+        description: e instanceof Error ? e.message : String(e),
+      }),
+  });
 
   const [name, setName] = useState("");
   const [nameAr, setNameAr] = useState("");
@@ -72,9 +109,29 @@ function ProductsPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="font-serif text-3xl">{t("products")}</h1>
-        <p className="mt-1 text-sm text-muted-foreground">{t("catalogueSub")}</p>
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <h1 className="font-serif text-3xl">{t("products")}</h1>
+          <p className="mt-1 text-sm text-muted-foreground">{t("catalogueSub")}</p>
+        </div>
+        <div className="flex flex-col items-start gap-1 sm:items-end">
+          <Button onClick={() => sync.mutate()} disabled={sync.isPending}>
+            {sync.isPending
+              ? lang === "ar"
+                ? "جارٍ قراءة الموقع الرسمي…"
+                : "Reading the official site…"
+              : lang === "ar"
+                ? "مزامنة كتالوج Steinheim"
+                : "Sync Steinheim Catalog"}
+          </Button>
+          <p className="text-xs text-muted-foreground">
+            {source.data?.lastSyncAt
+              ? `${lang === "ar" ? "آخر مزامنة" : "Last synced"} ${new Date(source.data.lastSyncAt).toLocaleString(lang === "ar" ? "ar-EG" : "en-GB")}`
+              : lang === "ar"
+                ? "لم تتم أي مزامنة بعد"
+                : "Never synced"}
+          </p>
+        </div>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">

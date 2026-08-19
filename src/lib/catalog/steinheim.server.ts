@@ -31,6 +31,16 @@ export interface NormalisedProduct {
   url: string;
   name: string;
   nameAr: string | null;
+  description: string | null;
+  /**
+   * Per-product technical specifications, when the page publishes them as
+   * product fields. It currently does not: the payload carries a shared
+   * specification vocabulary for the whole site ("Brass body", "Sedal ·
+   * Neoperl", "1/2 inch · 0.5-5 bar") rather than values attached to a SKU.
+   * Attributing a site-wide phrase to one product would be an inference, so
+   * this stays null until the page says otherwise.
+   */
+  specs: Record<string, string> | null;
   collection: string | null;
   images: string[];
   variants: Variant[];
@@ -97,6 +107,16 @@ function shortAvailability(value: unknown): string | null {
   return value.split("/").pop() ?? null;
 }
 
+function decodeEntities(value: string): string {
+  return value
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#0?39;/g, "'")
+    .replace(/&nbsp;/g, " ");
+}
+
 export async function fetchProduct(baseUrl: string, slug: string): Promise<NormalisedProduct> {
   const url = `${baseUrl}/en/products/${slug}`;
   const html = await fetchText(url);
@@ -121,6 +141,12 @@ export async function fetchProduct(baseUrl: string, slug: string): Promise<Norma
     .map((i) => (i.startsWith("http") ? i : `${baseUrl}${i}`));
 
   const name = String(product["name"] ?? slug);
+
+  // The page's own meta description is product-specific, unlike the shared
+  // marketing vocabulary elsewhere in the payload. It is stored as prose on
+  // the product, never promoted to a claim.
+  const descMatch = html.match(/<meta[^>]+name=["']description["'][^>]+content=["']([^"']*)["']/i);
+  const description = descMatch?.[1] ? decodeEntities(descMatch[1]).trim() || null : null;
   // The collection is the first word of the product name on this catalogue —
   // derived, not invented, and only used for grouping.
   const collection = name.split(" ")[0] ?? null;
@@ -138,13 +164,15 @@ export async function fetchProduct(baseUrl: string, slug: string): Promise<Norma
   }
 
   const primary = variants[0] ?? null;
-  const payload = JSON.stringify({ name, nameAr, images, variants });
+  const payload = JSON.stringify({ name, nameAr, description, images, variants });
 
   return {
     slug,
     url,
     name,
     nameAr,
+    description,
+    specs: null,
     collection,
     images,
     variants,
@@ -211,6 +239,7 @@ export interface SyncSummary {
   failed: Array<{ slug: string; error: string }>;
   claimsWritten: number;
   claimsStale: number;
+  archived?: number;
 }
 
 /**
@@ -241,6 +270,7 @@ export async function syncCatalog(
     failed: [],
     claimsWritten: 0,
     claimsStale: 0,
+    archived: 0,
   };
 
   for (const slug of slugs) {
@@ -273,6 +303,8 @@ export async function syncCatalog(
         availability: product.availability,
         variants: product.variants as never,
         images: product.images as never,
+        description: product.description,
+        technical_specs: (product.specs ?? {}) as never,
         content_fingerprint: product.fingerprint,
         synced_at: new Date().toISOString(),
         // The catalogue proves the product exists and what it costs. It does not
@@ -338,6 +370,22 @@ export async function syncCatalog(
         error: error instanceof Error ? error.message : String(error),
       });
     }
+  }
+
+  // A product that disappeared from the catalogue is archived, never deleted:
+  // content already published against it still needs its source to exist.
+  // slugs.length is part of the guard on purpose: an empty listing (a site
+  // outage, a moved catalogue path) would otherwise archive the whole
+  // catalogue in one pass.
+  if (!options?.limit && summary.failed.length === 0 && slugs.length > 0) {
+    const { data: archived } = await supabase
+      .from("products")
+      .update({ is_active: false, availability: "Discontinued" })
+      .eq("source_id", source.id)
+      .not("source_slug", "in", `(${slugs.map((s) => `"${s}"`).join(",")})`)
+      .eq("is_active", true)
+      .select("id");
+    summary.archived = archived?.length ?? 0;
   }
 
   await supabase

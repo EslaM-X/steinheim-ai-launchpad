@@ -1,0 +1,133 @@
+{
+  "name": "W04 — Catalogue sync",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": { "interval": [{ "field": "cronExpression", "expression": "0 4 * * *" }] }
+      },
+      "id": "w04-cron",
+      "name": "04:00 Cairo",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [-200, 0],
+      "notes": "Runs before W01 at 09:00 so the day's content is written against a catalogue read this morning, not yesterday's."
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "__APP_URL__/api/public/automation/catalog-sync",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "x-automation-timestamp", "value": "={{ Date.now() }}" },
+            { "name": "x-automation-nonce", "value": "={{ $execution.id }}-{{ Date.now() }}" }
+          ]
+        },
+        "options": {
+          "timeout": 900000,
+          "response": { "response": { "neverError": true, "fullResponse": true } }
+        }
+      },
+      "id": "w04-sync",
+      "name": "Sync catalogue",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [40, 0],
+      "notes": "One page fetch per product, so the timeout is 15 minutes rather than the usual 5.",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_WITH_CREDENTIAL_ID",
+          "name": "Steinheim automation secret"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "version": 2 },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.statusCode }}",
+              "rightValue": 200,
+              "operator": { "type": "number", "operation": "equals" }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "w04-check",
+      "name": "Succeeded?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [280, 0]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "version": 2 },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.body.created + $json.body.updated + $json.body.archived + $json.body.failed.length }}",
+              "rightValue": 0,
+              "operator": { "type": "number", "operation": "gt" }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "w04-changed",
+      "name": "Anything change?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [520, -100],
+      "notes": "A sync that found nothing new is the normal case. Reporting it every morning trains people to ignore the channel, so only real changes are announced."
+    },
+    {
+      "parameters": {
+        "chatId": "__TELEGRAM_CHAT_ID__",
+        "text": "=📦 <b>Catalogue updated</b>\n\nScanned: {{ $json.body.scanned }}\nNew: {{ $json.body.created }} · Changed: {{ $json.body.updated }} · Unchanged: {{ $json.body.unchanged }}\nArchived: {{ $json.body.archived }}\n\nClaims written: {{ $json.body.claimsWritten }}\nClaims retired: {{ $json.body.claimsStale }}\n{{ $json.body.failed.length ? '\n⚠️ Failed: ' + $json.body.failed.map(f => f.slug).join(', ') : '' }}",
+        "additionalFields": { "parse_mode": "HTML" }
+      },
+      "id": "w04-notify",
+      "name": "Report changes",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [760, -180],
+      "credentials": {
+        "telegramApi": { "id": "REPLACE_WITH_CREDENTIAL_ID", "name": "Steinheim bot" }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "__TELEGRAM_CHAT_ID__",
+        "text": "=🔴 <b>Catalogue sync failed</b>\n\nHTTP {{ $json.statusCode }}\n{{ JSON.stringify($json.body).slice(0, 500) }}\n\nThe Truth Layer still holds the last good snapshot — nothing was deleted.",
+        "additionalFields": { "parse_mode": "HTML" }
+      },
+      "id": "w04-alert",
+      "name": "Alert Telegram",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [520, 100],
+      "credentials": {
+        "telegramApi": { "id": "REPLACE_WITH_CREDENTIAL_ID", "name": "Steinheim bot" }
+      }
+    }
+  ],
+  "connections": {
+    "04:00 Cairo": { "main": [[{ "node": "Sync catalogue", "type": "main", "index": 0 }]] },
+    "Sync catalogue": { "main": [[{ "node": "Succeeded?", "type": "main", "index": 0 }]] },
+    "Succeeded?": {
+      "main": [
+        [{ "node": "Anything change?", "type": "main", "index": 0 }],
+        [{ "node": "Alert Telegram", "type": "main", "index": 0 }]
+      ]
+    },
+    "Anything change?": {
+      "main": [[{ "node": "Report changes", "type": "main", "index": 0 }], []]
+    }
+  },
+  "settings": { "executionOrder": "v1", "timezone": "Africa/Cairo" },
+  "pinData": {}
+}
