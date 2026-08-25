@@ -12,6 +12,7 @@ not in *Who calls what* either, nothing consumes it.
 | --- | --- | --- | --- |
 | `/api/public/automation/analytics` | POST | `x-automation-secret`<br/>n8n | Ingests a metrics snapshot for a published post. |
 | `/api/public/automation/approved` | GET | `x-automation-secret`<br/>n8n | The publish queue, and the reconciliation queue beside it. |
+| `/api/public/automation/build-plates` | POST | `x-automation-secret`<br/>n8n | Builds the canonical plate for every product in every finish it is sold in. |
 | `/api/public/automation/catalog-sync` | POST | `x-automation-secret`<br/>n8n | Reads the official catalogue and writes it into the Truth Layer. |
 | `/api/public/automation/generate-today` | POST | `x-automation-secret`<br/>n8n | Runs the daily content cycle. |
 | `/api/public/automation/published` | POST | `x-automation-secret`<br/>n8n | Records the outcome of a publish attempt, and is the only way a post leaves the `publishing` state. |

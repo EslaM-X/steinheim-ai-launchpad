@@ -1,4 +1,5 @@
 import { buildCampaignAssets, type CampaignAssets } from "./index";
+import { platePath } from "./plates.server";
 
 /**
  * Produces a campaign's assets for one product, straight from the catalogue.
@@ -79,12 +80,27 @@ export async function renderCampaignForProduct(
     );
   }
 
+  // A plate, when one exists, is the canonical image of this product in this
+  // finish: backdrop already removed, colour already taken from the
+  // specification. Falling back to the raw photograph keeps a product whose
+  // plates have not been built from dropping out of a campaign.
+  const withPlates = await Promise.all(
+    variants.map(async (variant) => {
+      const url = supabase.storage
+        .from(BUCKET)
+        .getPublicUrl(platePath(String(product.source_slug ?? product.id), variant.finish))
+        .data.publicUrl;
+      const exists = await head(url);
+      return { ...variant, plateUrl: exists ? url : null };
+    }),
+  );
+
   const wallMounted = /wall/i.test(String(product.installation_type ?? product.name ?? ""));
 
   const assets: CampaignAssets = await buildCampaignAssets({
     productName: String(product.name),
     sku: product.sku ? String(product.sku) : null,
-    variants,
+    variants: withPlates,
     palette: request.palette,
     format: request.format,
     motion: request.motion,
@@ -119,6 +135,16 @@ export async function renderCampaignForProduct(
     video,
     warnings: assets.warnings,
   };
+}
+
+/** Whether a public object is actually there, without downloading it. */
+async function head(url: string): Promise<boolean> {
+  try {
+    const res = await fetch(url, { method: "HEAD", signal: AbortSignal.timeout(15_000) });
+    return res.ok;
+  } catch {
+    return false;
+  }
 }
 
 async function put(supabase: DB, path: string, body: Buffer, contentType: string): Promise<string> {

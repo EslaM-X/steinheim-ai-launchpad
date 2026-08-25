@@ -21,7 +21,7 @@ export interface CampaignAssetRequest {
   productName: string;
   sku: string | null;
   /** Official photograph per finish, in the order they should appear. */
-  variants: Array<{ finish: string; imageUrl: string }>;
+  variants: Array<{ finish: string; imageUrl: string; plateUrl?: string | null }>;
   palette: string;
   /** Wall-mounted parts get a wall and no contact shadow. */
   wallMounted?: boolean;
@@ -74,6 +74,7 @@ export async function buildCampaignAssets(request: CampaignAssetRequest): Promis
     try {
       composition = await composeProductScene({
         imageUrl: variant.imageUrl,
+        plateUrl: variant.plateUrl ?? null,
         finish: variant.finish,
         mood: `studio:${request.palette}`,
         wallMounted: request.wallMounted === true,

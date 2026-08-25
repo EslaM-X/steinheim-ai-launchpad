@@ -21,7 +21,11 @@ type DB = {
   ) => PromiseLike<{ data: unknown; error: unknown }>;
 };
 
-export type JobKind = "catalog_sync" | "daily_generation" | "campaign_render";
+export type JobKind =
+  | "catalog_sync"
+  | "daily_generation"
+  | "campaign_render"
+  | "plate_library";
 
 export interface JobProgress {
   phase?: string;

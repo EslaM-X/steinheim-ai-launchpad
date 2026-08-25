@@ -39,6 +39,14 @@ export interface CompositionRequest {
   wallMounted?: boolean;
   /** Words to set over the frame. Omitted leaves it clean. */
   caption?: Caption;
+  /**
+   * A stored plate for this product and finish.
+   *
+   * When present it is used as-is: it has already had its backdrop removed and
+   * its colour taken from the finish specification, so re-running either step
+   * would only cost time and re-quantise the pixels.
+   */
+  plateUrl?: string | null;
 }
 
 export interface Composition {
@@ -55,7 +63,7 @@ export interface Composition {
 export async function composeProductScene(request: CompositionRequest): Promise<Composition> {
   const studio = request.mood.startsWith("studio:");
   const [productImage, background] = await Promise.all([
-    fetchProduct(request.imageUrl),
+    fetchProduct(request.plateUrl ?? request.imageUrl),
     studio
       ? buildBackdrop({
           palette: request.mood.slice("studio:".length),
@@ -76,17 +84,35 @@ export async function composeProductScene(request: CompositionRequest): Promise<
         }),
   ]);
 
-  const cutout = await cutOutProduct(productImage);
-  const verdict = verifyFinish(request.finish, cutout.measurement);
+  let cutout: Cutout;
+  let product: Buffer;
+  let platingNote: string;
 
-  // Replating runs every time, not only when the photograph is measurably
-  // wrong. The catalogue's images were generated rather than photographed and
-  // disagree with each other by a factor of five inside a single finish name;
-  // correcting only the outliers would still ship two different golds in one
-  // set. The verdict is kept because it is worth reporting which photographs
-  // were furthest out, but it no longer decides whether to act.
-  const plating = await replate(cutout.png, request.finish);
-  const product = plating.png;
+  if (request.plateUrl) {
+    // A plate arrives cut out and plated. Only its dimensions are needed.
+    const meta = await sharp(productImage).metadata();
+    cutout = {
+      png: productImage,
+      width: meta.width ?? 0,
+      height: meta.height ?? 0,
+      measurement: null,
+      coverage: 1,
+    };
+    product = productImage;
+    platingNote = "stored plate used as supplied";
+  } else {
+    cutout = await cutOutProduct(productImage);
+    // Replating runs every time, not only when the photograph is measurably
+    // wrong. The catalogue's images were generated rather than photographed and
+    // disagree with each other by a factor of five inside a single finish name;
+    // correcting only the outliers would still ship two different golds in one
+    // set.
+    const plating = await replate(cutout.png, request.finish);
+    product = plating.png;
+    platingNote = plating.note;
+  }
+
+  const verdict = verifyFinish(request.finish, cutout.measurement);
 
   return {
     png: await assemble(background, product, cutout, request),
@@ -94,8 +120,8 @@ export async function composeProductScene(request: CompositionRequest): Promise<
     height: request.height,
     finish: verdict,
     scene: { prompt: background.prompt, seed: background.seed, source: background.source },
-    finishCorrected: plating.replated,
-    platingNote: plating.note,
+    finishCorrected: true,
+    platingNote,
   };
 }
 
