@@ -25,7 +25,13 @@ export interface Caption {
   subtitle: string | null;
   /** Where the block sits. */
   placement: "top-left" | "bottom-left" | "bottom-centre";
-  /** Light text for dark palettes, dark text for light ones. */
+  /**
+   * Light text for dark grounds, dark text for light ones.
+   *
+   * Ignored when the ground is a photograph: the value is measured from the
+   * pixels the caption will actually sit on, because a photograph is not one
+   * tone and a caller cannot know in advance what its lower third looks like.
+   */
   onDark: boolean;
 }
 
@@ -64,8 +70,15 @@ export async function applyCaption(
     return frame;
   }
 
-  const ink = caption.onDark ? "#F4F1EA" : "#141414";
-  const rule = caption.onDark ? "rgba(244,241,234,0.42)" : "rgba(20,20,20,0.32)";
+  // Measured, not assumed. Set over a photograph, light type on a light
+  // marble wall is unreadable — which is exactly what the first version
+  // produced, because the caller had passed onDark for a dark palette and the
+  // background then came from a photo bank instead.
+  const band = await measureCaptionBand(frame, width, height, caption.placement);
+  const onDark = band === null ? caption.onDark : band < 0.55;
+
+  const ink = onDark ? "#F4F1EA" : "#141414";
+  const rule = onDark ? "rgba(244,241,234,0.42)" : "rgba(20,20,20,0.32)";
 
   const titleSize = Math.round(width * 0.062);
   const subSize = Math.round(width * 0.021);
@@ -83,8 +96,21 @@ export async function applyCaption(
   const escape = (value: string) =>
     value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
+  // A scrim under the type. Every piece of advertising that sets words over
+  // photography has one, because no photograph is evenly toned enough to carry
+  // text on its own — and a caption that competes with a busy wall is the
+  // fastest way to look amateur.
+  const scrimTop = caption.placement === "top-left" ? 0 : Math.round(height * 0.62);
+  const scrimHeight = Math.round(height * 0.38);
+  const scrim = onDark ? "rgba(0,0,0,0.62)" : "rgba(255,255,255,0.68)";
+  const scrimFade = onDark ? "rgba(0,0,0,0)" : "rgba(255,255,255,0)";
+
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}">
   <defs>
+    <linearGradient id="scrim" x1="0" y1="${caption.placement === "top-left" ? 1 : 0}" x2="0" y2="${caption.placement === "top-left" ? 0 : 1}">
+      <stop offset="0%" stop-color="${scrimFade}"/>
+      <stop offset="100%" stop-color="${scrim}"/>
+    </linearGradient>
     <style>
       @font-face { font-family: "SteinheimDisplay"; src: url(data:font/ttf;base64,${loaded.display}) format("truetype"); }
       @font-face { font-family: "SteinheimBody"; src: url(data:font/ttf;base64,${loaded.body}) format("truetype"); }
@@ -92,6 +118,7 @@ export async function applyCaption(
       .s { font-family: "SteinheimBody", "Inter", sans-serif; font-size: ${subSize}px; fill: ${ink}; letter-spacing: ${(subSize * 0.16).toFixed(2)}px; opacity: 0.78; }
     </style>
   </defs>
+  <rect x="0" y="${scrimTop}" width="${width}" height="${scrimHeight}" fill="url(#scrim)"/>
   <!-- The rule clears the display face's descenders: at 1.0x the subtitle size
        it cut straight through the tail of a lowercase y. -->
   <text x="${anchor.x}" y="${baseY}" class="t" text-anchor="${anchor.align}">${escape(caption.title)}</text>
@@ -107,4 +134,38 @@ export async function applyCaption(
     .composite([{ input: Buffer.from(svg), top: 0, left: 0 }])
     .png()
     .toBuffer();
+}
+
+/**
+ * Measures how bright the strip the caption will occupy actually is.
+ *
+ * Only that strip: a frame can be dark overall and still have a bright floor
+ * exactly where the words go.
+ */
+async function measureCaptionBand(
+  frame: Buffer,
+  width: number,
+  height: number,
+  placement: Caption["placement"],
+): Promise<number | null> {
+  try {
+    const top = placement === "top-left" ? 0 : Math.round(height * 0.7);
+    const bandHeight = Math.max(1, Math.round(height * 0.28));
+    const { data, info } = await sharp(frame)
+      .extract({ left: 0, top, width, height: Math.min(bandHeight, height - top) })
+      .removeAlpha()
+      .raw()
+      .toBuffer({ resolveWithObject: true });
+
+    let sum = 0;
+    let n = 0;
+    for (let i = 0; i < info.width * info.height; i++) {
+      const s = i * info.channels;
+      sum += 0.2126 * data[s]! + 0.7152 * data[s + 1]! + 0.0722 * data[s + 2]!;
+      n += 1;
+    }
+    return n === 0 ? null : sum / n / 255;
+  } catch {
+    return null;
+  }
 }

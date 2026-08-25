@@ -85,7 +85,10 @@ export async function composeProductScene(request: CompositionRequest): Promise<
                   prompt: `${photo.source}: ${request.mood.slice("photo:".length)}`,
                   seed: request.seed,
                   source: photo.source,
-                  credit: `Photograph by ${photo.photographer} — ${photo.sourceUrl} (${photo.licence})`,
+                  // The licence's own wording, stored verbatim: an attribution
+                  // paraphrased into something shorter stops satisfying the
+                  // condition it was written to satisfy.
+                  credit: photo.credit,
                 }
               : null,
           )
