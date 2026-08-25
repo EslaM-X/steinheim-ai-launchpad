@@ -1524,6 +1524,140 @@ export type Database = {
         }
         Relationships: []
       }
+      scene_references: {
+        Row: {
+          analysis: Json | null
+          created_at: string
+          description: string | null
+          id: string
+          image_url: string
+          scene_type: string | null
+          status: string
+          storage_path: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          analysis?: Json | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url: string
+          scene_type?: string | null
+          status?: string
+          storage_path?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          analysis?: Json | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string
+          scene_type?: string | null
+          status?: string
+          storage_path?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      scene_replacements: {
+        Row: {
+          created_at: string
+          detected_product: Json
+          id: string
+          matched_finish: string | null
+          matched_product_id: string | null
+          position: Json
+          scene_ref_id: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          detected_product: Json
+          id?: string
+          matched_finish?: string | null
+          matched_product_id?: string | null
+          position: Json
+          scene_ref_id: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          detected_product?: Json
+          id?: string
+          matched_finish?: string | null
+          matched_product_id?: string | null
+          position?: Json
+          scene_ref_id?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scene_replacements_matched_product_id_fkey"
+            columns: ["matched_product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scene_replacements_scene_ref_id_fkey"
+            columns: ["scene_ref_id"]
+            isOneToOne: false
+            referencedRelation: "scene_references"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      scene_results: {
+        Row: {
+          created_at: string
+          format: string
+          id: string
+          meta: Json | null
+          product_count: number
+          result_url: string | null
+          scene_ref_id: string
+          storage_path: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          format?: string
+          id?: string
+          meta?: Json | null
+          product_count?: number
+          result_url?: string | null
+          scene_ref_id: string
+          storage_path?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          format?: string
+          id?: string
+          meta?: Json | null
+          product_count?: number
+          result_url?: string | null
+          scene_ref_id?: string
+          storage_path?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scene_results_scene_ref_id_fkey"
+            columns: ["scene_ref_id"]
+            isOneToOne: false
+            referencedRelation: "scene_references"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       shots: {
         Row: {
           ai_artifact_score: number | null

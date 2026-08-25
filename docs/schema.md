@@ -2,7 +2,7 @@
 
 # Database inventory
 
-28 tables across 8 migrations, generated from
+31 tables across 9 migrations, generated from
 `supabase/migrations/`. The authoritative list lives here because this file
 is regenerated — hand-written counts go stale, this cannot.
 
@@ -31,6 +31,9 @@ is regenerated — hand-written counts go stale, this cannot.
 | `products` | `20260813224703_12b329df-ae4a-40b1-ac4a-635a7726c25f.sql` |
 | `profiles` | `20260813224703_12b329df-ae4a-40b1-ac4a-635a7726c25f.sql` |
 | `projects` | `20260813224703_12b329df-ae4a-40b1-ac4a-635a7726c25f.sql` |
+| `scene_references` | `20260825160000_scene_replacement.sql` |
+| `scene_replacements` | `20260825160000_scene_replacement.sql` |
+| `scene_results` | `20260825160000_scene_replacement.sql` |
 | `shots` | `20260814010847_27572927-f82b-4a18-95f9-cf8e2d7d4759.sql` |
 | `social_accounts` | `20260814200000_phase_e2_social_core.sql` |
 | `storyboards` | `20260814010847_27572927-f82b-4a18-95f9-cf8e2d7d4759.sql` |

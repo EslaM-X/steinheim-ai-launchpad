@@ -10,7 +10,7 @@
 
 ALTER TABLE public.jobs DROP CONSTRAINT IF EXISTS jobs_kind_check;
 ALTER TABLE public.jobs
-  ADD CONSTRAINT jobs_kind_check CHECK (kind IN ('catalog_sync', 'daily_generation'));
+  ADD CONSTRAINT jobs_kind_check CHECK (kind IN ('catalog_sync', 'daily_generation', 'campaign_render'));
 
 -- The single-active index is already per-kind, so a generation and a sync can
 -- still run at the same time. That is intended: they touch different tables and

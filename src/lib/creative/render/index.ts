@@ -28,7 +28,7 @@ export interface CampaignAssetRequest {
   /** Set the product's name, SKU and finish over each frame. */
   caption?: boolean;
   /** 1080 square for feed, 1080×1920 for stories and reels. */
-  format: "square" | "story" | "landscape";
+  format: "square" | "story" | "landscape" | "square-4k" | "story-4k" | "landscape-4k";
   /** Cut a video as well as the stills. */
   motion: boolean;
 }
@@ -59,6 +59,9 @@ const FORMATS: Record<CampaignAssetRequest["format"], { width: number; height: n
   square: { width: 1080, height: 1080 },
   story: { width: 1080, height: 1920 },
   landscape: { width: 1350, height: 1080 },
+  "square-4k": { width: 2160, height: 2160 },
+  "story-4k": { width: 2160, height: 3840 },
+  "landscape-4k": { width: 2700, height: 2160 },
 };
 
 export async function buildCampaignAssets(request: CampaignAssetRequest): Promise<CampaignAssets> {

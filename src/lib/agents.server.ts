@@ -143,21 +143,34 @@ export async function genObject<T extends z.ZodType>(args: {
   schema: T;
   system: string;
   prompt: string;
+  images?: string[];
 }): Promise<z.infer<T>> {
   return withModelFallback((modelId) => genObjectWith(modelId, args));
 }
 
 async function genObjectWith<T extends z.ZodType>(
   modelId: string,
-  args: { schema: T; system: string; prompt: string },
+  args: { schema: T; system: string; prompt: string; images?: string[] },
 ): Promise<z.infer<T>> {
+  const msgs = args.images?.length
+    ? [
+        { role: "system" as const, content: args.system },
+        {
+          role: "user" as const,
+          content: [
+            ...args.images.map((url) => ({ type: "image" as const, image: url })),
+            { type: "text" as const, text: args.prompt },
+          ],
+        },
+      ]
+    : undefined;
+
   if (streamingDisabled()) {
     try {
       const { object } = await generateObject({
         model: getModel(modelId),
         schema: args.schema,
-        system: args.system,
-        prompt: args.prompt,
+        ...(msgs ? { messages: msgs } : { system: args.system, prompt: args.prompt }),
       });
       return object as z.infer<T>;
     } catch (error) {
@@ -169,8 +182,7 @@ async function genObjectWith<T extends z.ZodType>(
   try {
     const result = streamText({
       model: getModel(modelId),
-      system: args.system,
-      prompt: args.prompt,
+      ...(msgs ? { messages: msgs } : { system: args.system, prompt: args.prompt }),
       output: Output.object({ schema: args.schema }),
       onError: ({ error }) => {
         streamError = error;
@@ -192,17 +204,29 @@ async function genObjectWith<T extends z.ZodType>(
   }
 }
 
-export async function genText(args: { system: string; prompt: string }) {
+export async function genText(args: { system: string; prompt: string; images?: string[] }) {
   return withModelFallback((modelId) => genTextWith(modelId, args));
 }
 
-async function genTextWith(modelId: string, args: { system: string; prompt: string }) {
+async function genTextWith(modelId: string, args: { system: string; prompt: string; images?: string[] }) {
+  const msgs = args.images?.length
+    ? [
+        { role: "system" as const, content: args.system },
+        {
+          role: "user" as const,
+          content: [
+            ...args.images.map((url) => ({ type: "image" as const, image: url })),
+            { type: "text" as const, text: args.prompt },
+          ],
+        },
+      ]
+    : undefined;
+
   if (streamingDisabled()) {
     try {
       const { text } = await generateText({
         model: getModel(modelId),
-        system: args.system,
-        prompt: args.prompt,
+        ...(msgs ? { messages: msgs } : { system: args.system, prompt: args.prompt }),
       });
       return text;
     } catch (error) {
@@ -214,8 +238,7 @@ async function genTextWith(modelId: string, args: { system: string; prompt: stri
   try {
     const result = streamText({
       model: getModel(modelId),
-      system: args.system,
-      prompt: args.prompt,
+      ...(msgs ? { messages: msgs } : { system: args.system, prompt: args.prompt }),
       onError: ({ error }) => {
         streamError = error;
       },

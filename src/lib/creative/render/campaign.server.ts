@@ -26,7 +26,7 @@ type DB = {
 export interface RenderCampaignRequest {
   productId: string;
   palette: string;
-  format: "square" | "story" | "landscape";
+  format: "square" | "story" | "landscape" | "square-4k" | "story-4k" | "landscape-4k";
   motion: boolean;
   /** Defaults on. Off produces clean plates for a designer to set type over. */
   caption?: boolean;

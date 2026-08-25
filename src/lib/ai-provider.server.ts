@@ -66,3 +66,47 @@ export async function generateImage(apiKey: string, prompt: string) {
   if (!url) throw new Error("The model returned no image.");
   return url;
 }
+
+/**
+ * Edits an image using a vision+image model (e.g. Gemini 3.1 Flash Image).
+ * Sends a source image alongside a text instruction; returns the edited image
+ * as a data URL.
+ */
+export async function editImage(
+  apiKey: string,
+  sourceImageUrl: string,
+  instruction: string,
+): Promise<string> {
+  const response = await fetch(`${getBaseUrl()}/chat/completions`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model: process.env["AI_IMAGE_MODEL"] ?? "google/gemini-3.1-flash-image",
+      modalities: ["image", "text"],
+      messages: [
+        {
+          role: "user",
+          content: [
+            { type: "image_url", image_url: { url: sourceImageUrl } },
+            { type: "text", text: instruction },
+          ],
+        },
+      ],
+    }),
+  });
+
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(`Image editing failed (${response.status}): ${text.slice(0, 300)}`);
+  }
+
+  const payload = (await response.json()) as {
+    choices?: Array<{ message?: { images?: Array<{ image_url?: { url?: string } }> } }>;
+  };
+  const url = payload.choices?.[0]?.message?.images?.[0]?.image_url?.url;
+  if (!url) throw new Error("The model returned no edited image.");
+  return url;
+}
