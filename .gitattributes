@@ -1,0 +1,16 @@
+# Line endings are part of the contract: prettier enforces LF, and
+# scripts/sync/check.mjs compares generated docs byte-for-byte. A Windows
+# checkout with core.autocrlf=true would break both, so every text file is
+# pinned to LF regardless of local git config.
+* text=auto eol=lf
+
+# Windows-only artifacts keep CRLF where their toolchain demands it.
+*.bat text eol=crlf
+*.ps1 text eol=crlf
+
+# Never touch these.
+*.png binary
+*.jpg binary
+*.ico binary
+*.woff binary
+*.woff2 binary
