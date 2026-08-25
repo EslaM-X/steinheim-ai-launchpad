@@ -21,3 +21,7 @@ jobs:
       - run: npm run typecheck
       - run: npm run lint
       - run: npm run build
+      # Fails when a layer changed without its mirrors following: a workflow
+      # calling a route that no longer exists, an endpoint nothing consumes,
+      # stale generated docs, compose variables missing from the example env.
+      - run: npm run sync:check
