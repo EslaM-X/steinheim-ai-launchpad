@@ -1,4 +1,4 @@
-# Moves this installation to another computer.
+﻿# Moves this installation to another computer.
 #
 # Almost nothing needs to travel. The catalogue, the claims, the posts, the
 # plates and the campaign assets are in Supabase; the code and the workflow
@@ -110,9 +110,11 @@ if ($Action -eq "backup") {
         "",
         "  1. Install Docker Desktop and Git.",
         "  2. git clone https://github.com/EslaM-X/steinheim-ai-launchpad.git",
-        "  3. Copy this whole folder next to the clone.",
-        "  4. In the clone, run:  scripts/move-machine.ps1 restore -Path ..\steinheim-move",
-        "  5. Double-click START.bat",
+        "  3. Copy this whole folder into the cloned folder.",
+        "  4. Double-click RESTORE.bat",
+        "",
+        "That is all. RESTORE.bat finds this folder on its own, puts the secrets",
+        "and the automation data back, and starts everything.",
         "",
         "Everything else is already in the cloud: the catalogue, the claims, the",
         "posts, the plates, the campaign assets and the Telegram approvers all",
@@ -124,7 +126,13 @@ if ($Action -eq "backup") {
 
     Write-Host ""
     Ok "packed into $full"
-    Warn "it holds live secrets - carry it on a USB drive, not by email"
+    Write-Host ""
+    Write-Host "  Next, on the new machine:" -ForegroundColor White
+    Write-Host "    1. git clone https://github.com/EslaM-X/steinheim-ai-launchpad.git" -ForegroundColor White
+    Write-Host "    2. Copy this folder into the cloned folder" -ForegroundColor White
+    Write-Host "    3. Double-click RESTORE.bat" -ForegroundColor White
+    Write-Host ""
+    Warn "this folder holds live secrets - carry it on a USB drive, not by email"
     Write-Host ""
 }
 else {
