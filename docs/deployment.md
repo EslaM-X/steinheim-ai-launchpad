@@ -1,5 +1,9 @@
 # Deployment runbook — external Supabase + Vercel
 
+> Local / self-hosted machine? You do not need this page. Double-click
+> `START.bat` at the repo root — the Arabic walkthrough is
+> [start-here.ar.md](./start-here.ar.md).
+
 Order matters: Supabase first, because every migration (Social Core, the automation
 ledger, the publish claim, the analytics constraints) must land on the project that
 will be production. Wiring n8n against a throwaway database means doing it twice.

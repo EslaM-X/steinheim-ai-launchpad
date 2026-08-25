@@ -29,7 +29,7 @@ So the system is built around two rules that are enforced in code, not in prompt
 > **1. No unverified claim ships.**
 > Writers may only state facts that exist in the Truth Layer — approved product
 > specifications, approved claims, real projects. An accuracy validator rejects
-> everything else *before* the content is ever scored.
+> everything else _before_ the content is ever scored.
 >
 > **2. No publish without a human.**
 > The AI scores and recommends. `ai_approved` is never sufficient. Only a human
@@ -64,16 +64,16 @@ Layer. The **Brand Gatekeeper** scores nine dimensions and blocks anything under
 
 ### The agent team
 
-| Agent | Decides |
-| --- | --- |
-| 🧠 **Strategist** | what to say today, to whom, at which funnel stage |
-| 🔎 **Research** | which approved facts support it |
-| 🎯 **Platform Strategy** | how the idea differs per channel |
-| ✍️ **Writers** ×3 | native copy for LinkedIn, Facebook, Instagram — Arabic and English |
-| 🖼 **Image agent** | the visual brief, in the brand's language |
-| 🔍 **Accuracy Validator** | whether every claim is verifiable |
-| 🛡 **Brand Gatekeeper** | whether this deserves to represent the brand |
-| 🎬 **Creative Studio** | concept → storyboard → shots → assets, via an external GPU worker |
+| Agent                     | Decides                                                            |
+| ------------------------- | ------------------------------------------------------------------ |
+| 🧠 **Strategist**         | what to say today, to whom, at which funnel stage                  |
+| 🔎 **Research**           | which approved facts support it                                    |
+| 🎯 **Platform Strategy**  | how the idea differs per channel                                   |
+| ✍️ **Writers** ×3         | native copy for LinkedIn, Facebook, Instagram — Arabic and English |
+| 🖼 **Image agent**         | the visual brief, in the brand's language                          |
+| 🔍 **Accuracy Validator** | whether every claim is verifiable                                  |
+| 🛡 **Brand Gatekeeper**    | whether this deserves to represent the brand                       |
+| 🎬 **Creative Studio**    | concept → storyboard → shots → assets, via an external GPU worker  |
 
 Agents never publish. They produce, score, and hand over.
 
@@ -84,13 +84,13 @@ Agents never publish. They produce, score, and hand over.
 TikTok and Telegram are first-class in the schema, the adapters and the analytics
 from day one — so switching them on is configuration, not a refactor.
 
-| Channel | Publishing | Waiting on |
-| --- | --- | --- |
-| **Telegram** | ✅ live | — |
-| **Facebook** | 🔨 contract | Meta App Review (`pages_manage_posts`) |
+| Channel       | Publishing  | Waiting on                                          |
+| ------------- | ----------- | --------------------------------------------------- |
+| **Telegram**  | ✅ live     | —                                                   |
+| **Facebook**  | 🔨 contract | Meta App Review (`pages_manage_posts`)              |
 | **Instagram** | 🔨 contract | Business account link + `instagram_content_publish` |
-| **LinkedIn** | 🔨 contract | Community Management API (`w_organization_social`) |
-| **TikTok** | 🔨 contract | Content Posting API audit (`video.publish`) |
+| **LinkedIn**  | 🔨 contract | Community Management API (`w_organization_social`)  |
+| **TikTok**    | 🔨 contract | Content Posting API audit (`video.publish`)         |
 
 Telegram is also the **command centre**: `/status`, `/today`, `/pending`,
 `/analytics`, with inline approve and reject. Approving queues a post — it never
@@ -105,12 +105,12 @@ npm install
 npm run dev
 ```
 
-| Command | |
-| --- | --- |
-| `npm run dev` | dev server on `:8080` |
-| `npm run typecheck` | `tsc --noEmit` |
-| `npm run build` | production build |
-| `npm run lint` | eslint |
+| Command             |                       |
+| ------------------- | --------------------- |
+| `npm run dev`       | dev server on `:8080` |
+| `npm run typecheck` | `tsc --noEmit`        |
+| `npm run build`     | production build      |
+| `npm run lint`      | eslint                |
 
 Database — 14 migrations, 26 tables:
 
@@ -136,17 +136,17 @@ Full deployment path in **[docs/go-live.md](docs/go-live.md)** and **[docs/deplo
 
 ## Configuration
 
-| Variable | Scope | Purpose |
-| --- | --- | --- |
-| `VITE_SUPABASE_URL` `VITE_SUPABASE_PUBLISHABLE_KEY` | client | public by design |
-| `SUPABASE_URL` `SUPABASE_PUBLISHABLE_KEY` | server | SSR and auth middleware |
-| `SUPABASE_SERVICE_ROLE_KEY` | **server only** | admin writes, bypasses RLS |
-| `AI_BASE_URL` `AI_API_KEY` | **server only** | any OpenAI-compatible endpoint |
-| `AI_MODEL` `AI_IMAGE_MODEL` | server | optional overrides |
-| `AI_STREAMING` | server | set to `false` for providers that reject streaming with structured outputs |
-| `AUTOMATION_SECRET` | **server only** | n8n credential |
-| `TELEGRAM_BOT_TOKEN` `TELEGRAM_WEBHOOK_SECRET` | **server only** | command centre |
-| `CREATIVE_MODE` `CREATIVE_WORKER_SECRET` | server | GPU worker channel |
+| Variable                                            | Scope           | Purpose                                                                    |
+| --------------------------------------------------- | --------------- | -------------------------------------------------------------------------- |
+| `VITE_SUPABASE_URL` `VITE_SUPABASE_PUBLISHABLE_KEY` | client          | public by design                                                           |
+| `SUPABASE_URL` `SUPABASE_PUBLISHABLE_KEY`           | server          | SSR and auth middleware                                                    |
+| `SUPABASE_SERVICE_ROLE_KEY`                         | **server only** | admin writes, bypasses RLS                                                 |
+| `AI_BASE_URL` `AI_API_KEY`                          | **server only** | any OpenAI-compatible endpoint                                             |
+| `AI_MODEL` `AI_IMAGE_MODEL`                         | server          | optional overrides                                                         |
+| `AI_STREAMING`                                      | server          | set to `false` for providers that reject streaming with structured outputs |
+| `AUTOMATION_SECRET`                                 | **server only** | n8n credential                                                             |
+| `TELEGRAM_BOT_TOKEN` `TELEGRAM_WEBHOOK_SECRET`      | **server only** | command centre                                                             |
+| `CREATIVE_MODE` `CREATIVE_WORKER_SECRET`            | server          | GPU worker channel                                                         |
 
 Changing LLM provider is a deployment change, never a code change.
 
@@ -158,12 +158,12 @@ Four endpoints under `/api/public/automation/` drive the daily cycle from n8n.
 They sit under `public` because no Supabase session authenticates them — they are
 **not public**.
 
-| Endpoint | |
-| --- | --- |
-| `POST generate-today` | run the daily content cycle |
-| `GET approved` | the publish queue; `?claim=true` claims atomically, `?state=unknown` lists posts awaiting reconciliation |
-| `POST published` | record the outcome of a publish attempt |
-| `POST analytics` | ingest a metrics snapshot |
+| Endpoint              |                                                                                                          |
+| --------------------- | -------------------------------------------------------------------------------------------------------- |
+| `POST generate-today` | run the daily content cycle                                                                              |
+| `GET approved`        | the publish queue; `?claim=true` claims atomically, `?state=unknown` lists posts awaiting reconciliation |
+| `POST published`      | record the outcome of a publish attempt                                                                  |
+| `POST analytics`      | ingest a metrics snapshot                                                                                |
 
 Every request carries a shared secret compared in constant time, a timestamp
 inside a five-minute window, and a single-use nonce. Retries carry an
@@ -241,13 +241,13 @@ scripts/                infrastructure smoke test
 
 ## Documentation
 
-| | |
-| --- | --- |
+|                                          |                                                        |
+| ---------------------------------------- | ------------------------------------------------------ |
 | **[Go-live checklist](docs/go-live.md)** | the shortest path from a fresh clone to a working loop |
-| **[Architecture](docs/architecture.md)** | layers, request lifecycle, state machine, data model |
-| **[Deployment](docs/deployment.md)** | Supabase → Vercel → Telegram → smoke test |
-| **[Contributing rules](AGENTS.md)** | the invariants any change must preserve |
-| **[Phase plans](docs/plan/)** | how the system was designed |
+| **[Architecture](docs/architecture.md)** | layers, request lifecycle, state machine, data model   |
+| **[Deployment](docs/deployment.md)**     | Supabase → Vercel → Telegram → smoke test              |
+| **[Contributing rules](AGENTS.md)**      | the invariants any change must preserve                |
+| **[Phase plans](docs/plan/)**            | how the system was designed                            |
 
 ---
 

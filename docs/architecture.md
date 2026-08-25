@@ -109,11 +109,11 @@ sequenceDiagram
 
 Three separate credentials, never interchangeable:
 
-| Credential | Used by | Reaches |
-| --- | --- | --- |
-| `x-automation-secret` | n8n | `/api/public/automation/*` |
-| `x-worker-secret` | GPU worker | `/api/public/creative/*` |
-| `x-telegram-bot-api-secret-token` | Telegram | `/api/public/telegram/webhook` |
+| Credential                        | Used by    | Reaches                        |
+| --------------------------------- | ---------- | ------------------------------ |
+| `x-automation-secret`             | n8n        | `/api/public/automation/*`     |
+| `x-worker-secret`                 | GPU worker | `/api/public/creative/*`       |
+| `x-telegram-bot-api-secret-token` | Telegram   | `/api/public/telegram/webhook` |
 
 ---
 
@@ -180,11 +180,12 @@ src/
 │   │                           creative, publish, analytics, logs, tests
 │   └── api/public/
 │       ├── automation/         generate-today · approved · published · analytics
+│       │                       · catalog-sync   (canonical list: docs/api.md)
 │       ├── creative/           claim · complete   (GPU worker)
 │       └── telegram/           webhook
 └── integrations/supabase/      browser client, admin client, auth middleware
 
-supabase/migrations/            14 migrations, 26 tables
+supabase/migrations/            see docs/schema.md for the generated table inventory
 infra/n8n/                      self-hosted automation plane
 scripts/smoke-automation.sh     W00 infrastructure test
 ```
@@ -193,14 +194,16 @@ scripts/smoke-automation.sh     W00 infrastructure test
 
 ## 6. Data model
 
-26 tables in four groups.
+The full table-by-table inventory is generated from the migrations into
+`docs/schema.md` — it cannot drift, so no counts are repeated here. Conceptually
+the tables fall into four groups:
 
-| Group | Tables |
-| --- | --- |
-| **Truth** | `brand_profile` `categories` `products` `product_images` `audiences` `projects` `claims` |
-| **Content** | `content_ideas` `posts` `post_analytics` `agent_runs` |
-| **Creative** | `campaigns` `creative_references` `creative_concepts` `storyboards` `shots` `creative_assets` `generation_jobs` `creative_reviews` `ad_variants` |
-| **Operations** | `social_accounts` `integrations` `automation_requests` `test_scenarios` `test_runs` `profiles` |
+| Group          | Tables                                                                                                                                           |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Truth**      | `brand_profile` `categories` `products` `product_images` `audiences` `projects` `claims`                                                         |
+| **Content**    | `content_ideas` `posts` `post_analytics` `agent_runs`                                                                                            |
+| **Creative**   | `campaigns` `creative_references` `creative_concepts` `storyboards` `shots` `creative_assets` `generation_jobs` `creative_reviews` `ad_variants` |
+| **Operations** | `social_accounts` `integrations` `automation_requests` `test_scenarios` `test_runs` `profiles`                                                   |
 
 Analytics are stored twice on purpose: canonical columns that compare across every
 channel, plus `raw_metrics` for whatever a single platform reports and nobody else
@@ -232,16 +235,16 @@ Enforced, not documented:
 
 ## 8. Status
 
-| Phase | State |
-| --- | --- |
-| E0 Lovable removal | ✅ |
-| E2 Social core | ✅ |
-| E3 Publish state machine | ✅ |
-| E6 Automation API | ✅ code-verified; live verification pending |
-| E7 Telegram | ✅ |
-| E1 External Supabase | ⏳ |
-| E0.5 Vercel | ⏳ |
-| W00–W01 n8n | ⏳ blocked on the two above |
-| Meta · LinkedIn · TikTok | ⏳ blocked on platform approvals |
+| Phase                    | State                                       |
+| ------------------------ | ------------------------------------------- |
+| E0 Lovable removal       | ✅                                          |
+| E2 Social core           | ✅                                          |
+| E3 Publish state machine | ✅                                          |
+| E6 Automation API        | ✅ code-verified; live verification pending |
+| E7 Telegram              | ✅                                          |
+| E1 External Supabase     | ⏳                                          |
+| E0.5 Vercel              | ⏳                                          |
+| W00–W01 n8n              | ⏳ blocked on the two above                 |
+| Meta · LinkedIn · TikTok | ⏳ blocked on platform approvals            |
 
 The channel table in the README tracks what each platform is waiting on.

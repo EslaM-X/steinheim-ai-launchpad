@@ -114,11 +114,11 @@ APP_URL=https://<app> TELEGRAM_CHAT_ID=... TELEGRAM_CHANNEL_ID=... \
 Create the two credentials it names, import the three files from
 `infra/n8n/workflows/ready/`, then activate:
 
-| Workflow | Runs | Does |
-| --- | --- | --- |
-| **W01** | 09:00 Cairo | generate the day's content, notify Telegram |
-| **W02** | every 15 min | claim approved posts, publish, record the outcome |
-| **W03** | hourly | surface posts stuck in `unknown` for reconciliation |
+| Workflow | Runs         | Does                                                |
+| -------- | ------------ | --------------------------------------------------- |
+| **W01**  | 09:00 Cairo  | generate the day's content, notify Telegram         |
+| **W02**  | every 15 min | claim approved posts, publish, record the outcome   |
+| **W03**  | hourly       | surface posts stuck in `unknown` for reconciliation |
 
 Run W01 manually once before trusting the schedule.
 
@@ -135,12 +135,12 @@ That loop closing is the definition of done for today.
 
 ## Not today
 
-| | Blocked on | Start now because |
-| --- | --- | --- |
-| Facebook | Meta App Review — `pages_manage_posts` | a Page admin can test before review |
-| Instagram | Business account link + `instagram_content_publish` | same review queue |
-| LinkedIn | Community Management API — `w_organization_social` | approval takes the longest |
-| TikTok | Content Posting API audit — `video.publish` | unaudited clients post privately only |
+|           | Blocked on                                          | Start now because                     |
+| --------- | --------------------------------------------------- | ------------------------------------- |
+| Facebook  | Meta App Review — `pages_manage_posts`              | a Page admin can test before review   |
+| Instagram | Business account link + `instagram_content_publish` | same review queue                     |
+| LinkedIn  | Community Management API — `w_organization_social`  | approval takes the longest            |
+| TikTok    | Content Posting API audit — `video.publish`         | unaudited clients post privately only |
 
 Each adapter already exists as a contract with its endpoints documented in
 `src/lib/platforms/`. When an approval lands, the work is implementing one
