@@ -1,6 +1,9 @@
 import sharp from "sharp";
+import type { OverlayOptions } from "sharp";
 
 import { buildBackdrop } from "./backdrop";
+import { applyGrain, applyVignette, buildReflection, buildRimLight } from "./light";
+import { applyCaption, type Caption } from "./typography";
 import { cutOutProduct, type Cutout } from "./cutout";
 import { verifyFinish, type FinishVerdict } from "./finish";
 import { generateScene, type Scene } from "./scene";
@@ -33,6 +36,8 @@ export interface CompositionRequest {
   seed: number;
   /** Set for wall-mounted parts: no floor plane, no contact shadow. */
   wallMounted?: boolean;
+  /** Words to set over the frame. Omitted leaves it clean. */
+  caption?: Caption;
 }
 
 export interface Composition {
@@ -158,25 +163,55 @@ async function assemble(
     .resize(width, height, { fit: "cover", position: "centre" })
     .toBuffer();
 
-  return sharp(scenePrepared)
-    .composite([
-      ...(shadow
-        ? [
-            {
-              // Sits at the foot of the part, not behind all of it.
-              input: shadow,
-              left: Math.max(0, left - SHADOW_SPREAD),
-              top: Math.max(
-                0,
-                top + targetHeight - Math.round(targetHeight * 0.12) - SHADOW_SPREAD,
-              ),
-            },
-          ]
-        : []),
-      { input: product, left, top },
-    ])
-    .png()
-    .toBuffer();
+  // The key sits left of centre in every palette, so the rim goes on the left
+  // edge of the part and the reflection falls away from the viewer.
+  const rim = await buildRimLight(product, targetWidth, targetHeight, {
+    fromLeft: true,
+    strength: RIM_STRENGTH,
+    tint: [255, 250, 242],
+  });
+
+  // A wall-mounted part is not standing on a polished surface, so it has
+  // nothing to reflect in.
+  const reflection = request.wallMounted
+    ? null
+    : await buildReflection(product, targetWidth, targetHeight, {
+        extent: REFLECTION_EXTENT,
+        strength: REFLECTION_STRENGTH,
+        blur: 3.5,
+      });
+
+  const layers: OverlayOptions[] = [];
+
+  if (reflection) {
+    layers.push({
+      input: reflection.png,
+      left,
+      top: Math.min(height - 1, top + targetHeight),
+    });
+  }
+  if (shadow) {
+    layers.push({
+      // Sits at the foot of the part, not behind all of it.
+      input: shadow,
+      left: Math.max(0, left - SHADOW_SPREAD),
+      top: Math.max(0, top + targetHeight - Math.round(targetHeight * 0.12) - SHADOW_SPREAD),
+    });
+  }
+  layers.push({ input: product, left, top });
+  if (rim) layers.push({ input: rim, left, top, blend: "screen" });
+
+  const assembled = await sharp(scenePrepared).composite(layers).png().toBuffer();
+
+  // Vignette then grain, both over the finished frame. A vignette applied under
+  // the product darkens only the ground and leaves the part sitting on top of
+  // it looking cut out.
+  const vignetted = await applyVignette(assembled, width, height, VIGNETTE_STRENGTH);
+  const grained = await applyGrain(vignetted, width, height, GRAIN_AMOUNT, request.seed || 1);
+
+  // Type goes on last, over the grain. Grain applied over type softens the
+  // letterforms, and soft type is the first thing that reads as amateur.
+  return request.caption ? applyCaption(grained, width, height, request.caption) : grained;
 }
 
 /**
@@ -262,6 +297,21 @@ async function buildShadow(product: Buffer, width: number, height: number): Prom
     .png()
     .toBuffer();
 }
+
+/** How far down the reflection reaches, as a fraction of the part's height. */
+const REFLECTION_EXTENT = 0.42;
+
+/** Opacity where the reflection meets the part. Above this it reads as a twin. */
+const REFLECTION_STRENGTH = 0.3;
+
+/** Brightness of the edge facing the key. */
+const RIM_STRENGTH = 0.38;
+
+/** How dark the corners go. */
+const VIGNETTE_STRENGTH = 0.42;
+
+/** Grain, as a fraction of full-strength noise. Enough to stop banding. */
+const GRAIN_AMOUNT = 0.022;
 
 /** The widest the part may sit in the frame, as a fraction of frame width. */
 const MAX_PRODUCT_WIDTH = 0.82;

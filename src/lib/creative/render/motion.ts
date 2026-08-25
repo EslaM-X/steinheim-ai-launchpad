@@ -43,8 +43,11 @@ export async function renderMotion(request: MotionRequest): Promise<Motion> {
   const { frames, width, height } = request;
   if (frames.length === 0) throw new Error("renderMotion needs at least one frame.");
 
-  const hold = request.hold ?? 2.5;
-  const dissolve = request.dissolve ?? 0.5;
+  // Slower than feels right when you are watching it on a laptop, and about
+  // right on a phone. Luxury advertising holds a frame long enough for the eye
+  // to finish reading the object before it moves.
+  const hold = request.hold ?? 3.2;
+  const dissolve = request.dissolve ?? 0.8;
   const fps = request.fps ?? 25;
 
   const dir = await mkdtemp(join(tmpdir(), "steinheim-motion-"));
@@ -138,7 +141,7 @@ function run(command: string, args: string[]): Promise<void> {
 }
 
 /** Zoom added per frame. Slow enough to read as a camera move, not a zoom. */
-const PUSH_RATE = 0.0022;
+const PUSH_RATE = 0.0016;
 
 /** Where the push stops. Beyond this the source starts to soften visibly. */
 const PUSH_LIMIT = 1.16;

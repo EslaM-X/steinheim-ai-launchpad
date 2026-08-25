@@ -33,12 +33,22 @@ FROM node:24-alpine AS runtime
 # rather than a nicety: the alternative is an AI video model, and every one of
 # those would redraw the product frame by frame, which is the one thing this
 # system is built to refuse. ~80MB, and it earns it.
-RUN apk add --no-cache ffmpeg
+RUN apk add --no-cache ffmpeg fontconfig
 
 WORKDIR /app
 
 ENV NODE_ENV=production
 ENV PORT=3000
+
+# The brand faces are installed system-wide, not merely copied in.
+#
+# Embedding them in the SVG as base64 @font-face works on Windows and produced
+# rows of empty boxes here: this librsvg resolves families through fontconfig
+# and ignores the embedded data. Installing them and running fc-cache is what
+# actually makes the type render, and it is checked at build time — a silent
+# substitution would ship the wrong typeface on every campaign.
+COPY assets/fonts ./assets/fonts
+RUN mkdir -p /usr/share/fonts/steinheim     && cp ./assets/fonts/*.ttf /usr/share/fonts/steinheim/     && fc-cache -f     && fc-list | grep -qi cormorant     && fc-list | grep -qi inter
 
 # The build output is self-contained. Nitro traces sharp's native binary into
 # it during the build stage, which is why that happens here rather than in a

@@ -25,6 +25,8 @@ export interface CampaignAssetRequest {
   palette: string;
   /** Wall-mounted parts get a wall and no contact shadow. */
   wallMounted?: boolean;
+  /** Set the product's name, SKU and finish over each frame. */
+  caption?: boolean;
   /** 1080 square for feed, 1080×1920 for stories and reels. */
   format: "square" | "story" | "landscape";
   /** Cut a video as well as the stills. */
@@ -46,6 +48,13 @@ export interface CampaignAssets {
   warnings: string[];
 }
 
+/** Palettes dark enough to need light type. */
+const DARK_PALETTES = new Set(["obsidian", "forest", "slate"]);
+
+function titleCase(value: string): string {
+  return value.replace(/\w/g, (c) => c.toUpperCase());
+}
+
 const FORMATS: Record<CampaignAssetRequest["format"], { width: number; height: number }> = {
   square: { width: 1080, height: 1080 },
   story: { width: 1080, height: 1920 },
@@ -65,6 +74,19 @@ export async function buildCampaignAssets(request: CampaignAssetRequest): Promis
         finish: variant.finish,
         mood: `studio:${request.palette}`,
         wallMounted: request.wallMounted === true,
+        // Only the product's own name, SKU and verified finish are ever set.
+        // A strapline written to fill the space would be an unverified claim
+        // in a typeface.
+        ...(request.caption === false
+          ? {}
+          : {
+              caption: {
+                title: request.productName,
+                subtitle: [request.sku, titleCase(variant.finish)].filter(Boolean).join("  ·  "),
+                placement: "bottom-left" as const,
+                onDark: DARK_PALETTES.has(request.palette),
+              },
+            }),
         width,
         height,
         // Fixed: the backdrop is built, not sampled, so a re-render of the same

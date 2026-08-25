@@ -28,6 +28,8 @@ export interface RenderCampaignRequest {
   palette: string;
   format: "square" | "story" | "landscape";
   motion: boolean;
+  /** Defaults on. Off produces clean plates for a designer to set type over. */
+  caption?: boolean;
 }
 
 export interface RenderedCampaign {
@@ -87,6 +89,7 @@ export async function renderCampaignForProduct(
     format: request.format,
     motion: request.motion,
     wallMounted,
+    caption: request.caption !== false,
   });
 
   const slug = String(product.source_slug ?? product.id);
