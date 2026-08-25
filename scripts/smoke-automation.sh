@@ -43,6 +43,15 @@ echo
 
 echo "Rejections:"
 expect "no secret"            401 "$BASE/approved"
+# Every long-running endpoint is checked unauthenticated, not just one. A guard
+# wired onto three routes and forgotten on the fourth is the kind of gap that
+# only shows up once something is already reachable.
+#
+# POST explicitly: these routes define no GET handler, so a GET falls through to
+# the SSR page and answers 200 — which reads as "the guard is missing" when it
+# is only the wrong verb.
+expect "render-campaign: no secret" 401 "${BASE}/render-campaign" -X POST
+expect "catalog-sync: no secret"    401 "${BASE}/catalog-sync" -X POST
 expect "wrong secret"         401 "$BASE/approved" \
   -H "x-automation-secret: definitely-not-the-secret" \
   -H "x-automation-timestamp: $(now_ms)" -H "x-automation-nonce: $(new_nonce)"

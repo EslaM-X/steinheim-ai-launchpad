@@ -28,6 +28,8 @@ not in *Who calls what* either, nothing consumes it.
 - **docs/plan/phase-d-steinheim-ai-creative-studio-2026-08-14.md** → `/api/public/creative/complete`
 - **README.md** → `/api/public/automation/generate-today`
 - **scripts/smoke-automation.sh** → `/api/public/automation`
+- **scripts/smoke-automation.sh** → `/api/public/automation/catalog-sync`
+- **scripts/smoke-automation.sh** → `/api/public/automation/render-campaign`
 - **Telegram webhook configuration** → `/api/public/telegram/webhook`
 - **W01-daily-generation.json (W01 — Daily content generation)** → `/api/public/automation/generate-today`
 - **W02-publish-queue.json (W02 — Publish queue (Telegram channel))** → `/api/public/automation/approved`, `/api/public/automation/published`
