@@ -63,8 +63,10 @@ function worthTryingAnotherModel(error: unknown): boolean {
 async function withModelFallback<T>(attempt: (modelId: string) => Promise<T>): Promise<T> {
   const chain = modelChain();
   let lastError: unknown;
+  let tried = 0;
 
   for (const [index, modelId] of chain.entries()) {
+    tried += 1;
     try {
       const value = await attempt(modelId);
       if (index > 0) {
@@ -83,7 +85,11 @@ async function withModelFallback<T>(attempt: (modelId: string) => Promise<T>): P
   }
 
   const detail = lastError instanceof Error ? lastError.message : String(lastError);
-  throw new Error(chain.length > 1 ? `All ${chain.length} models failed. Last: ${detail}` : detail);
+  if (tried === 1) return Promise.reject(new Error(detail));
+  // Says how many were actually tried, not how many exist: the chain stops
+  // early on account-level failures, and reporting "all 3 failed" after one
+  // attempt sends someone hunting for three problems that were never there.
+  throw new Error(`${tried} of ${chain.length} models tried, all failed. Last: ${detail}`);
 }
 
 /** Surfaces the real gateway error instead of "No output generated". */
