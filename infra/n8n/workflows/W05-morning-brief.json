@@ -1,0 +1,69 @@
+{
+  "id": "steinheim-w05-morning-brief",
+  "name": "W05 — Morning brief",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": { "interval": [{ "field": "cronExpression", "expression": "30 9 * * *" }] }
+      },
+      "id": "w05-cron",
+      "name": "09:30 Cairo",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [-220, 0],
+      "notes": "Half an hour after the daily generation, so the brief reports on a run that has finished rather than one still in flight."
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "__APP_URL__/api/public/automation/analytics",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "x-automation-timestamp", "value": "={{ Date.now() }}" },
+            { "name": "x-automation-nonce", "value": "={{ $execution.id }}-brief-{{ Date.now() }}" }
+          ]
+        },
+        "options": {
+          "timeout": 60000,
+          "response": { "response": { "neverError": true, "fullResponse": true } }
+        }
+      },
+      "id": "w05-analytics",
+      "name": "Read analytics",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [20, 0],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_WITH_CREDENTIAL_ID",
+          "name": "Steinheim automation secret"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "__TELEGRAM_CHAT_ID__",
+        "text": "=☀️ <b>Good morning</b>\n\n{{ $json.statusCode === 200 ? 'Last 7 days: ' + JSON.stringify($json.body).slice(0, 400) : 'Analytics unavailable (HTTP ' + $json.statusCode + ')' }}\n\nSend /pending to approve today's posts, or /jobs to see what ran overnight.",
+        "additionalFields": { "parse_mode": "HTML" }
+      },
+      "id": "w05-brief",
+      "name": "Send the brief",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [280, 0],
+      "notes": "Sent whether or not analytics answered. A morning with no message is indistinguishable from a morning where everything broke, which is the failure this brief exists to prevent.",
+      "credentials": {
+        "telegramApi": { "id": "REPLACE_WITH_CREDENTIAL_ID", "name": "Steinheim bot" }
+      }
+    }
+  ],
+  "connections": {
+    "09:30 Cairo": { "main": [[{ "node": "Read analytics", "type": "main", "index": 0 }]] },
+    "Read analytics": { "main": [[{ "node": "Send the brief", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1", "timezone": "Africa/Cairo" },
+  "pinData": {}
+}

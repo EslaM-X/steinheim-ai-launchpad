@@ -38,7 +38,8 @@ not in *Who calls what* either, nothing consumes it.
 - **W01-daily-generation.json (W01 — Daily content generation)** → `/api/public/automation/generate-today`
 - **W02-publish-queue.json (W02 — Publish queue (Telegram channel))** → `/api/public/automation/approved`, `/api/public/automation/published`
 - **W03-reconciliation.json (W03 — Reconciliation sweep)** → `/api/public/automation/approved`
-- **W04-catalog-sync.json (W04 — Catalogue sync)** → `/api/public/automation/catalog-sync`
+- **W04-catalog-sync.json (W04 — Catalogue sync)** → `/api/public/automation/build-plates`, `/api/public/automation/catalog-sync`
+- **W05-morning-brief.json (W05 — Morning brief)** → `/api/public/automation/analytics`
 
 ## Known-unwired endpoints
 

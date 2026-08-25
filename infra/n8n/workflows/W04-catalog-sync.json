@@ -17,7 +17,10 @@
       "name": "04:00 Cairo",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.2,
-      "position": [-200, 0],
+      "position": [
+        -200,
+        0
+      ],
       "notes": "Runs before W01 at 09:00 so the day's content is written against a catalogue read this morning, not yesterday's."
     },
     {
@@ -53,7 +56,10 @@
       "name": "Sync catalogue",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [40, 0],
+      "position": [
+        40,
+        0
+      ],
       "notes": "One page fetch per product, so the timeout is 15 minutes rather than the usual 5. A 409 means a manual sync already holds the single-active slot: that is a skip, not a failure.",
       "credentials": {
         "httpHeaderAuth": {
@@ -86,7 +92,10 @@
       "name": "Succeeded?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
-      "position": [280, 0]
+      "position": [
+        280,
+        0
+      ]
     },
     {
       "parameters": {
@@ -112,28 +121,11 @@
       "name": "Anything change?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
-      "position": [520, -100],
+      "position": [
+        520,
+        -100
+      ],
       "notes": "A sync that found nothing new is the normal case. Reporting it every morning trains people to ignore the channel, so only real changes are announced."
-    },
-    {
-      "parameters": {
-        "chatId": "__TELEGRAM_CHAT_ID__",
-        "text": "=📦 <b>Catalogue updated</b>\n\nScanned: {{ $json.body.scanned }}\nNew: {{ $json.body.created }} · Changed: {{ $json.body.updated }} · Unchanged: {{ $json.body.unchanged }}\nArchived: {{ $json.body.archived }}\n\nClaims written: {{ $json.body.claimsWritten }}\nClaims retired: {{ $json.body.claimsStale }}\n{{ $json.body.failed.length ? '\n⚠️ Failed: ' + $json.body.failed.map(f => f.slug).join(', ') : '' }}",
-        "additionalFields": {
-          "parse_mode": "HTML"
-        }
-      },
-      "id": "w04-notify",
-      "name": "Report changes",
-      "type": "n8n-nodes-base.telegram",
-      "typeVersion": 1.2,
-      "position": [760, -180],
-      "credentials": {
-        "telegramApi": {
-          "id": "REPLACE_WITH_CREDENTIAL_ID",
-          "name": "Steinheim bot"
-        }
-      }
     },
     {
       "parameters": {
@@ -147,7 +139,78 @@
       "name": "Report skip or failure",
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
-      "position": [520, 100],
+      "position": [
+        520,
+        100
+      ],
+      "credentials": {
+        "telegramApi": {
+          "id": "REPLACE_WITH_CREDENTIAL_ID",
+          "name": "Steinheim bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "__APP_URL__/api/public/automation/build-plates",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-automation-timestamp",
+              "value": "={{ Date.now() }}"
+            },
+            {
+              "name": "x-automation-nonce",
+              "value": "={{ $execution.id }}-plates-{{ Date.now() }}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 900000,
+          "response": {
+            "response": {
+              "neverError": true,
+              "fullResponse": true
+            }
+          }
+        }
+      },
+      "id": "w04-plates",
+      "name": "Rebuild plates",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        760,
+        -260
+      ],
+      "notes": "Runs only when the sync actually changed something. Plates are derived from the catalogue's photographs, so a changed photograph leaves a stale plate - and a campaign rendered from a stale plate shows last week's product without anyone being told. 15 minute timeout: one page fetch per product, one file per finish.",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_WITH_CREDENTIAL_ID",
+          "name": "Steinheim automation secret"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "__TELEGRAM_CHAT_ID__",
+        "text": "=📦 <b>Catalogue updated</b>\\n\\nScanned: {{ $('Sync catalogue').item.json.body.scanned }}\\nNew: {{ $('Sync catalogue').item.json.body.created }} · Changed: {{ $('Sync catalogue').item.json.body.updated }} · Unchanged: {{ $('Sync catalogue').item.json.body.unchanged }}\\nArchived: {{ $('Sync catalogue').item.json.body.archived }}\\n\\nClaims written: {{ $('Sync catalogue').item.json.body.claimsWritten }}\\nClaims retired: {{ $('Sync catalogue').item.json.body.claimsStale }}\\n\\n{{ $json.statusCode === 200 ? '🎨 Plates rebuilt: ' + $json.body.plates + ' across ' + $json.body.products + ' products' : '⚠️ Plate rebuild failed (HTTP ' + $json.statusCode + ') - campaigns may render last week\\\\'s photographs until it is re-run' }}",
+        "additionalFields": {
+          "parse_mode": "HTML"
+        }
+      },
+      "id": "w04-notify-2",
+      "name": "Report changes and plates",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1000,
+        -260
+      ],
       "credentials": {
         "telegramApi": {
           "id": "REPLACE_WITH_CREDENTIAL_ID",
@@ -201,12 +264,23 @@
       "main": [
         [
           {
-            "node": "Report changes",
+            "node": "Rebuild plates",
             "type": "main",
             "index": 0
           }
         ],
         []
+      ]
+    },
+    "Rebuild plates": {
+      "main": [
+        [
+          {
+            "node": "Report changes and plates",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     }
   },
