@@ -449,34 +449,87 @@ async function commandRegister(supabase: DB, chatId: string, fromId: string, fro
     return;
   }
 
-  // Auto-create a Supabase user for this approver
-  const { data: existingUser } = await supabase
+  // An approver has to be a real identity.
+  //
+  // The first version minted a random UUID and inserted it into profiles. That
+  // table's primary key is a foreign key onto auth.users, so the insert failed
+  // — silently, because nothing checked — and the dead id went into the
+  // approvers map anyway. posts.approved_by has no foreign key, so approvals
+  // from that account would have been recorded against an id belonging to
+  // nobody. An approval nobody can be traced to is worse than one that fails.
+  const { data: existing } = await supabase
     .from("profiles")
     .select("id")
     .eq("telegram_id", fromId)
     .maybeSingle();
 
   let supabaseUserId: string;
-  if (existingUser?.id) {
-    supabaseUserId = existingUser.id;
+  if (existing?.id) {
+    supabaseUserId = String(existing.id);
   } else {
-    // Create a minimal profile for this Telegram user
-    const newId = crypto.randomUUID();
-    await supabase.from("profiles").insert({
-      id: newId,
-      display_name: fromName,
-      telegram_id: fromId,
+    const admin = supabase as unknown as {
+      auth: {
+        admin: {
+          createUser: (input: Record<string, unknown>) => Promise<{
+            data: { user: { id: string } | null };
+            error: { message: string } | null;
+          }>;
+        };
+      };
+    };
+    // A routed address rather than a real inbox: this account exists to carry
+    // an approval, never to receive mail or sign in with a password.
+    const { data: created, error } = await admin.auth.admin.createUser({
+      email: `telegram-${fromId}@steinheim.invalid`,
+      email_confirm: true,
+      user_metadata: { telegram_id: fromId, display_name: fromName, source: "telegram" },
     });
-    supabaseUserId = newId;
+    if (error || !created?.user?.id) {
+      await sendMessage(
+        chatId,
+        `⚠️ Could not register <b>${escapeHtml(fromName)}</b>: ${escapeHtml(error?.message ?? "no account was created")}`,
+      );
+      return;
+    }
+    supabaseUserId = created.user.id;
+    // on_auth_user_created writes the profile row; this only adds the link back
+    // to Telegram, and its failure is reported rather than swallowed.
+    const { error: linkError } = await supabase
+      .from("profiles")
+      .update({ telegram_id: fromId, display_name: fromName })
+      .eq("id", supabaseUserId);
+    if (linkError) {
+      await sendMessage(
+        chatId,
+        `⚠️ Registered, but the Telegram link was not saved: ${escapeHtml(linkError.message)}`,
+      );
+    }
   }
 
-  // Update the approvers map in integrations
-  const newApprovers = { ...config.approvers, [fromId]: supabaseUserId };
-  await supabase
+  // Merged, not replaced. Writing { approvers } over the whole config drops
+  // every other key the integration holds.
+  const { data: current } = await supabase
     .from("integrations")
-    .update({ config: { approvers: newApprovers } })
+    .select("config")
+    .eq("kind", "telegram")
+    .eq("status", "active")
+    .maybeSingle();
+  const merged = {
+    ...((current?.config as Record<string, unknown>) ?? {}),
+    approvers: { ...config.approvers, [fromId]: supabaseUserId },
+  };
+  const { error: saveError } = await supabase
+    .from("integrations")
+    .update({ config: merged as never })
     .eq("kind", "telegram")
     .eq("status", "active");
+  if (saveError) {
+    await sendMessage(
+      chatId,
+      `⚠️ Could not save the approver list: ${escapeHtml(saveError.message)}`,
+    );
+    return;
+  }
 
   await sendMessage(
     chatId,
