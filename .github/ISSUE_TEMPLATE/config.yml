@@ -1,8 +1,8 @@
 blank_issues_enabled: false
 contact_links:
-- name: Discussions
-  url: https://github.com/EslaM-X/steinheim-ai-launchpad/discussions
-  about: Ask questions and discuss the roadmap here.
-- name: Project documentation
-  url: https://github.com/EslaM-X/steinheim-ai-launchpad/blob/main/docs
-  about: Architecture and design docs.
+  - name: Discussions
+    url: https://github.com/EslaM-X/steinheim-ai-launchpad/discussions
+    about: Ask questions and discuss the roadmap here.
+  - name: Project documentation
+    url: https://github.com/EslaM-X/steinheim-ai-launchpad/blob/main/docs
+    about: Architecture and design docs.
