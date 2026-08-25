@@ -77,9 +77,38 @@ export async function cutOutProduct(input: Buffer): Promise<Cutout> {
     if (y < height - 1) push(idx + width);
   }
 
-  // Alpha is graded rather than binary across the backdrop boundary, so the
-  // anti-aliased rim of the original photograph survives instead of turning
-  // into a stair-stepped edge on the new background.
+  // Alpha is decided first, then softened, then written. Doing it in that order
+  // keeps the softening to the boundary: a 3x3 average over a binary mask only
+  // moves pixels that have a neighbour on the other side, so the interior stays
+  // fully opaque and the rim picks up the gradient that stops it looking cut
+  // with scissors.
+  const solid = new Uint8Array(width * height);
+  for (let idx = 0; idx < width * height; idx++) solid[idx] = outside[idx] ? 0 : 255;
+
+  const feathered = new Uint8Array(width * height);
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const idx = y * width + x;
+      const here = solid[idx]!;
+      let sum = 0;
+      let n = 0;
+      for (let dy = -1; dy <= 1; dy++) {
+        const yy = y + dy;
+        if (yy < 0 || yy >= height) continue;
+        for (let dx = -1; dx <= 1; dx++) {
+          const xx = x + dx;
+          if (xx < 0 || xx >= width) continue;
+          sum += solid[yy * width + xx]!;
+          n += 1;
+        }
+      }
+      const average = sum / n;
+      // Only the boundary moves. Away from it every neighbour agrees and the
+      // average equals the pixel itself.
+      feathered[idx] = average === here ? here : Math.round(average);
+    }
+  }
+
   const out = Buffer.alloc(width * height * 4);
   let minX = width;
   let minY = height;
@@ -93,23 +122,7 @@ export async function cutOutProduct(input: Buffer): Promise<Cutout> {
     out[d] = data[s]!;
     out[d + 1] = data[s + 1]!;
     out[d + 2] = data[s + 2]!;
-
-    let alpha: number;
-    if (outside[idx]) {
-      alpha = 0;
-    } else {
-      const distance = Math.hypot(
-        data[s]! - backdrop[0],
-        data[s + 1]! - backdrop[1],
-        data[s + 2]! - backdrop[2],
-      );
-      alpha =
-        distance >= BACKDROP_TOLERANCE + FEATHER
-          ? 255
-          : Math.round(255 * Math.max(0, (distance - BACKDROP_TOLERANCE) / FEATHER));
-      // A hole enclosed by the product keeps whatever the photograph had.
-      if (distance < BACKDROP_TOLERANCE) alpha = 0;
-    }
+    const alpha = feathered[idx]!;
     out[d + 3] = alpha;
 
     if (alpha > 24) {
@@ -144,6 +157,3 @@ export async function cutOutProduct(input: Buffer): Promise<Cutout> {
     coverage: kept / (width * height),
   };
 }
-
-/** Width of the soft band where backdrop fades into product, in colour distance. */
-const FEATHER = 26;
