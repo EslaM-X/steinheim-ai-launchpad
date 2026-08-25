@@ -3,6 +3,7 @@ import type { OverlayOptions } from "sharp";
 
 import { buildBackdrop } from "./backdrop";
 import { applyGrain, applyVignette, buildReflection, buildRimLight } from "./light";
+import { replate } from "./plating";
 import { applyCaption, type Caption } from "./typography";
 import { cutOutProduct, type Cutout } from "./cutout";
 import { verifyFinish, type FinishVerdict } from "./finish";
@@ -46,8 +47,9 @@ export interface Composition {
   height: number;
   finish: FinishVerdict;
   scene: { prompt: string; seed: number; source: string };
-  /** True when the photograph disagreed with its label and was corrected. */
+  /** True when the finish had a plating curve and the product was replated. */
   finishCorrected: boolean;
+  platingNote: string;
 }
 
 export async function composeProductScene(request: CompositionRequest): Promise<Composition> {
@@ -76,7 +78,15 @@ export async function composeProductScene(request: CompositionRequest): Promise<
 
   const cutout = await cutOutProduct(productImage);
   const verdict = verifyFinish(request.finish, cutout.measurement);
-  const product = verdict.correction ? await recolour(cutout, verdict) : cutout.png;
+
+  // Replating runs every time, not only when the photograph is measurably
+  // wrong. The catalogue's images were generated rather than photographed and
+  // disagree with each other by a factor of five inside a single finish name;
+  // correcting only the outliers would still ship two different golds in one
+  // set. The verdict is kept because it is worth reporting which photographs
+  // were furthest out, but it no longer decides whether to act.
+  const plating = await replate(cutout.png, request.finish);
+  const product = plating.png;
 
   return {
     png: await assemble(background, product, cutout, request),
@@ -84,7 +94,8 @@ export async function composeProductScene(request: CompositionRequest): Promise<
     height: request.height,
     finish: verdict,
     scene: { prompt: background.prompt, seed: background.seed, source: background.source },
-    finishCorrected: Boolean(verdict.correction),
+    finishCorrected: plating.replated,
+    platingNote: plating.note,
   };
 }
 
