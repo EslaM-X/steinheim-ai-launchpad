@@ -52,7 +52,7 @@ export interface CampaignAssets {
 const DARK_PALETTES = new Set(["obsidian", "forest", "slate"]);
 
 function titleCase(value: string): string {
-  return value.replace(/\w/g, (c) => c.toUpperCase());
+  return value.replace(/\w/g, (c) => c.toUpperCase());
 }
 
 const FORMATS: Record<CampaignAssetRequest["format"], { width: number; height: number }> = {
