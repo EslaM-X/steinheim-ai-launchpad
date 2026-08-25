@@ -21,7 +21,7 @@ type DB = {
   ) => PromiseLike<{ data: unknown; error: unknown }>;
 };
 
-export type JobKind = "catalog_sync";
+export type JobKind = "catalog_sync" | "daily_generation";
 
 export interface JobProgress {
   phase?: string;

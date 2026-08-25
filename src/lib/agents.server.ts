@@ -7,9 +7,79 @@ export { getApiKey };
 
 export const MODEL = process.env["AI_MODEL"] ?? "google/gemini-3.6-flash";
 
-export function getModel() {
+/**
+ * The models to try, in order.
+ *
+ * A single model is a single point of failure, and on the free tier it is a
+ * lively one: a provider answers "temporarily overloaded", or a model that
+ * honoured a JSON schema last week quietly stops. Neither is a reason for the
+ * day's content to not exist, so AI_MODEL_FALLBACKS names the understudies.
+ *
+ * Order matters — put the model you actually want first. The rest are there to
+ * keep the pipeline alive, not to be equal choices.
+ */
+export function modelChain(): string[] {
+  const fallbacks = (process.env["AI_MODEL_FALLBACKS"] ?? "")
+    .split(",")
+    .map((m) => m.trim())
+    .filter(Boolean);
+  return [...new Set([MODEL, ...fallbacks])];
+}
+
+export function getModel(modelId: string = MODEL) {
   const provider = createAiProvider(getApiKey(), { structuredOutputs: true });
-  return provider(MODEL);
+  return provider(modelId);
+}
+
+/**
+ * Whether trying the next model could plausibly help.
+ *
+ * Exhausted credits and a bad key are properties of the account, not of the
+ * model: walking the chain would burn minutes to arrive at the same answer, so
+ * those stop immediately. Everything else — an overloaded provider, a rate
+ * limit, a model that would not produce the object — is worth another attempt
+ * with a different model.
+ */
+function worthTryingAnotherModel(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error);
+  // Word-bounded on purpose: a bare /402/ also matches "4021 tokens", which
+  // would abandon the chain over a token count.
+  if (/\b(401|402|403)\b/.test(message)) return false;
+  if (/credits exhausted|invalid api key|unauthorized|quota/i.test(message)) return false;
+  return true;
+}
+
+/**
+ * Runs `attempt` against each model in turn until one succeeds.
+ *
+ * The error that escapes is the LAST one, with the chain named: a report that
+ * says only "overloaded" sends someone to check one provider, when in fact
+ * every model was tried and all of them failed.
+ */
+async function withModelFallback<T>(attempt: (modelId: string) => Promise<T>): Promise<T> {
+  const chain = modelChain();
+  let lastError: unknown;
+
+  for (const [index, modelId] of chain.entries()) {
+    try {
+      const value = await attempt(modelId);
+      if (index > 0) {
+        console.warn(`[ai] ${chain[0]} failed; produced by fallback ${modelId}`);
+      }
+      return value;
+    } catch (error) {
+      lastError = error;
+      if (!worthTryingAnotherModel(error)) break;
+      if (index < chain.length - 1) {
+        console.warn(
+          `[ai] ${modelId} failed (${error instanceof Error ? error.message : String(error)}); trying ${chain[index + 1]}`,
+        );
+      }
+    }
+  }
+
+  const detail = lastError instanceof Error ? lastError.message : String(lastError);
+  throw new Error(chain.length > 1 ? `All ${chain.length} models failed. Last: ${detail}` : detail);
 }
 
 /** Surfaces the real gateway error instead of "No output generated". */
@@ -64,10 +134,17 @@ export async function genObject<T extends z.ZodType>(args: {
   system: string;
   prompt: string;
 }): Promise<z.infer<T>> {
+  return withModelFallback((modelId) => genObjectWith(modelId, args));
+}
+
+async function genObjectWith<T extends z.ZodType>(
+  modelId: string,
+  args: { schema: T; system: string; prompt: string },
+): Promise<z.infer<T>> {
   if (streamingDisabled()) {
     try {
       const { object } = await generateObject({
-        model: getModel(),
+        model: getModel(modelId),
         schema: args.schema,
         system: args.system,
         prompt: args.prompt,
@@ -81,7 +158,7 @@ export async function genObject<T extends z.ZodType>(args: {
   let streamError: unknown;
   try {
     const result = streamText({
-      model: getModel(),
+      model: getModel(modelId),
       system: args.system,
       prompt: args.prompt,
       output: Output.object({ schema: args.schema }),
@@ -106,10 +183,14 @@ export async function genObject<T extends z.ZodType>(args: {
 }
 
 export async function genText(args: { system: string; prompt: string }) {
+  return withModelFallback((modelId) => genTextWith(modelId, args));
+}
+
+async function genTextWith(modelId: string, args: { system: string; prompt: string }) {
   if (streamingDisabled()) {
     try {
       const { text } = await generateText({
-        model: getModel(),
+        model: getModel(modelId),
         system: args.system,
         prompt: args.prompt,
       });
@@ -122,7 +203,7 @@ export async function genText(args: { system: string; prompt: string }) {
   let streamError: unknown;
   try {
     const result = streamText({
-      model: getModel(),
+      model: getModel(modelId),
       system: args.system,
       prompt: args.prompt,
       onError: ({ error }) => {
