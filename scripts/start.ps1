@@ -160,6 +160,28 @@ $chatId = $selfEnv["TELEGRAM_CHAT_ID"]
 $channelId = "$($selfEnv["TELEGRAM_CHANNEL_ID"])"
 if (-not $channelId) { $channelId = $chatId }
 
+# --- Telegram webhook --------------------------------------------------------
+# Telegram delivers bot messages only to the URL it has on file. Registering
+# on every boot means a reboot, a network change or a whole new machine
+# converges to a working bot without anyone remembering this step exists.
+$tgToken = "$($selfEnv["TELEGRAM_BOT_TOKEN"])"
+$publicUrl = "$($selfEnv["PUBLIC_URL"])".TrimEnd("/")
+if ($tgToken -and $publicUrl) {
+    $hookPath = "$publicUrl/api/public/telegram/webhook"
+    $respFile = [System.IO.Path]::GetTempFileName()
+    & curl.exe -s --max-time 20 `
+        "https://api.telegram.org/bot$tgToken/setWebhook?url=$([uri]::EscapeDataString($hookPath))&secret_token=$([uri]::EscapeDataString("$($selfEnv["TELEGRAM_WEBHOOK_SECRET"])))" `
+        -o $respFile
+    try {
+        $hookResp = Get-Content $respFile -Raw | ConvertFrom-Json
+        if ($hookResp.ok) { Ok "telegram webhook registered at $publicUrl" }
+        else { Warn ("telegram webhook registration failed: " + $hookResp.description) }
+    } catch { Warn "telegram webhook registration could not be verified." }
+    Remove-Item $respFile -Force -ErrorAction SilentlyContinue
+} elseif (-not $publicUrl) {
+    Warn "PUBLIC_URL not set — bot works only on this machine; fill it to get approvals from anywhere."
+}
+
 # --- n8n session -----------------------------------------------------------
 # The launcher manages n8n itself (owner account + the shared header-auth
 # credential) so a fresh machine never needs a manual click inside the n8n UI.

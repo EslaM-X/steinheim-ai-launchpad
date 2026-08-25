@@ -13,7 +13,9 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          # Matches the Dockerfile (node:24-alpine): several deps declare
+          # engines >=22, so CI must run the same runtime as production.
+          node-version: 24
       # `npm ci` installs the committed lockfile exactly. `npm install` floats
       # transitive versions, which is how a TanStack core got split into two
       # chunks that imported each other and crashed every request in production.

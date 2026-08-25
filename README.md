@@ -100,37 +100,72 @@ publishes from the chat.
 
 ## Quick start
 
+### One button, whole stack (self-hosted)
+
+The production deployment is a single Windows machine with Docker Desktop.
+Double-click **`START.bat`** and walk away — the launcher boots Docker, builds
+the app, starts `app + n8n + Postgres + tunnel`, waits for every health check,
+creates the n8n owner account and its credentials from `.env`, deploys and
+activates the four automation workflows, registers the Telegram webhook, and
+opens the dashboard. Re-running it after a reboot, a power cut or a network
+change simply converges to "everything running".
+
+**`STOP.bat`** stops everything and keeps all data.
+
+First run only: fill `.env` once (the launcher copies it from
+`.env.selfhost.example` and opens Notepad). Everything else is automatic —
+including on a brand-new machine: copy the project folder + `.env`, press the
+button. The full non-technical walkthrough lives in
+**[docs/start-here.ar.md](docs/start-here.ar.md)**.
+
+### Developer mode
+
 ```bash
 npm install
 npm run dev
 ```
 
-| Command             |                       |
-| ------------------- | --------------------- |
-| `npm run dev`       | dev server on `:8080` |
-| `npm run typecheck` | `tsc --noEmit`        |
-| `npm run build`     | production build      |
-| `npm run lint`      | eslint                |
+| Command               |                                                       |
+| --------------------- | ----------------------------------------------------- |
+| `npm run dev`         | dev server                                            |
+| `npm run typecheck`   | `tsc --noEmit`                                        |
+| `npm run build`       | production build                                      |
+| `npm run lint`        | eslint                                                |
+| `npm run sync`        | regenerate `docs/api.md`, `docs/schema.md`, db types  |
+| `npm run sync:check`  | fail when any layer drifted without its mirror        |
 
-Database — 14 migrations, 26 tables:
+Database — 17 migrations, 28 tables, pushed and typed through
+`scripts/sb.ps1`:
 
-```bash
-supabase db push
+```powershell
+./scripts/sb.ps1 db push        # apply migrations to the linked project
+npm run sync                    # regenerate types from the live database
 ```
 
-Self-hosted automation — n8n Community Edition, free with no account and no trial:
+---
 
-```bash
-cd infra/n8n && cp .env.example .env && docker compose up -d
+## Everything stays in sync
+
+Four layers drift apart silently on any real project: routes call nothing,
+workflows call dead endpoints, docs describe last month's schema. This repo
+enforces the mirrors in code:
+
+```mermaid
+flowchart LR
+    R["routes/api/public"] --> S["npm run sync"]
+    W["infra/n8n workflows"] --> S
+    C["compose env"] --> S
+    DB["Supabase schema"] --> S
+    S --> D["docs/api.md<br/>docs/schema.md"]
+    S --> T["types.ts"]
+    S -.->|CI fails on drift| R
 ```
 
-Go live — one file of keys, one command:
-
-```bash
-cp .env.golive.example .env.golive && ./scripts/go-live.sh
-```
-
-Full deployment path in **[docs/go-live.md](docs/go-live.md)** and **[docs/deployment.md](docs/deployment.md)**.
+`npm run sync:check` runs in CI: a workflow calling a route that no longer
+exists, an endpoint nothing consumes (unless justified in an allowlist), stale
+generated docs, or a compose variable absent from the example file all fail the
+build — and `src/integrations/supabase/types.ts` is regenerated straight from
+the linked Supabase project, so migrations and TypeScript never disagree.
 
 ---
 
@@ -146,7 +181,14 @@ Full deployment path in **[docs/go-live.md](docs/go-live.md)** and **[docs/deplo
 | `AI_STREAMING`                                      | server          | set to `false` for providers that reject streaming with structured outputs |
 | `AUTOMATION_SECRET`                                 | **server only** | n8n credential                                                             |
 | `TELEGRAM_BOT_TOKEN` `TELEGRAM_WEBHOOK_SECRET`      | **server only** | command centre                                                             |
+| `TELEGRAM_CHAT_ID` `TELEGRAM_CHANNEL_ID`            | **server only** | ops chat + public channel; channel defaults to the chat                    |
 | `CREATIVE_MODE` `CREATIVE_WORKER_SECRET`            | server          | GPU worker channel                                                         |
+| `N8N_ENCRYPTION_KEY` `N8N_DB_*`                     | **server only** | n8n's own store — losing the key loses every stored credential             |
+| `N8N_OWNER_EMAIL` `N8N_OWNER_PASSWORD`              | **server only** | the account `START.bat` creates and signs in with                          |
+| `TUNNEL_TOKEN` `PUBLIC_URL`                         | **server only** | Cloudflare named tunnel + the hostname Telegram is pointed at              |
+
+One `.env` at the repo root feeds the app, n8n, the workflow templates and
+every script. There is deliberately no second copy of it anywhere.
 
 Changing LLM provider is a deployment change, never a code change.
 
@@ -233,21 +275,28 @@ src/lib/platforms/      channel contracts + registry
 src/lib/automation/     guard, schemas, approvals, Telegram
 src/routes/             dashboard + secured API routes
 supabase/migrations/    schema, RLS, grants
-infra/n8n/              self-hosted automation plane
-scripts/                infrastructure smoke test
+infra/n8n/              workflow templates + deploy scripts
+infra/selfhost/         one compose file: app + n8n + db + tunnel
+scripts/sync/           drift guard between routes, workflows, docs and env
+scripts/                START/STOP launchers, smoke test, Supabase helper
+docs/api.md             generated endpoint/consumer map — do not edit
+docs/schema.md          generated schema reference — do not edit
 ```
 
 ---
 
 ## Documentation
 
-|                                          |                                                        |
-| ---------------------------------------- | ------------------------------------------------------ |
-| **[Go-live checklist](docs/go-live.md)** | the shortest path from a fresh clone to a working loop |
-| **[Architecture](docs/architecture.md)** | layers, request lifecycle, state machine, data model   |
-| **[Deployment](docs/deployment.md)**     | Supabase → Vercel → Telegram → smoke test              |
-| **[Contributing rules](AGENTS.md)**      | the invariants any change must preserve                |
-| **[Phase plans](docs/plan/)**            | how the system was designed                            |
+|                                              |                                                        |
+| -------------------------------------------- | ------------------------------------------------------ |
+| **[Start here (عربي)](docs/start-here.ar.md)** | the non-technical operator's guide, in Arabic       |
+| **[Go-live checklist](docs/go-live.md)**     | the shortest path from a fresh clone to a working loop |
+| **[Architecture](docs/architecture.md)**     | layers, request lifecycle, state machine, data model   |
+| **[API map (generated)](docs/api.md)**       | every endpoint and what consumes it                    |
+| **[Schema (generated)](docs/schema.md)**     | every table as it exists right now                     |
+| **[Deployment](docs/deployment.md)**         | Supabase → Vercel → Telegram → smoke test              |
+| **[Contributing rules](AGENTS.md)**          | the invariants any change must preserve                |
+| **[Phase plans](docs/plan/)**                | how the system was designed                            |
 
 ---
 
