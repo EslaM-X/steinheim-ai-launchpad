@@ -1,84 +1,179 @@
-# Steinheim, self-hosted: the application and its automation plane on one box.
+# Steinheim — self-hosted application + automation plane.
 #
-#   cp .env.selfhost.example .env && docker compose up -d --build
+# Local:
+#   docker compose --env-file .env -f docker-compose.yml up -d --build
 #
-# n8n reaches the app at http://app:3000 over the internal network, so the
-# automation secret never crosses the public internet on this hop.
+# Architecture:
+#   app         -> Steinheim Node server :3000
+#   n8n         -> automation            :5678
+#   n8n-db      -> PostgreSQL for n8n
+#   cloudflared -> optional public HTTPS tunnel
+#
+# IMPORTANT:
+# VITE_* variables are passed both:
+#   1. as Docker build arguments, because Vite needs them during npm run build
+#   2. as runtime environment variables, because the application also reads them
+#
+# n8n reaches the application internally at:
+#   http://app:3000
+#
+# cloudflared is optional and only starts with:
+#   docker compose --profile tunnel up -d
 
 services:
+  # ============================================================
+  # Steinheim application
+  # ============================================================
   app:
     build:
       context: ../..
       dockerfile: Dockerfile
+      args:
+        VITE_SUPABASE_URL: ${VITE_SUPABASE_URL}
+        VITE_SUPABASE_PUBLISHABLE_KEY: ${VITE_SUPABASE_PUBLISHABLE_KEY}
+
     restart: unless-stopped
+
     ports:
       - "3000:3000"
+
     environment:
+      # --------------------------------------------------------
+      # Public/client-side Supabase configuration
+      # --------------------------------------------------------
       VITE_SUPABASE_URL: ${VITE_SUPABASE_URL}
       VITE_SUPABASE_PUBLISHABLE_KEY: ${VITE_SUPABASE_PUBLISHABLE_KEY}
+
+      # --------------------------------------------------------
+      # Server-side Supabase configuration
+      # --------------------------------------------------------
       SUPABASE_URL: ${SUPABASE_URL}
       SUPABASE_PUBLISHABLE_KEY: ${SUPABASE_PUBLISHABLE_KEY}
       SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY}
+
+      # --------------------------------------------------------
+      # AI
+      # --------------------------------------------------------
       AI_BASE_URL: ${AI_BASE_URL}
       AI_API_KEY: ${AI_API_KEY}
       AI_MODEL: ${AI_MODEL}
+
+      # --------------------------------------------------------
+      # Automation / security
+      # --------------------------------------------------------
       AUTOMATION_SECRET: ${AUTOMATION_SECRET}
+      CREATIVE_WORKER_SECRET: ${CREATIVE_WORKER_SECRET}
+
+      # --------------------------------------------------------
+      # Telegram
+      # --------------------------------------------------------
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
       TELEGRAM_WEBHOOK_SECRET: ${TELEGRAM_WEBHOOK_SECRET}
+
+      # --------------------------------------------------------
+      # Creative generation
+      # --------------------------------------------------------
       CREATIVE_MODE: ${CREATIVE_MODE:-mock}
-      CREATIVE_WORKER_SECRET: ${CREATIVE_WORKER_SECRET}
-      # Where long work runs. Same process when everything is on this box; set
-      # to this box's address when the front end is hosted elsewhere, so a
-      # request ceiling over there can never cut a sync short.
+
+      # --------------------------------------------------------
+      # Application URLs
+      #
+      # Local default:
+      #   http://localhost:3000
+      #
+      # Later, when Cloudflare Tunnel is configured:
+      #   APP_URL=https://your-subdomain.your-domain.com
+      #   WORKER_URL=https://your-subdomain.your-domain.com
+      # --------------------------------------------------------
       WORKER_URL: ${WORKER_URL:-http://localhost:3000}
       APP_URL: ${APP_URL:-http://localhost:3000}
+
     healthcheck:
-      test: ["CMD", "node", "-e", "fetch('http://localhost:3000/auth').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://localhost:3000/auth').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
       interval: 30s
       timeout: 10s
       retries: 5
       start_period: 20s
 
+  # ============================================================
+  # PostgreSQL database for n8n
+  # ============================================================
   n8n-db:
     image: postgres:16-alpine
+
     restart: unless-stopped
+
     environment:
       POSTGRES_USER: ${N8N_DB_USER:-n8n}
       POSTGRES_PASSWORD: ${N8N_DB_PASSWORD}
       POSTGRES_DB: ${N8N_DB_NAME:-n8n}
+
     volumes:
       - n8n_db:/var/lib/postgresql/data
+
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${N8N_DB_USER:-n8n}"]
       interval: 10s
       timeout: 5s
       retries: 10
 
+  # ============================================================
+  # n8n automation engine
+  # ============================================================
   n8n:
     image: docker.n8n.io/n8nio/n8n:latest
+
     restart: unless-stopped
+
     depends_on:
       n8n-db:
         condition: service_healthy
+
       app:
-        condition: service_started
+        condition: service_healthy
+
     ports:
       - "5678:5678"
+
     environment:
+      # --------------------------------------------------------
+      # Database
+      # --------------------------------------------------------
       DB_TYPE: postgresdb
       DB_POSTGRESDB_HOST: n8n-db
       DB_POSTGRESDB_DATABASE: ${N8N_DB_NAME:-n8n}
       DB_POSTGRESDB_USER: ${N8N_DB_USER:-n8n}
       DB_POSTGRESDB_PASSWORD: ${N8N_DB_PASSWORD}
+
+      # --------------------------------------------------------
+      # n8n encryption
+      # --------------------------------------------------------
       N8N_ENCRYPTION_KEY: ${N8N_ENCRYPTION_KEY}
+
+      # --------------------------------------------------------
+      # Time
+      # --------------------------------------------------------
       GENERIC_TIMEZONE: Africa/Cairo
       TZ: Africa/Cairo
+
+      # --------------------------------------------------------
+      # Privacy / execution behavior
+      # --------------------------------------------------------
       N8N_DIAGNOSTICS_ENABLED: "false"
       N8N_RUNNERS_ENABLED: "true"
+
       EXECUTIONS_DATA_PRUNE: "true"
       EXECUTIONS_DATA_MAX_AGE: "336"
+
     volumes:
       - n8n_data:/home/node/.n8n
+
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://localhost:5678/healthz || exit 1"]
       interval: 30s
@@ -86,26 +181,58 @@ services:
       retries: 5
       start_period: 30s
 
-  # Publishes the app without opening a single inbound port: cloudflared dials
-  # out to Cloudflare and traffic arrives back down that connection. The server
-  # can keep its firewall closed.
+  # ============================================================
+  # Cloudflare Tunnel
   #
-  # Optional — the stack runs without it. Start it with:
-  #   docker compose --profile tunnel up -d
-  # after putting a named-tunnel token in TUNNEL_TOKEN. Use a hostname that is
-  # NOT the company website: steinheim-eg.com is the live shop and the
-  # catalogue this system reads as its source of truth.
+  # OPTIONAL.
+  #
+  # It does NOT run by default.
+  #
+  # After configuring TUNNEL_TOKEN in .env:
+  #
+  #   docker compose \
+  #     --env-file .env \
+  #     --profile tunnel \
+  #     up -d
+  #
+  # The tunnel connects OUTBOUND to Cloudflare.
+  # No inbound port forwarding is required.
+  #
+  # IMPORTANT:
+  # Do not use the company's live shop domain as the application
+  # hostname. Use a dedicated subdomain.
+  # ============================================================
   cloudflared:
     image: cloudflare/cloudflared:latest
+
     restart: unless-stopped
-    profiles: ["tunnel"]
+
+    profiles:
+      - tunnel
+
     depends_on:
       app:
         condition: service_healthy
-    command: tunnel --no-autoupdate run --token ${TUNNEL_TOKEN}
 
+    command:
+      - tunnel
+      - --no-autoupdate
+      - run
+      - --token
+      - ${TUNNEL_TOKEN}
+
+# ================================================================
+# Persistent Docker volumes
+#
+# docker compose down
+#     -> keeps these volumes
+#
+# docker compose down -v
+#     -> DELETES the volumes
+#
+# Therefore do NOT use "down -v" unless you intentionally want
+# to delete n8n's database and n8n's stored credentials/workflows.
+# ================================================================
 volumes:
-  # Named volumes, so n8n's workflows and credentials and Postgres' data
-  # outlive `docker compose down`. Only `down -v` removes them.
   n8n_db:
   n8n_data:

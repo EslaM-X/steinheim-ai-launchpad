@@ -44,4 +44,12 @@ infra/n8n/workflows/ready/
 # generated env bundle for the Vercel dashboard
 .env.vercel
 
-infra/selfhost/.env
+
+# Supabase access token — scripts/sb.ps1 reads it so you never export anything
+.supabase-access-token
+
+# Local CLI binaries — downloaded on demand by scripts/sb.ps1
+tools/
+
+# Supabase CLI local session cache
+supabase/.temp/

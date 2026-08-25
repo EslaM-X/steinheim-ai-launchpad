@@ -28,7 +28,12 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [0, 0],
-      "credentials": { "httpHeaderAuth": { "id": "REPLACE_WITH_CREDENTIAL_ID", "name": "Steinheim automation secret" } }
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_WITH_CREDENTIAL_ID",
+          "name": "Steinheim automation secret"
+        }
+      }
     },
     {
       "parameters": { "fieldToSplitOut": "body.posts", "options": {} },
@@ -50,7 +55,9 @@
       "typeVersion": 1.2,
       "position": [440, 0],
       "onError": "continueErrorOutput",
-      "credentials": { "telegramApi": { "id": "REPLACE_WITH_CREDENTIAL_ID", "name": "Steinheim bot" } }
+      "credentials": {
+        "telegramApi": { "id": "REPLACE_WITH_CREDENTIAL_ID", "name": "Steinheim bot" }
+      }
     },
     {
       "parameters": {
@@ -62,8 +69,14 @@
         "headerParameters": {
           "parameters": [
             { "name": "x-automation-timestamp", "value": "={{ Date.now() }}" },
-            { "name": "x-automation-nonce", "value": "={{ $execution.id }}-{{ $itemIndex }}-{{ Date.now() }}" },
-            { "name": "idempotency-key", "value": "=publish-{{ $('One item per post').item.json.id }}" }
+            {
+              "name": "x-automation-nonce",
+              "value": "={{ $execution.id }}-{{ $itemIndex }}-{{ Date.now() }}"
+            },
+            {
+              "name": "idempotency-key",
+              "value": "=publish-{{ $('One item per post').item.json.id }}"
+            }
           ]
         },
         "sendBody": true,
@@ -76,7 +89,12 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [680, -110],
-      "credentials": { "httpHeaderAuth": { "id": "REPLACE_WITH_CREDENTIAL_ID", "name": "Steinheim automation secret" } }
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_WITH_CREDENTIAL_ID",
+          "name": "Steinheim automation secret"
+        }
+      }
     },
     {
       "parameters": {
@@ -88,8 +106,14 @@
         "headerParameters": {
           "parameters": [
             { "name": "x-automation-timestamp", "value": "={{ Date.now() }}" },
-            { "name": "x-automation-nonce", "value": "={{ $execution.id }}-err-{{ $itemIndex }}-{{ Date.now() }}" },
-            { "name": "idempotency-key", "value": "=unknown-{{ $('One item per post').item.json.id }}" }
+            {
+              "name": "x-automation-nonce",
+              "value": "={{ $execution.id }}-err-{{ $itemIndex }}-{{ Date.now() }}"
+            },
+            {
+              "name": "idempotency-key",
+              "value": "=unknown-{{ $('One item per post').item.json.id }}"
+            }
           ]
         },
         "sendBody": true,
@@ -102,13 +126,22 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [680, 110],
-      "credentials": { "httpHeaderAuth": { "id": "REPLACE_WITH_CREDENTIAL_ID", "name": "Steinheim automation secret" } }
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_WITH_CREDENTIAL_ID",
+          "name": "Steinheim automation secret"
+        }
+      }
     }
   ],
   "connections": {
     "Every 15 min": { "main": [[{ "node": "Claim approved posts", "type": "main", "index": 0 }]] },
-    "Claim approved posts": { "main": [[{ "node": "One item per post", "type": "main", "index": 0 }]] },
-    "One item per post": { "main": [[{ "node": "Publish to channel", "type": "main", "index": 0 }]] },
+    "Claim approved posts": {
+      "main": [[{ "node": "One item per post", "type": "main", "index": 0 }]]
+    },
+    "One item per post": {
+      "main": [[{ "node": "Publish to channel", "type": "main", "index": 0 }]]
+    },
     "Publish to channel": {
       "main": [
         [{ "node": "Record published", "type": "main", "index": 0 }],

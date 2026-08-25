@@ -28,7 +28,12 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [0, 0],
-      "credentials": { "httpHeaderAuth": { "id": "REPLACE_WITH_CREDENTIAL_ID", "name": "Steinheim automation secret" } }
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_WITH_CREDENTIAL_ID",
+          "name": "Steinheim automation secret"
+        }
+      }
     },
     {
       "parameters": {
@@ -61,13 +66,19 @@
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [470, -80],
-      "credentials": { "telegramApi": { "id": "REPLACE_WITH_CREDENTIAL_ID", "name": "Steinheim bot" } }
+      "credentials": {
+        "telegramApi": { "id": "REPLACE_WITH_CREDENTIAL_ID", "name": "Steinheim bot" }
+      }
     }
   ],
   "connections": {
     "Hourly": { "main": [[{ "node": "List UNKNOWN posts", "type": "main", "index": 0 }]] },
-    "List UNKNOWN posts": { "main": [[{ "node": "Anything to reconcile?", "type": "main", "index": 0 }]] },
-    "Anything to reconcile?": { "main": [[{ "node": "Alert human", "type": "main", "index": 0 }], []] }
+    "List UNKNOWN posts": {
+      "main": [[{ "node": "Anything to reconcile?", "type": "main", "index": 0 }]]
+    },
+    "Anything to reconcile?": {
+      "main": [[{ "node": "Alert human", "type": "main", "index": 0 }], []]
+    }
   },
   "settings": { "executionOrder": "v1", "timezone": "Africa/Cairo" },
   "pinData": {}

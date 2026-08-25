@@ -5,20 +5,54 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Offline — Steinheim</title>
     <style>
-      :root { color-scheme: dark; }
+      :root {
+        color-scheme: dark;
+      }
       body {
-        margin: 0; min-height: 100vh; display: grid; place-items: center;
-        background: #080808; color: #f7f5f0; text-align: center; padding: 2rem;
+        margin: 0;
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        background: #080808;
+        color: #f7f5f0;
+        text-align: center;
+        padding: 2rem;
         font-family: Inter, system-ui, sans-serif;
       }
-      h1 { font-family: "Cormorant Garamond", Georgia, serif; font-size: 2.75rem; font-weight: 500; margin: 0; }
-      .rule { width: 4rem; height: 1px; background: #b7a27a; margin: 1.25rem auto; }
-      p { color: #9b9890; font-size: 0.875rem; line-height: 1.7; max-width: 26rem; margin: 0 auto; }
-      button {
-        margin-top: 2rem; padding: 0.65rem 1.5rem; border: 1px solid #b7a27a; border-radius: 0.75rem;
-        background: transparent; color: #f7f5f0; font: inherit; font-size: 0.8125rem; cursor: pointer;
+      h1 {
+        font-family: "Cormorant Garamond", Georgia, serif;
+        font-size: 2.75rem;
+        font-weight: 500;
+        margin: 0;
       }
-      button:hover { background: #b7a27a; color: #080808; }
+      .rule {
+        width: 4rem;
+        height: 1px;
+        background: #b7a27a;
+        margin: 1.25rem auto;
+      }
+      p {
+        color: #9b9890;
+        font-size: 0.875rem;
+        line-height: 1.7;
+        max-width: 26rem;
+        margin: 0 auto;
+      }
+      button {
+        margin-top: 2rem;
+        padding: 0.65rem 1.5rem;
+        border: 1px solid #b7a27a;
+        border-radius: 0.75rem;
+        background: transparent;
+        color: #f7f5f0;
+        font: inherit;
+        font-size: 0.8125rem;
+        cursor: pointer;
+      }
+      button:hover {
+        background: #b7a27a;
+        color: #080808;
+      }
     </style>
   </head>
   <body>
@@ -26,8 +60,8 @@
       <h1>Steinheim</h1>
       <div class="rule"></div>
       <p>
-        You're offline. Steinheim is still installed and ready, but live data is
-        unavailable until you're connected again. Nothing has been deleted.
+        You're offline. Steinheim is still installed and ready, but live data is unavailable until
+        you're connected again. Nothing has been deleted.
       </p>
       <button onclick="location.reload()">Try again</button>
     </main>

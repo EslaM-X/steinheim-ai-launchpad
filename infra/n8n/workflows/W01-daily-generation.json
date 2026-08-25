@@ -25,14 +25,22 @@
             { "name": "idempotency-key", "value": "=daily-{{ $now.format('yyyy-MM-dd') }}" }
           ]
         },
-        "options": { "timeout": 300000, "response": { "response": { "neverError": true, "fullResponse": true } } }
+        "options": {
+          "timeout": 300000,
+          "response": { "response": { "neverError": true, "fullResponse": true } }
+        }
       },
       "id": "w01-generate",
       "name": "Generate today",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [40, 0],
-      "credentials": { "httpHeaderAuth": { "id": "REPLACE_WITH_CREDENTIAL_ID", "name": "Steinheim automation secret" } }
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_WITH_CREDENTIAL_ID",
+          "name": "Steinheim automation secret"
+        }
+      }
     },
     {
       "parameters": {
@@ -65,7 +73,9 @@
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [520, -100],
-      "credentials": { "telegramApi": { "id": "REPLACE_WITH_CREDENTIAL_ID", "name": "Steinheim bot" } }
+      "credentials": {
+        "telegramApi": { "id": "REPLACE_WITH_CREDENTIAL_ID", "name": "Steinheim bot" }
+      }
     },
     {
       "parameters": {
@@ -78,7 +88,9 @@
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [520, 100],
-      "credentials": { "telegramApi": { "id": "REPLACE_WITH_CREDENTIAL_ID", "name": "Steinheim bot" } }
+      "credentials": {
+        "telegramApi": { "id": "REPLACE_WITH_CREDENTIAL_ID", "name": "Steinheim bot" }
+      }
     }
   ],
   "connections": {
