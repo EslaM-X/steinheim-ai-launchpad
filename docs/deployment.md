@@ -241,3 +241,35 @@ publishable key, `WORKER_URL`, `AUTOMATION_SECRET`. `SUPABASE_SERVICE_ROLE_KEY`
 is not among them and must not be added: nothing on the presentation layer
 needs to bypass row-level security, and a key that does has no business on a
 public edge.
+
+## Moving to another computer
+
+Almost nothing travels. The catalogue, the claims, the posts, the plates and
+the campaign assets are in Supabase; the code and the workflow templates are on
+GitHub; the Telegram approvers are a row in the database.
+
+What is genuinely local is the `.env` file — which is not in git precisely so
+that nothing else carries it — and n8n's own Docker volumes, holding its
+credentials and its execution history. Volumes have no path on the host to
+copy, which is why this needs a script rather than a drag.
+
+```powershell
+scripts/move-machine.ps1 backup
+```
+
+It checks the repository is actually pushed first, packs both, and writes a
+note into the folder explaining itself — the folder may be opened days later on
+a machine with none of this context. On the new machine, after installing
+Docker Desktop and cloning the repository:
+
+```powershell
+scripts/move-machine.ps1 restore -Path ..\steinheim-move
+```
+
+then `START.bat`. The public address changes on a new machine, so the launcher
+re-registers the Telegram webhook on its first run.
+
+The bundle holds live credentials: carry it on a USB drive rather than by
+email, and delete it from both machines once the new one is running. Skipping
+the n8n volumes is survivable — the workflows are in the repository and the
+launcher re-imports them, so only the two stored credentials need re-entering.

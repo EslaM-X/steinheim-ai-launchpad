@@ -45,11 +45,16 @@ infra/n8n/workflows/ready/
 .env.vercel
 
 
-# Supabase access token — scripts/sb.ps1 reads it so you never export anything
+# Supabase access token ï¿½ scripts/sb.ps1 reads it so you never export anything
 .supabase-access-token
 
-# Local CLI binaries — downloaded on demand by scripts/sb.ps1
+# Local CLI binaries ï¿½ downloaded on demand by scripts/sb.ps1
 tools/
 
 # Supabase CLI local session cache
 supabase/.temp/
+
+# The move-machine bundle. It holds live secrets by design, so it must never be
+# committed even by accident.
+steinheim-move/
+*.tar.gz
