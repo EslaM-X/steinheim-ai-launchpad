@@ -14,6 +14,13 @@
 
 set -eu
 
+# Git Bash rewrites any argument that looks like a Unix path into a Windows one
+# before the process sees it, so a container path becomes C:/Users/.../tmp/... and
+# the import fails with ENOENT on a file the container never had. Harmless
+# everywhere else.
+export MSYS_NO_PATHCONV=1
+export MSYS2_ARG_CONV_EXCL='*' 
+
 cd "$(dirname "$0")/.."
 
 READY="infra/n8n/workflows/ready"
@@ -36,7 +43,17 @@ for f in "$READY"/W*.json; do
   name="$(basename "$f")"
   compose cp "$f" "n8n:/tmp/$name"
   compose exec -T n8n n8n import:workflow --input="/tmp/$name"
-  echo "  ✅ $name imported"
+
+  # Importing leaves a workflow inactive, whatever it was before. Left there,
+  # the file looks deployed and nothing is scheduled - the exact silent drift
+  # this script exists to prevent. The id comes from the template, which is why
+  # the templates carry stable ones.
+  wf_id=$(sed -n 's/.*"id": *"\([^"]*\)".*//p' "$f" | head -1)
+  if [ -n "$wf_id" ]; then
+    compose exec -T n8n n8n publish:workflow --id="$wf_id" >/dev/null 2>&1       && echo "  ✅ $name imported and activated"       || echo "  ⚠️  $name imported but NOT activated - enable it in the n8n UI"
+  else
+    echo "  ⚠️  $name imported but has no id - cannot activate automatically"
+  fi
 done
 
 cat <<'EOF'
