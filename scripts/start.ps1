@@ -166,20 +166,87 @@ if (-not $channelId) { $channelId = $chatId }
 # converges to a working bot without anyone remembering this step exists.
 $tgToken = "$($selfEnv["TELEGRAM_BOT_TOKEN"])"
 $publicUrl = "$($selfEnv["PUBLIC_URL"])".TrimEnd("/")
-if ($tgToken -and $publicUrl) {
-    $hookPath = "$publicUrl/api/public/telegram/webhook"
+$tgSecret = "$($selfEnv["TELEGRAM_WEBHOOK_SECRET"])"
+$webhookRegistered = $false
+
+function Register-TelegramWebhook([string]$url) {
+    $hookPath = "$url/api/public/telegram/webhook"
     $respFile = [System.IO.Path]::GetTempFileName()
     & curl.exe -s --max-time 20 `
-        "https://api.telegram.org/bot$tgToken/setWebhook?url=$([uri]::EscapeDataString($hookPath))&secret_token=$([uri]::EscapeDataString("$($selfEnv["TELEGRAM_WEBHOOK_SECRET"])))" `
+        "https://api.telegram.org/bot$tgToken/setWebhook?url=$([uri]::EscapeDataString($hookPath))&secret_token=$([uri]::EscapeDataString($tgSecret))" `
         -o $respFile
     try {
-        $hookResp = Get-Content $respFile -Raw | ConvertFrom-Json
-        if ($hookResp.ok) { Ok "telegram webhook registered at $publicUrl" }
-        else { Warn ("telegram webhook registration failed: " + $hookResp.description) }
-    } catch { Warn "telegram webhook registration could not be verified." }
-    Remove-Item $respFile -Force -ErrorAction SilentlyContinue
-} elseif (-not $publicUrl) {
-    Warn "PUBLIC_URL not set — bot works only on this machine; fill it to get approvals from anywhere."
+        $resp = Get-Content $respFile -Raw | ConvertFrom-Json
+        Remove-Item $respFile -Force -ErrorAction SilentlyContinue
+        return $resp.ok
+    } catch {
+        Remove-Item $respFile -Force -ErrorAction SilentlyContinue
+        return $false
+    }
+}
+
+if ($tgToken) {
+    # Try the configured PUBLIC_URL first.
+    if ($publicUrl) {
+        try {
+            $testReq = Invoke-WebRequest -Uri "$publicUrl/api/public/automation/analytics" -UseBasicParsing -TimeoutSec 10
+            if (Register-TelegramWebhook $publicUrl) {
+                Ok "telegram webhook registered at $publicUrl"
+                $webhookRegistered = $true
+            }
+        } catch {}
+    }
+
+    # Fallback: spin up a Cloudflare quick tunnel (no DNS, no token needed).
+    # The URL changes on every boot, but we re-register on every boot anyway.
+    if (-not $webhookRegistered) {
+        Warn "PUBLIC_URL unreachable — starting a Cloudflare quick tunnel (temporary URL)..."
+
+        # Find the compose network so the tunnel can reach the app container.
+        $netName = ""
+        try {
+            $netName = & docker network ls --filter "name=selfhost" --format "{{.Name}}" 2>$null |
+                Select-Object -First 1
+        } catch {}
+        if (-not $netName) { $netName = "selfhost_default" }
+
+        # Remove any leftover quick-tunnel container from a previous run.
+        & docker rm -f steinheim-quick-tunnel 2>$null | Out-Null
+
+        # Start cloudflared in the background. It prints the URL to stderr.
+        $proc = Start-Process -FilePath "docker" -ArgumentList @(
+            "run", "-d", "--name", "steinheim-quick-tunnel",
+            "--network", $netName, "--restart", "unless-stopped",
+            "cloudflare/cloudflared:latest",
+            "tunnel", "--url", "http://app:3000"
+        ) -PassThru -NoNewWindow
+
+        # Wait for the URL to appear in container logs (up to 60 seconds).
+        $tunnelUrl = ""
+        $deadline = (Get-Date).AddSeconds(60)
+        while ((Get-Date) -lt $deadline) {
+            Start-Sleep -Seconds 3
+            $logs = & docker logs steinheim-quick-tunnel 2>&1
+            $match = [regex]::Match(($logs | Out-String), "https://[a-z0-9-]+\.trycloudflare\.com")
+            if ($match.Success) {
+                $tunnelUrl = $match.Value
+                break
+            }
+        }
+
+        if ($tunnelUrl) {
+            if (Register-TelegramWebhook $tunnelUrl) {
+                Ok "telegram webhook registered at $tunnelUrl"
+                $webhookRegistered = $true
+            } else {
+                Warn "webhook registration failed — the bot will not receive messages until you set PUBLIC_URL."
+            }
+        } else {
+            Warn "quick tunnel did not produce a URL in time — the bot will not receive messages."
+        }
+    }
+} else {
+    Warn "TELEGRAM_BOT_TOKEN not set — skipping webhook registration."
 }
 
 # --- n8n session -----------------------------------------------------------
