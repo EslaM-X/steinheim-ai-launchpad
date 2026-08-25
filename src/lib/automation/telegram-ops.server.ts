@@ -108,6 +108,8 @@ export interface RenderRequest {
   palette: string;
   format: string;
   motion: boolean;
+  /** "auto" fits the product into one of the brand's own photographed rooms. */
+  scene?: string | null;
 }
 
 /**
@@ -179,6 +181,7 @@ export async function opsRender(supabase: DB, request: RenderRequest): Promise<O
     palette: request.palette,
     format: request.format,
     motion: request.motion ? "1" : "0",
+    ...(request.scene ? { scene: request.scene } : {}),
   });
   const label = `Render — ${found.name}`;
   return res.ok ? started(label, res.body) : refused(label, res.status, res.body);

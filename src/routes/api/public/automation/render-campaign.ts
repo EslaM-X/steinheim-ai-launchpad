@@ -47,6 +47,7 @@ export const Route = createFileRoute("/api/public/automation/render-campaign")({
                 palette,
                 format,
                 motion,
+                scene: url.searchParams.get("scene"),
               });
             },
           );

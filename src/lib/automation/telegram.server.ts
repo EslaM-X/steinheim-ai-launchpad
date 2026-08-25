@@ -62,6 +62,7 @@ const HELP = [
   "/sync — read the official catalogue again",
   "/plates — rebuild every product in every finish",
   "/render &lt;product&gt; | &lt;palette&gt; | &lt;format&gt; — campaign images + video",
+  "/render &lt;product&gt; | room — fitted into a real bathroom",
   "/generate — write today's content",
   "/verify — a test run that publishes nowhere",
   "/jobs — what is running now",
@@ -491,16 +492,21 @@ async function commandOps(supabase: DB, chatId: string, command: string, rest: s
               "Example: <code>/render joy basin mixer | obsidian | story</code>",
               "",
               "Palettes: porcelain, obsidian, forest, champagne, slate",
+              "Or <b>room</b> — fitted into one of our own bathrooms",
               "Formats: square, story, landscape",
             ].join("\n"),
           };
           break;
         }
+        // "room" as the palette means: fit it into one of our own
+        // photographed bathrooms rather than stand it on a backdrop.
+        const wantsRoom = palette.toLowerCase() === "room" || palette.toLowerCase() === "scene";
         reply = await ops.opsRender(supabase as never, {
           productQuery,
-          palette,
+          palette: wantsRoom ? "obsidian" : palette,
           format,
           motion: true,
+          scene: wantsRoom ? "auto" : null,
         });
         break;
       }

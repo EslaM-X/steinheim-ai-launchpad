@@ -31,6 +31,11 @@ export interface RenderCampaignRequest {
   motion: boolean;
   /** Defaults on. Off produces clean plates for a designer to set type over. */
   caption?: boolean;
+  /**
+   * "auto" picks a room matching the product's mounting; a scene id names one;
+   * omitted keeps the studio backdrop.
+   */
+  scene?: string | null;
 }
 
 export interface RenderedCampaign {
@@ -97,6 +102,19 @@ export async function renderCampaignForProduct(
 
   const wallMounted = /wall/i.test(String(product.installation_type ?? product.name ?? ""));
 
+  // A room is chosen by how the product mounts, not by preference. Standing a
+  // deck-mounted mixer on a wall bracket would be a picture of something that
+  // cannot be installed.
+  let sceneId: string | null = null;
+  if (request.scene) {
+    const { scenesFor } = await import("./scenes");
+    if (request.scene === "auto") {
+      sceneId = scenesFor(wallMounted ? "wall" : "deck")[0]?.id ?? null;
+    } else {
+      sceneId = request.scene;
+    }
+  }
+
   const assets: CampaignAssets = await buildCampaignAssets({
     productName: String(product.name),
     sku: product.sku ? String(product.sku) : null,
@@ -106,12 +124,14 @@ export async function renderCampaignForProduct(
     motion: request.motion,
     wallMounted,
     caption: request.caption !== false,
+    sceneId,
   });
 
   const slug = String(product.source_slug ?? product.id);
   const stills: RenderedCampaign["stills"] = [];
   for (const still of assets.stills) {
-    const path = `${slug}/${request.format}/${request.palette}/${still.finish.replace(/\s+/g, "-")}.png`;
+    const folder = sceneId ? `scene-${sceneId}` : request.palette;
+    const path = `${slug}/${request.format}/${folder}/${still.finish.replace(/\s+/g, "-")}.png`;
     stills.push({
       finish: still.finish,
       url: await put(supabase, path, still.png, "image/png"),
@@ -121,7 +141,7 @@ export async function renderCampaignForProduct(
 
   let video: RenderedCampaign["video"] = null;
   if (assets.video) {
-    const path = `${slug}/${request.format}/${request.palette}/motion.mp4`;
+    const path = `${slug}/${request.format}/${sceneId ? `scene-${sceneId}` : request.palette}/motion.mp4`;
     video = {
       url: await put(supabase, path, assets.video.mp4, "video/mp4"),
       durationSeconds: assets.video.durationSeconds,

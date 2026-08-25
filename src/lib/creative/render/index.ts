@@ -1,4 +1,5 @@
 import { composeProductScene, type Composition } from "./compose";
+import { installIntoScene } from "./install";
 import { renderMotion } from "./motion";
 
 export { PALETTES, paletteNames } from "./backdrop";
@@ -27,6 +28,15 @@ export interface CampaignAssetRequest {
   wallMounted?: boolean;
   /** Set the product's name, SKU and finish over each frame. */
   caption?: boolean;
+  /**
+   * Fit the product into one of the brand's own photographed rooms instead of
+   * standing it on a backdrop.
+   *
+   * This is the only mode that produces a picture of the product installed:
+   * the room was shot with a correctly fitted mixer, so the mounting point,
+   * scale, perspective and light are the photograph's rather than a guess.
+   */
+  sceneId?: string | null;
   /** 1080 square for feed, 1080×1920 for stories and reels. */
   format: "square" | "story" | "landscape" | "square-4k" | "story-4k" | "landscape-4k";
   /** Cut a video as well as the stills. */
@@ -70,6 +80,38 @@ export async function buildCampaignAssets(request: CampaignAssetRequest): Promis
   const stills: CampaignAssets["stills"] = [];
 
   for (const variant of request.variants) {
+    // Installed shots take a different path entirely. There is nothing to
+    // compose — the room already holds a correctly fitted mixer, and the work
+    // is to swap it. Only a plate can be fitted: the raw photograph still
+    // carries its studio backdrop, which would paste a white rectangle onto a
+    // wall.
+    if (request.sceneId && variant.plateUrl) {
+      try {
+        const plate = Buffer.from(
+          await (
+            await fetch(variant.plateUrl, { signal: AbortSignal.timeout(60_000) })
+          ).arrayBuffer(),
+        );
+        const fitted = await installIntoScene({
+          sceneId: request.sceneId,
+          plate,
+          width,
+          height,
+        });
+        stills.push({
+          finish: variant.finish,
+          png: fitted.png,
+          corrected: true,
+          note: `fitted into ${fitted.scene.label}`,
+        });
+      } catch (error) {
+        warnings.push(
+          `${variant.finish}: ${error instanceof Error ? error.message : String(error)}`,
+        );
+      }
+      continue;
+    }
+
     let composition: Composition;
     try {
       composition = await composeProductScene({
