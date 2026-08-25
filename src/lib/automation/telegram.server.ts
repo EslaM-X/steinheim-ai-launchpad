@@ -2,8 +2,10 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import {
   answerCallbackQuery,
+  editMessageCaption,
   editMessageText,
   escapeHtml,
+  sendPhoto,
   sendMessage,
   type InlineButton,
 } from "@/lib/platforms/telegram";
@@ -13,16 +15,14 @@ import { applyHumanApproval } from "./approvals.server";
 type DB = SupabaseClient<any, "public", any>;
 
 /**
- * Telegram command centre: the human-in-the-loop interface.
+ * Telegram command centre — full interactive interface.
  *
- * It reads state and flips approval flags. It never publishes — approving marks
- * the post `approved`, and the n8n publisher picks it up from the queue. Keeping
- * the two apart is what stops a chat button from becoming a publishing path.
+ * Both approvers can browse posts with images, approve/reject with reasons,
+ * explore ideas, view campaign renders, and see analytics — all from chat.
  */
 
 interface TelegramConfig {
   chatId: string;
-  /** telegram user id → Supabase user uuid, so approvals keep a real author. */
   approvers: Record<string, string>;
 }
 
@@ -38,25 +38,53 @@ async function loadConfig(supabase: DB): Promise<TelegramConfig | null> {
   return { chatId: String(data.external_id), approvers: config.approvers ?? {} };
 }
 
+// ─── Help & formatting ───────────────────────────────────────────────
+
 const HELP = [
-  "<b>Steinheim AI — command centre</b>",
+  "<b>Steinheim AI — Command Centre</b>",
   "",
-  "/status — today's pipeline at a glance",
-  "/today — what was generated today",
-  "/pending — posts waiting for your approval",
-  "/analytics — last 7 days of performance",
+  "<b>Content</b>",
+  "/pending — posts awaiting approval (with images)",
+  "/post &lt;id&gt; — full post detail",
+  "/approve all — approve everything pending",
+  "/rejected — rejected posts",
+  "",
+  "<b>Planning</b>",
+  "/today — today's generated content",
+  "/ideas — content ideas in the queue",
+  "/campaigns — active campaign renders",
+  "",
+  "<b>Reports</b>",
+  "/status — pipeline at a glance",
+  "/analytics — last 7 days performance",
+  "",
+  "<b>Admin</b>",
+  "/register — register as an approver",
   "/help — this message",
   "",
-  "Approving a post only queues it. Publishing runs on its own schedule.",
+  "Approving queues for publishing. Publishing runs on schedule.",
 ].join("\n");
 
-function postSummary(post: Record<string, any>): string {
-  const body = String(post["body_en"] ?? post["body_ar"] ?? "").slice(0, 400);
-  const score = post["review_score"] != null ? `${post["review_score"]}/100` : "unscored";
+function postCaption(post: Record<string, any>): string {
+  const body = String(post["body_en"] ?? post["body_ar"] ?? "").slice(0, 800);
+  const score = post["review_score"] != null ? `${post["review_score"]}/100` : "—";
+  const platform = String(post["platform"] ?? "").toUpperCase();
+  const rec = post["ai_recommendation"]
+    ? `\n💡 ${escapeHtml(String(post["ai_recommendation"]))}`
+    : "";
+  const hashtags =
+    Array.isArray(post["hashtags"]) && post["hashtags"].length
+      ? `\n${post["hashtags"].map((h: string) => `#${h.replace(/\s+/g, "")}`).join(" ")}`
+      : "";
   return [
-    `<b>${escapeHtml(String(post["platform"]).toUpperCase())}</b> · ${escapeHtml(score)}`,
+    `<b>${escapeHtml(platform)}</b> · Score: ${escapeHtml(score)}`,
+    "",
     escapeHtml(body),
-  ].join("\n\n");
+    hashtags,
+    rec,
+  ]
+    .filter(Boolean)
+    .join("\n");
 }
 
 function approvalButtons(postId: string): InlineButton[][] {
@@ -65,14 +93,39 @@ function approvalButtons(postId: string): InlineButton[][] {
       { text: "✅ Approve", callback_data: `approve:${postId}` },
       { text: "❌ Reject", callback_data: `reject:${postId}` },
     ],
+    [{ text: "📋 Details", callback_data: `detail:${postId}` }],
   ];
 }
+
+function detailButtons(postId: string): InlineButton[][] {
+  return [
+    [
+      { text: "✅ Approve", callback_data: `approve:${postId}` },
+      { text: "❌ Reject", callback_data: `reject:${postId}` },
+    ],
+  ];
+}
+
+// ─── Send post with or without image ─────────────────────────────────
+
+async function sendPostPreview(chatId: string, post: Record<string, any>): Promise<void> {
+  const caption = postCaption(post);
+  const imageUrl = post["image_url"];
+
+  if (imageUrl && typeof imageUrl === "string" && imageUrl.startsWith("http")) {
+    await sendPhoto(chatId, imageUrl, caption, approvalButtons(String(post["id"])));
+  } else {
+    await sendMessage(chatId, caption, approvalButtons(String(post["id"])));
+  }
+}
+
+// ─── Commands ────────────────────────────────────────────────────────
 
 async function commandStatus(supabase: DB, chatId: string) {
   const today = new Date().toISOString().slice(0, 10);
   const { data } = await supabase
     .from("posts")
-    .select("status, created_at")
+    .select("status")
     .eq("is_test", false)
     .gte("created_at", `${today}T00:00:00Z`);
   const rows = (data ?? []) as Array<{ status: string }>;
@@ -80,59 +133,275 @@ async function commandStatus(supabase: DB, chatId: string) {
     acc[row.status] = (acc[row.status] ?? 0) + 1;
     return acc;
   }, {});
-  const lines = Object.entries(counts).map(([status, count]) => `${status}: ${count}`);
+  const total = rows.length;
+  const lines = Object.entries(counts)
+    .map(([s, c]) => `  ${statusEmoji(s)} ${s}: <b>${c}</b>`)
+    .join("\n");
   await sendMessage(
     chatId,
     [
-      `<b>📊 Today (${today})</b>`,
+      `<b>📊 Pipeline Status — ${today}</b>`,
+      `Total: <b>${total}</b>`,
       "",
-      lines.length ? lines.join("\n") : "Nothing generated yet.",
+      lines || "Nothing generated yet.",
     ].join("\n"),
   );
+}
+
+function statusEmoji(status: string): string {
+  const map: Record<string, string> = {
+    draft: "📝",
+    reviewed: "🔍",
+    ai_approved: "🟡",
+    approved: "🟢",
+    publishing: "⏳",
+    published: "✅",
+    needs_revision: "🔴",
+    failed: "💥",
+    unknown: "❓",
+  };
+  return map[status] ?? "•";
 }
 
 async function commandToday(supabase: DB, chatId: string) {
   const today = new Date().toISOString().slice(0, 10);
   const { data } = await supabase
     .from("content_ideas")
-    .select("topic, content_type, funnel_stage, planned_date")
+    .select("id, topic, topic_ar, content_type, funnel_stage, angle")
     .eq("planned_date", today)
     .order("created_at", { ascending: false })
-    .limit(3);
+    .limit(5);
   const ideas = (data ?? []) as Array<Record<string, unknown>>;
   if (!ideas.length) {
     await sendMessage(chatId, "Nothing generated for today yet.");
     return;
   }
-  const lines = ideas.map(
-    (idea) =>
-      `• <b>${escapeHtml(String(idea["topic"]))}</b>\n  ${escapeHtml(
-        [idea["content_type"], idea["funnel_stage"]].filter(Boolean).join(" · "),
-      )}`,
-  );
-  await sendMessage(chatId, [`<b>🗓 Today's ideas</b>`, "", ...lines].join("\n"));
+  const lines = ideas.map((idea, i) => {
+    const topic = escapeHtml(String(idea["topic"] ?? ""));
+    const topicAr = idea["topic_ar"] ? ` (${escapeHtml(String(idea["topic_ar"]))})` : "";
+    const type = idea["content_type"] ? escapeHtml(String(idea["content_type"])) : "";
+    const stage = idea["funnel_stage"] ? escapeHtml(String(idea["funnel_stage"])) : "";
+    const angle = idea["angle"] ? escapeHtml(String(idea["angle"]).slice(0, 120)) : "";
+    return [
+      `<b>${i + 1}. ${topic}${topicAr}</b>`,
+      [type, stage].filter(Boolean).join(" · "),
+      angle ? `📝 ${angle}` : "",
+    ]
+      .filter(Boolean)
+      .join("\n");
+  });
+  await sendMessage(chatId, [`<b>🗓 Today's Content — ${today}</b>`, "", ...lines].join("\n"));
 }
 
 export async function commandPending(supabase: DB, chatId: string) {
   const { data } = await supabase
     .from("posts")
-    .select("id, platform, body_en, body_ar, review_score, ai_recommendation")
+    .select("id, platform, body_en, body_ar, review_score, ai_recommendation, image_url, hashtags")
     .eq("is_test", false)
     .eq("ai_approved", true)
     .eq("hard_fail", false)
     .is("human_approved_at", null)
     .in("status", ["ai_approved", "reviewed"])
     .order("created_at", { ascending: false })
+    .limit(10);
+  const posts = (data ?? []) as Array<Record<string, unknown>>;
+  if (!posts.length) {
+    await sendMessage(chatId, "✅ Nothing waiting for approval — all clear!");
+    return;
+  }
+  await sendMessage(
+    chatId,
+    `<b>🟡 ${posts.length} post(s) awaiting approval</b>\nSwipe through and tap Approve or Reject.`,
+  );
+  for (const post of posts) {
+    await sendPostPreview(chatId, post);
+  }
+}
+
+async function commandPostDetail(supabase: DB, chatId: string, postId: string) {
+  const { data: post } = await supabase
+    .from("posts")
+    .select(
+      "id, platform, body_en, body_ar, review_score, ai_recommendation, image_url, hashtags, status, review_notes, accuracy_report, penalties, created_at",
+    )
+    .eq("id", postId)
+    .maybeSingle();
+  if (!post) {
+    await sendMessage(chatId, "Post not found.");
+    return;
+  }
+  const body = String(post["body_en"] ?? post["body_ar"] ?? "");
+  const bodyAr = post["body_ar"] ? escapeHtml(String(post["body_ar"])) : "—";
+  const score = post["review_score"] != null ? `${post["review_score"]}/100` : "—";
+  const hashtags = Array.isArray(post["hashtags"])
+    ? post["hashtags"].map((h: string) => `#${h.replace(/\s+/g, "")}`).join(" ")
+    : "—";
+  const notes = post["review_notes"] ? escapeHtml(String(post["review_notes"]).slice(0, 300)) : "—";
+  const created = post["created_at"]
+    ? new Date(String(post["created_at"])).toLocaleString("en-GB")
+    : "—";
+
+  const caption = [
+    `<b>📋 Post Detail</b>`,
+    "",
+    `<b>Platform:</b> ${escapeHtml(String(post["platform"]).toUpperCase())}`,
+    `<b>Status:</b> ${statusEmoji(String(post["status"]))} ${escapeHtml(String(post["status"]))}`,
+    `<b>Score:</b> ${escapeHtml(score)}`,
+    `<b>Created:</b> ${created}`,
+    "",
+    `<b>English:</b>`,
+    escapeHtml(body.slice(0, 1000)),
+    "",
+    `<b>Arabic:</b>`,
+    bodyAr,
+    "",
+    `<b>Hashtags:</b> ${escapeHtml(hashtags)}`,
+    `<b>Notes:</b> ${notes}`,
+  ]
+    .filter(Boolean)
+    .join("\n");
+
+  const imageUrl = post["image_url"];
+  if (imageUrl && typeof imageUrl === "string" && imageUrl.startsWith("http")) {
+    await sendPhoto(chatId, imageUrl, caption, detailButtons(postId));
+  } else {
+    await sendMessage(chatId, caption, detailButtons(postId));
+  }
+}
+
+async function commandApproveAll(
+  supabase: DB,
+  chatId: string,
+  config: TelegramConfig,
+  approverUserId: string,
+) {
+  const { data } = await supabase
+    .from("posts")
+    .select("id")
+    .eq("is_test", false)
+    .eq("ai_approved", true)
+    .eq("hard_fail", false)
+    .is("human_approved_at", null)
+    .in("status", ["ai_approved", "reviewed"])
+    .limit(20);
+  const posts = (data ?? []) as Array<{ id: string }>;
+  if (!posts.length) {
+    await sendMessage(chatId, "✅ Nothing pending to approve.");
+    return;
+  }
+  let approved = 0;
+  let failed = 0;
+  for (const post of posts) {
+    const result = await applyHumanApproval(supabase, post.id, true, approverUserId);
+    if (result.ok) approved++;
+    else failed++;
+  }
+  await sendMessage(
+    chatId,
+    [
+      `<b>✅ Bulk approve complete</b>`,
+      `Approved: <b>${approved}</b>`,
+      failed ? `Skipped: <b>${failed}</b>` : "",
+    ]
+      .filter(Boolean)
+      .join("\n"),
+  );
+}
+
+async function commandRejected(supabase: DB, chatId: string) {
+  const { data } = await supabase
+    .from("posts")
+    .select("id, platform, body_en, body_ar, review_score, image_url")
+    .eq("is_test", false)
+    .eq("status", "needs_revision")
+    .order("updated_at", { ascending: false })
     .limit(5);
   const posts = (data ?? []) as Array<Record<string, unknown>>;
   if (!posts.length) {
-    await sendMessage(chatId, "✅ Nothing waiting for approval.");
+    await sendMessage(chatId, "No rejected posts.");
     return;
   }
-  await sendMessage(chatId, `<b>🟡 ${posts.length} post(s) awaiting your approval</b>`);
+  await sendMessage(chatId, `<b>🔴 ${posts.length} rejected post(s)</b>`);
   for (const post of posts) {
-    await sendMessage(chatId, postSummary(post), approvalButtons(String(post["id"])));
+    const body = String(post["body_en"] ?? post["body_ar"] ?? "").slice(0, 300);
+    const score = post["review_score"] != null ? `${post["review_score"]}/100` : "—";
+    const caption = [
+      `<b>${escapeHtml(String(post["platform"]).toUpperCase())}</b> · Score: ${escapeHtml(score)}`,
+      "",
+      escapeHtml(body),
+      "",
+      "Send /post &lt;id&gt; to view full details.",
+    ].join("\n");
+    const imageUrl = post["image_url"];
+    if (imageUrl && typeof imageUrl === "string" && imageUrl.startsWith("http")) {
+      await sendPhoto(chatId, imageUrl, caption);
+    } else {
+      await sendMessage(chatId, caption);
+    }
   }
+}
+
+async function commandIdeas(supabase: DB, chatId: string) {
+  const { data } = await supabase
+    .from("content_ideas")
+    .select("id, topic, topic_ar, goal, angle, content_type, funnel_stage, planned_date, status")
+    .in("status", ["planned", "in_progress"])
+    .order("planned_date", { ascending: true })
+    .limit(10);
+  const ideas = (data ?? []) as Array<Record<string, unknown>>;
+  if (!ideas.length) {
+    await sendMessage(chatId, "No content ideas in the queue.");
+    return;
+  }
+  const lines = ideas.map((idea, i) => {
+    const topic = escapeHtml(String(idea["topic"] ?? ""));
+    const topicAr = idea["topic_ar"] ? ` (${escapeHtml(String(idea["topic_ar"]))})` : "";
+    const date = idea["planned_date"] ? String(idea["planned_date"]) : "TBD";
+    const type = idea["content_type"] ? escapeHtml(String(idea["content_type"])) : "";
+    const stage = idea["funnel_stage"] ? escapeHtml(String(idea["funnel_stage"])) : "";
+    const angle = idea["angle"] ? escapeHtml(String(idea["angle"]).slice(0, 100)) : "";
+    const goal = idea["goal"] ? escapeHtml(String(idea["goal"]).slice(0, 80)) : "";
+    return [
+      `<b>${i + 1}. ${topic}${topicAr}</b>`,
+      `📅 ${date} · ${[type, stage].filter(Boolean).join(" · ")}`,
+      angle ? `📐 ${angle}` : "",
+      goal ? `🎯 ${goal}` : "",
+    ]
+      .filter(Boolean)
+      .join("\n");
+  });
+  await sendMessage(chatId, [`<b>💡 Content Ideas (${ideas.length})</b>`, "", ...lines].join("\n"));
+}
+
+async function commandCampaigns(supabase: DB, chatId: string) {
+  const { data } = await supabase
+    .from("campaigns")
+    .select("id, name, status, objective, market, platforms, created_at")
+    .order("created_at", { ascending: false })
+    .limit(5);
+  const campaigns = (data ?? []) as Array<Record<string, unknown>>;
+  if (!campaigns.length) {
+    await sendMessage(chatId, "No campaigns yet. Run a campaign render first.");
+    return;
+  }
+  const lines = campaigns.map((c, i) => {
+    const name = escapeHtml(String(c["name"] ?? "Unnamed"));
+    const status = c["status"] ? escapeHtml(String(c["status"])) : "unknown";
+    const objective = c["objective"] ? escapeHtml(String(c["objective"]).slice(0, 60)) : "";
+    const market = c["market"] ? escapeHtml(String(c["market"])) : "";
+    const platforms = Array.isArray(c["platforms"]) ? c["platforms"].join(", ") : "";
+    const date = c["created_at"]
+      ? new Date(String(c["created_at"])).toLocaleDateString("en-GB")
+      : "";
+    return [
+      `<b>${i + 1}. ${name}</b>`,
+      `  ${statusEmoji(status)} ${status} · ${market} · ${escapeHtml(platforms)} · ${date}`,
+      objective ? `  🎯 ${objective}` : "",
+    ]
+      .filter(Boolean)
+      .join("\n");
+  });
+  await sendMessage(chatId, [`<b>🎨 Campaigns</b>`, "", ...lines].join("\n"));
 }
 
 async function commandAnalytics(supabase: DB, chatId: string) {
@@ -146,24 +415,81 @@ async function commandAnalytics(supabase: DB, chatId: string) {
     await sendMessage(chatId, "No metrics collected in the last 7 days.");
     return;
   }
-  const byPlatform = rows.reduce<Record<string, { impressions: number; engagements: number }>>(
-    (acc, row) => {
-      const key = String(row["platform"] ?? "unknown");
-      acc[key] ??= { impressions: 0, engagements: 0 };
-      acc[key].impressions += Number(row["impressions"] ?? 0);
-      acc[key].engagements += Number(row["engagements"] ?? 0);
-      return acc;
-    },
-    {},
-  );
-  const lines = Object.entries(byPlatform).map(([platform, totals]) => {
-    const rate = totals.impressions
-      ? ((totals.engagements / totals.impressions) * 100).toFixed(1)
-      : "—";
-    return `${platform}: ${totals.impressions} impressions · ${totals.engagements} engagements (${rate}%)`;
+  const byPlatform = rows.reduce<
+    Record<string, { impressions: number; engagements: number; reach: number; clicks: number }>
+  >((acc, row) => {
+    const key = String(row["platform"] ?? "unknown");
+    acc[key] ??= { impressions: 0, engagements: 0, reach: 0, clicks: 0 };
+    acc[key].impressions += Number(row["impressions"] ?? 0);
+    acc[key].engagements += Number(row["engagements"] ?? 0);
+    acc[key].reach += Number(row["reach"] ?? 0);
+    acc[key].clicks += Number(row["clicks"] ?? 0);
+    return acc;
+  }, {});
+  const lines = Object.entries(byPlatform).map(([platform, t]) => {
+    const rate = t.impressions ? ((t.engagements / t.impressions) * 100).toFixed(1) : "—";
+    return [
+      `<b>${escapeHtml(platform.toUpperCase())}</b>`,
+      `  👁 ${t.impressions.toLocaleString()} views · 💬 ${t.engagements.toLocaleString()} engagements`,
+      `  📊 ${rate}% rate · 🔗 ${t.clicks.toLocaleString()} clicks`,
+    ].join("\n");
   });
-  await sendMessage(chatId, [`<b>📈 Last 7 days</b>`, "", ...lines].join("\n"));
+  await sendMessage(chatId, [`<b>📈 Last 7 Days</b>`, "", ...lines].join("\n"));
 }
+
+async function commandRegister(supabase: DB, chatId: string, fromId: string, fromName: string) {
+  const config = await loadConfig(supabase);
+  if (!config) return;
+
+  if (config.approvers[fromId]) {
+    await sendMessage(
+      chatId,
+      `✅ <b>${escapeHtml(fromName)}</b> is already registered as an approver.`,
+    );
+    return;
+  }
+
+  // Auto-create a Supabase user for this approver
+  const { data: existingUser } = await supabase
+    .from("profiles")
+    .select("id")
+    .eq("telegram_id", fromId)
+    .maybeSingle();
+
+  let supabaseUserId: string;
+  if (existingUser?.id) {
+    supabaseUserId = existingUser.id;
+  } else {
+    // Create a minimal profile for this Telegram user
+    const newId = crypto.randomUUID();
+    await supabase.from("profiles").insert({
+      id: newId,
+      display_name: fromName,
+      telegram_id: fromId,
+    });
+    supabaseUserId = newId;
+  }
+
+  // Update the approvers map in integrations
+  const newApprovers = { ...config.approvers, [fromId]: supabaseUserId };
+  await supabase
+    .from("integrations")
+    .update({ config: { approvers: newApprovers } })
+    .eq("kind", "telegram")
+    .eq("status", "active");
+
+  await sendMessage(
+    chatId,
+    [
+      `✅ <b>${escapeHtml(fromName)}</b> registered as approver!`,
+      `Telegram ID: <code>${escapeHtml(fromId)}</code>`,
+      "",
+      "You can now approve and reject posts.",
+    ].join("\n"),
+  );
+}
+
+// ─── Callback handling (button presses) ──────────────────────────────
 
 async function handleCallback(
   supabase: DB,
@@ -171,25 +497,42 @@ async function handleCallback(
   callback: Record<string, any>,
 ): Promise<void> {
   const fromId = String(callback["from"]?.["id"] ?? "");
+  const fromName = [callback["from"]?.["first_name"], callback["from"]?.["last_name"]]
+    .filter(Boolean)
+    .join(" ");
   const approverUserId = config.approvers[fromId];
+
   if (!approverUserId) {
-    await answerCallbackQuery(callback["id"], "You are not an approver for this system.");
+    await answerCallbackQuery(
+      callback["id"],
+      `${fromName || "Unknown"}, you're not registered. Send /register first.`,
+    );
     return;
   }
 
-  const [action, postId] = String(callback["data"] ?? "").split(":");
+  const data = String(callback["data"] ?? "");
+  const [action, postId] = data.split(":");
+
+  if (action === "detail" && postId) {
+    await answerCallbackQuery(callback["id"], "Opening details...");
+    await commandPostDetail(supabase, config.chatId, postId);
+    return;
+  }
+
   if ((action !== "approve" && action !== "reject") || !postId) {
     await answerCallbackQuery(callback["id"], "Unknown action.");
     return;
   }
 
   const result = await applyHumanApproval(supabase, postId, action === "approve", approverUserId);
+  const approverTag = escapeHtml(fromName || fromId);
+
   await answerCallbackQuery(
     callback["id"],
     result.ok
       ? action === "approve"
-        ? "Approved — queued for publishing."
-        : "Sent back for revision."
+        ? `Approved by ${approverTag}`
+        : `Rejected by ${approverTag}`
       : result.reason,
   );
 
@@ -197,23 +540,32 @@ async function handleCallback(
   if (message?.["message_id"]) {
     const outcome = result.ok
       ? action === "approve"
-        ? "✅ <b>Approved</b> — queued for publishing."
-        : "❌ <b>Sent back</b> for revision."
+        ? `✅ <b>Approved</b> by ${approverTag}\nQueued for publishing.`
+        : `❌ <b>Rejected</b> by ${approverTag}\nSent back for revision.`
       : `⚠️ ${escapeHtml(result.reason)}`;
-    // Clear the buttons so the same decision cannot be submitted twice.
-    await editMessageText(
-      config.chatId,
-      Number(message["message_id"]),
-      `${String(message["text"] ?? "").slice(0, 3500)}\n\n${outcome}`,
-      result.ok ? [] : approvalButtons(postId),
-    );
+
+    if (message.photo) {
+      // Photo message — edit caption
+      const oldCaption = message.caption ?? "";
+      await editMessageCaption(
+        config.chatId,
+        Number(message["message_id"]),
+        `${oldCaption.slice(0, 900)}\n\n${outcome}`,
+        result.ok ? [] : detailButtons(postId),
+      );
+    } else {
+      await editMessageText(
+        config.chatId,
+        Number(message["message_id"]),
+        `${String(message["text"] ?? "").slice(0, 3500)}\n\n${outcome}`,
+        result.ok ? [] : detailButtons(postId),
+      );
+    }
   }
 }
 
-/**
- * Pushes the approval queue to the configured chat. Called after a generation
- * run; a Telegram outage must never fail the run, so callers swallow errors.
- */
+// ─── Queue pusher (called after generation) ──────────────────────────
+
 export async function pushPendingApprovals(supabase: DB): Promise<boolean> {
   const config = await loadConfig(supabase);
   if (!config) return false;
@@ -221,7 +573,8 @@ export async function pushPendingApprovals(supabase: DB): Promise<boolean> {
   return true;
 }
 
-/** Entry point for a Telegram webhook update. */
+// ─── Main entry point ────────────────────────────────────────────────
+
 export async function handleTelegramUpdate(
   supabase: DB,
   update: Record<string, any>,
@@ -237,12 +590,20 @@ export async function handleTelegramUpdate(
   const message = update["message"];
   if (!message) return;
 
-  // Only the configured chat is served; anything else is ignored silently.
+  // Only the configured chat is served
   if (String(message["chat"]?.["id"] ?? "") !== config.chatId) return;
+
+  const fromId = String(message["from"]?.["id"] ?? "");
+  const fromName = [message["from"]?.["first_name"], message["from"]?.["last_name"]]
+    .filter(Boolean)
+    .join(" ");
 
   const text = String(message["text"] ?? "").trim();
   if (!text.startsWith("/")) return;
-  const command = text.split(/[\s@]/)[0]!.toLowerCase();
+
+  const parts = text.split(/\s+/);
+  const command = parts[0]!.toLowerCase().split("@")[0];
+  const args = parts.slice(1);
 
   switch (command) {
     case "/status":
@@ -254,8 +615,52 @@ export async function handleTelegramUpdate(
     case "/pending":
       await commandPending(supabase, config.chatId);
       break;
+    case "/post":
+      if (args[0]) {
+        await commandPostDetail(supabase, config.chatId, args[0]);
+      } else {
+        await sendMessage(config.chatId, "Usage: /post &lt;id&gt;");
+      }
+      break;
+    case "/approve":
+      if (args[0]?.toLowerCase() === "all") {
+        const approverUserId = config.approvers[fromId];
+        if (!approverUserId) {
+          await sendMessage(config.chatId, "You are not registered. Send /register first.");
+          break;
+        }
+        await commandApproveAll(supabase, config.chatId, config, approverUserId);
+      } else if (args[0]) {
+        const approverUserId = config.approvers[fromId];
+        if (!approverUserId) {
+          await sendMessage(config.chatId, "You are not registered. Send /register first.");
+          break;
+        }
+        const result = await applyHumanApproval(supabase, args[0], true, approverUserId);
+        await sendMessage(
+          config.chatId,
+          result.ok
+            ? `✅ Post approved — queued for publishing.`
+            : `⚠️ ${escapeHtml(result.reason)}`,
+        );
+      } else {
+        await sendMessage(config.chatId, "Usage: /approve all  or  /approve &lt;id&gt;");
+      }
+      break;
+    case "/rejected":
+      await commandRejected(supabase, config.chatId);
+      break;
+    case "/ideas":
+      await commandIdeas(supabase, config.chatId);
+      break;
+    case "/campaigns":
+      await commandCampaigns(supabase, config.chatId);
+      break;
     case "/analytics":
       await commandAnalytics(supabase, config.chatId);
+      break;
+    case "/register":
+      await commandRegister(supabase, config.chatId, fromId, fromName);
       break;
     case "/help":
     case "/start":

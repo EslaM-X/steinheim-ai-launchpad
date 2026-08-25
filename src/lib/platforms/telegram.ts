@@ -86,6 +86,43 @@ export async function answerCallbackQuery(callbackQueryId: string, text?: string
   });
 }
 
+export async function sendPhoto(
+  chatId: string | number,
+  photo: string,
+  caption: string,
+  buttons?: InlineButton[][],
+): Promise<{ message_id: number }> {
+  return callBotApi<{ message_id: number }>("sendPhoto", {
+    chat_id: chatId,
+    photo,
+    caption: caption.slice(0, 1024),
+    parse_mode: "HTML",
+    ...(buttons ? { reply_markup: { inline_keyboard: buttons } } : {}),
+  });
+}
+
+export async function sendMediaGroup(
+  chatId: string | number,
+  media: Array<{ type: "photo"; media: string; caption?: string; parse_mode?: string }>,
+): Promise<unknown> {
+  return callBotApi("sendMediaGroup", { chat_id: chatId, media });
+}
+
+export async function editMessageCaption(
+  chatId: string | number,
+  messageId: number,
+  caption: string,
+  buttons?: InlineButton[][],
+): Promise<void> {
+  await callBotApi("editMessageCaption", {
+    chat_id: chatId,
+    message_id: messageId,
+    caption: caption.slice(0, 1024),
+    parse_mode: "HTML",
+    reply_markup: { inline_keyboard: buttons ?? [] },
+  });
+}
+
 export const telegramAdapter: PlatformAdapter = {
   channel: "telegram",
   validate: validateAgainstSpec,
