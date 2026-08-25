@@ -46,6 +46,10 @@ function worthTryingAnotherModel(error: unknown): boolean {
   // would abandon the chain over a token count.
   if (/\b(401|402|403)\b/.test(message)) return false;
   if (/credits exhausted|invalid api key|unauthorized|quota/i.test(message)) return false;
+  // "free-models-per-day" counts every free model on the key against one
+  // allowance, so the next model in the chain is already out of budget too.
+  // Observed walking all three to arrive at the same answer, minutes later.
+  if (/free-models-per-day|per-day limit/i.test(message)) return false;
   return true;
 }
 
