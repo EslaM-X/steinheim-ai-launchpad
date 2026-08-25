@@ -26,6 +26,7 @@ not in *Who calls what* either, nothing consumes it.
 - **docs/architecture.md** → `/api/public/creative/`
 - **docs/plan/phase-d-steinheim-ai-creative-studio-2026-08-14.md** → `/api/public/creative/claim`
 - **docs/plan/phase-d-steinheim-ai-creative-studio-2026-08-14.md** → `/api/public/creative/complete`
+- **docs/plan/phase-e-scene-replacement-2026-08-25.md** → `/api/public/automation/render-scene`
 - **README.md** → `/api/public/automation/generate-today`
 - **scripts/smoke-automation.sh** → `/api/public/automation`
 - **scripts/smoke-automation.sh** → `/api/public/automation/catalog-sync`
