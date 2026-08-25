@@ -31,6 +31,7 @@ not in *Who calls what* either, nothing consumes it.
 - **docs/plan/phase-e-scene-replacement-2026-08-25.md** → `/api/public/automation/render-scene`
 - **README.md** → `/api/public/automation/generate-today`
 - **scripts/smoke-automation.sh** → `/api/public/automation`
+- **scripts/smoke-automation.sh** → `/api/public/automation/build-plates`
 - **scripts/smoke-automation.sh** → `/api/public/automation/catalog-sync`
 - **scripts/smoke-automation.sh** → `/api/public/automation/render-campaign`
 - **Telegram webhook configuration** → `/api/public/telegram/webhook`

@@ -58,6 +58,8 @@ services:
       AI_API_KEY: ${AI_API_KEY}
       AI_MODEL: ${AI_MODEL}
       AI_MODEL_FALLBACKS: ${AI_MODEL_FALLBACKS:-}
+      UNSPLASH_ACCESS_KEY: ${UNSPLASH_ACCESS_KEY:-}
+      PEXELS_API_KEY: ${PEXELS_API_KEY:-}
 
       # --------------------------------------------------------
       # Automation / security

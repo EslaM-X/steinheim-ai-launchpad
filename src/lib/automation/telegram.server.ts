@@ -58,6 +58,15 @@ const HELP = [
   "/status — pipeline at a glance",
   "/analytics — last 7 days performance",
   "",
+  "<b>Run it</b>",
+  "/sync — read the official catalogue again",
+  "/plates — rebuild every product in every finish",
+  "/render &lt;product&gt; | &lt;palette&gt; | &lt;format&gt; — campaign images + video",
+  "/generate — write today's content",
+  "/verify — a test run that publishes nowhere",
+  "/jobs — what is running now",
+  "/catalogue — what the catalogue holds",
+  "",
   "<b>Admin</b>",
   "/register — register as an approver",
   "/help — this message",
@@ -437,6 +446,78 @@ async function commandAnalytics(supabase: DB, chatId: string) {
   await sendMessage(chatId, [`<b>📈 Last 7 Days</b>`, "", ...lines].join("\n"));
 }
 
+/**
+ * Runs an operational command.
+ *
+ * Failures are reported into the chat rather than thrown. A bot that goes quiet
+ * when something breaks is indistinguishable from one that is still working,
+ * and the person waiting has no other window onto it.
+ */
+async function commandOps(supabase: DB, chatId: string, command: string, rest: string) {
+  const ops = await import("./telegram-ops.server");
+  try {
+    let reply;
+    switch (command) {
+      case "/sync":
+        reply = await ops.opsSync();
+        break;
+      case "/generate":
+        reply = await ops.opsGenerate(false);
+        break;
+      case "/verify":
+        reply = await ops.opsGenerate(true);
+        break;
+      case "/plates":
+        reply = await ops.opsPlates(rest || undefined);
+        break;
+      case "/jobs":
+        reply = await ops.opsJobs(supabase as never);
+        break;
+      case "/catalogue":
+      case "/catalog":
+        reply = await ops.opsCatalogue(supabase as never);
+        break;
+      case "/render": {
+        // /render <product> | <palette> | <format> — the pipe keeps a product
+        // name with spaces in it from being mistaken for an option.
+        const [productQuery = "", palette = "obsidian", format = "square"] = rest
+          .split("|")
+          .map((part) => part.trim());
+        if (!productQuery) {
+          reply = {
+            text: [
+              "<b>/render</b> &lt;product&gt; | &lt;palette&gt; | &lt;format&gt;",
+              "",
+              "Example: <code>/render joy basin mixer | obsidian | story</code>",
+              "",
+              "Palettes: porcelain, obsidian, forest, champagne, slate",
+              "Formats: square, story, landscape",
+            ].join("\n"),
+          };
+          break;
+        }
+        reply = await ops.opsRender(supabase as never, {
+          productQuery,
+          palette,
+          format,
+          motion: true,
+        });
+        break;
+      }
+      default:
+        reply = { text: "Unknown command. Try /help" };
+    }
+    await sendMessage(chatId, reply.text);
+  } catch (error) {
+    await sendMessage(
+      chatId,
+      `🔴 <b>${escapeHtml(command)}</b> failed.\n${escapeHtml(
+        error instanceof Error ? error.message : String(error),
+      )}`,
+    );
+  }
+}
+
 async function commandRegister(supabase: DB, chatId: string, fromId: string, fromName: string) {
   const config = await loadConfig(supabase);
   if (!config) return;
@@ -655,8 +736,14 @@ export async function handleTelegramUpdate(
   if (!text.startsWith("/")) return;
 
   const parts = text.split(/\s+/);
-  const command = parts[0]!.toLowerCase().split("@")[0];
+  // Telegram addresses commands in a group as /render@SteinheimBot, so the
+  // suffix is stripped before matching. `?? ""` because split can, in principle,
+  // return nothing — and an undefined here would index the wrong slice below.
+  const command = parts[0]!.toLowerCase().split("@")[0] ?? "";
   const args = parts.slice(1);
+
+  // Everything after the command word: /render joy basin mixer | obsidian
+  const rest = text.slice(parts[0]!.length).trim();
 
   switch (command) {
     case "/status":
@@ -714,6 +801,19 @@ export async function handleTelegramUpdate(
       break;
     case "/register":
       await commandRegister(supabase, config.chatId, fromId, fromName);
+      break;
+
+    // Operations. Each starts a job and answers immediately: these runs take
+    // minutes, and Telegram treats a slow webhook as a broken one.
+    case "/sync":
+    case "/generate":
+    case "/verify":
+    case "/plates":
+    case "/render":
+    case "/jobs":
+    case "/catalogue":
+    case "/catalog":
+      await commandOps(supabase, config.chatId, command, rest);
       break;
     case "/help":
     case "/start":

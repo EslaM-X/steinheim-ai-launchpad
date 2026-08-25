@@ -52,6 +52,7 @@ expect "no secret"            401 "$BASE/approved"
 # is only the wrong verb.
 expect "render-campaign: no secret" 401 "${BASE}/render-campaign" -X POST
 expect "catalog-sync: no secret"    401 "${BASE}/catalog-sync" -X POST
+expect "build-plates: no secret"    401 "${BASE}/build-plates" -X POST
 expect "wrong secret"         401 "$BASE/approved" \
   -H "x-automation-secret: definitely-not-the-secret" \
   -H "x-automation-timestamp: $(now_ms)" -H "x-automation-nonce: $(new_nonce)"

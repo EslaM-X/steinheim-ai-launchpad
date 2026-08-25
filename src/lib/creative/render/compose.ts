@@ -3,6 +3,7 @@ import type { OverlayOptions } from "sharp";
 
 import { buildBackdrop } from "./backdrop";
 import { applyGrain, applyVignette, buildReflection, buildRimLight } from "./light";
+import { fetchPhoto } from "./photobank";
 import { replate } from "./plating";
 import { applyCaption, type Caption } from "./typography";
 import { cutOutProduct, type Cutout } from "./cutout";
@@ -53,6 +54,8 @@ export interface Composition {
   png: Buffer;
   width: number;
   height: number;
+  /** Where the background came from, and under what licence. */
+  credit: string | null;
   finish: FinishVerdict;
   scene: { prompt: string; seed: number; source: string };
   /** True when the finish had a plating curve and the product was replated. */
@@ -62,26 +65,66 @@ export interface Composition {
 
 export async function composeProductScene(request: CompositionRequest): Promise<Composition> {
   const studio = request.mood.startsWith("studio:");
+  const photographic = request.mood.startsWith("photo:");
   const [productImage, background] = await Promise.all([
     fetchProduct(request.plateUrl ?? request.imageUrl),
-    studio
-      ? buildBackdrop({
-          palette: request.mood.slice("studio:".length),
-          width: request.width,
-          height: request.height,
-          wallOnly: request.wallMounted === true,
-        }).then((b) => ({
-          png: b.png,
-          prompt: `studio backdrop, ${b.palette}`,
-          seed: 0,
-          source: "built-in",
-        }))
-      : generateScene({
-          mood: request.mood,
+    photographic
+      ? // A real interior, licensed for commercial use. Falls back rather than
+        // fails: no key, no results or a dead request all leave a campaign with
+        // the studio backdrop, which is plainer and never wrong.
+        fetchPhoto({
+          subject: request.mood.slice("photo:".length),
           width: request.width,
           height: request.height,
           seed: request.seed,
-        }),
+        })
+          .then((photo) =>
+            photo
+              ? {
+                  png: photo.bytes,
+                  prompt: `${photo.source}: ${request.mood.slice("photo:".length)}`,
+                  seed: request.seed,
+                  source: photo.source,
+                  credit: `Photograph by ${photo.photographer} — ${photo.sourceUrl} (${photo.licence})`,
+                }
+              : null,
+          )
+          .catch(() => null)
+          .then(
+            async (photo) =>
+              photo ??
+              (await buildBackdrop({
+                palette: "obsidian",
+                width: request.width,
+                height: request.height,
+                wallOnly: request.wallMounted === true,
+              }).then((b) => ({
+                png: b.png,
+                prompt: `studio backdrop, ${b.palette} (photo bank unavailable)`,
+                seed: 0,
+                source: "built-in",
+                credit: null,
+              }))),
+          )
+      : studio
+        ? buildBackdrop({
+            palette: request.mood.slice("studio:".length),
+            width: request.width,
+            height: request.height,
+            wallOnly: request.wallMounted === true,
+          }).then((b) => ({
+            png: b.png,
+            prompt: `studio backdrop, ${b.palette}`,
+            seed: 0,
+            source: "built-in",
+            credit: null as string | null,
+          }))
+        : generateScene({
+            mood: request.mood,
+            width: request.width,
+            height: request.height,
+            seed: request.seed,
+          }).then((scene) => ({ ...scene, credit: null as string | null })),
   ]);
 
   let cutout: Cutout;
@@ -120,6 +163,7 @@ export async function composeProductScene(request: CompositionRequest): Promise<
     height: request.height,
     finish: verdict,
     scene: { prompt: background.prompt, seed: background.seed, source: background.source },
+    credit: background.credit ?? null,
     finishCorrected: true,
     platingNote,
   };
