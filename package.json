@@ -10,7 +10,9 @@
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "sync": "node scripts/sync/generate.mjs",
+    "sync:check": "node scripts/sync/check.mjs"
   },
   "dependencies": {
     "@ai-sdk/openai-compatible": "^3.0.30",

@@ -1,0 +1,3 @@
+{
+  "/api/public/automation/analytics": "Metrics collector not yet wired: no n8n workflow polls the platforms for numbers until Meta/LinkedIn/TikTok approvals land (see ROADMAP.md). The endpoint is ready; the caller is not."
+}

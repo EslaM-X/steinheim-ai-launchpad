@@ -26,21 +26,29 @@
 
 ## Layout
 
-| Path | Contents |
-| --- | --- |
-| `src/lib/agents.*` | Marketing OS pipeline — strategist, research, writers, validators, gatekeeper |
-| `src/lib/creative/` | Creative Studio — concepts, storyboards, jobs for the GPU worker |
-| `src/lib/social/` | Platform adapter contract — per-channel specs, publish and metrics interfaces |
-| `src/routes/api/public/` | Secret-authenticated endpoints for n8n and the GPU worker |
-| `supabase/migrations/` | Schema, RLS and grants — additive, never edit a migration that has run |
-| `infra/n8n/` | Self-hosted automation plane |
-| `docs/plan/` | Phase plans |
+| Path                     | Contents                                                                      |
+| ------------------------ | ----------------------------------------------------------------------------- |
+| `src/lib/agents.*`       | Marketing OS pipeline — strategist, research, writers, validators, gatekeeper |
+| `src/lib/creative/`      | Creative Studio — concepts, storyboards, jobs for the GPU worker              |
+| `src/lib/social/`        | Platform adapter contract — per-channel specs, publish and metrics interfaces |
+| `src/routes/api/public/` | Secret-authenticated endpoints for n8n and the GPU worker                     |
+| `supabase/migrations/`   | Schema, RLS and grants — additive, never edit a migration that has run        |
+| `infra/n8n/`             | Self-hosted automation plane                                                  |
+| `docs/plan/`             | Phase plans                                                                   |
+| `START.bat` / `STOP.bat` | One-button stack launcher/stopper (calls `scripts/start.ps1`, `stop.ps1`) — keep them idempotent and non-technical-operator friendly |
+| `docs/start-here.ar.md`  | Arabic quick-start for non-technical operators                                |
 
 ## Conventions
 
 - TypeScript strict. Agent outputs are validated with Zod schemas before they touch the database.
-- Comments in English, in the style already present: explain *why*, not *what*.
+- Comments in English, in the style already present: explain _why_, not _what_.
 - Conventional Commits.
 - New tables need `GRANT` + `ENABLE ROW LEVEL SECURITY` + a policy, matching the existing
   migrations. Tables holding secrets get column-level grants instead of table-level ones.
+- **Run `npm run sync` after touching any of:** an endpoint under `src/routes/api/public/`,
+  a migration (table added/renamed), an n8n workflow, or a compose environment variable —
+  then commit the regenerated `docs/api.md` / `docs/schema.md`. CI runs `sync:check` and
+  fails on drift between layers (workflow calling a missing endpoint, endpoint with no
+  consumer, stale generated docs, compose var undocumented). An endpoint nothing consumes
+  yet gets a reason in `scripts/sync/endpoints-allowlist.json` instead of silence.
 - Verify with `npm run typecheck` and `npm run build` before claiming a change works.
