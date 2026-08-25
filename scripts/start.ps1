@@ -295,12 +295,28 @@ if ($currentHash -eq $previousHash) {
         }
         Ok "deployed $($template.Name)"
     }
+
+    # Import lands workflows inactive; switch each one on so its schedule runs.
+    foreach ($template in Get-ChildItem $workflowsDir -Filter "W*.json" | Sort-Object Name) {
+        try {
+            $wfId = ((Get-Content $template.FullName -Raw | ConvertFrom-Json).id)
+            $wf = Invoke-N8nJson -Method GET -Path "/workflows/$wfId"
+            if (-not $wf.data.active) {
+                Invoke-N8nJson -Method POST -Path "/workflows/$wfId/activate" -Body (
+                    @{ versionId = $wf.data.versionId } | ConvertTo-Json) | Out-Null
+            }
+            Ok "activated $($template.Name)"
+        } catch {
+            Warn "could not activate $($template.Name) — enable it once in the n8n UI."
+        }
+    }
+
     @{ hash = $currentHash; deployedAt = (Get-Date -Format "o") } |
         ConvertTo-Json | Set-Content $markerFile
 
-    Write-Host ""
-    Warn "If an older copy of these workflows exists in n8n, delete it in the UI —"
-    Warn "imports create a new workflow instead of updating, and two schedulers firing twice is worse than one."
+    # Templates carry fixed workflow ids, so n8n upserts: redeploys update the
+    # existing workflow in place instead of piling up copies.
+    Ok "workflows are up to date in n8n"
 }
 
 # ---------------------------------------------------------------------------

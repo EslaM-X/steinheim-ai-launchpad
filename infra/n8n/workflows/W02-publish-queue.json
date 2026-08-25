@@ -1,5 +1,6 @@
 {
-  "name": "W02 — Publish queue (Telegram channel)",
+  "id": "steinheim-w02-publish-queue",
+  "name": "W02 â€” Publish queue (Telegram channel)",
   "nodes": [
     {
       "parameters": { "rule": { "interval": [{ "field": "minutes", "minutesInterval": 15 }] } },
@@ -70,11 +71,13 @@
           "parameters": [
             { "name": "x-automation-timestamp", "value": "={{ Date.now() }}" },
             {
-              "name": "x-automation-nonce",
+              "id": "steinheim-w02-publish-queue",
+  "name": "x-automation-nonce",
               "value": "={{ $execution.id }}-{{ $itemIndex }}-{{ Date.now() }}"
             },
             {
-              "name": "idempotency-key",
+              "id": "steinheim-w02-publish-queue",
+  "name": "idempotency-key",
               "value": "=publish-{{ $('One item per post').item.json.id }}"
             }
           ]
@@ -107,11 +110,13 @@
           "parameters": [
             { "name": "x-automation-timestamp", "value": "={{ Date.now() }}" },
             {
-              "name": "x-automation-nonce",
+              "id": "steinheim-w02-publish-queue",
+  "name": "x-automation-nonce",
               "value": "={{ $execution.id }}-err-{{ $itemIndex }}-{{ Date.now() }}"
             },
             {
-              "name": "idempotency-key",
+              "id": "steinheim-w02-publish-queue",
+  "name": "idempotency-key",
               "value": "=unknown-{{ $('One item per post').item.json.id }}"
             }
           ]

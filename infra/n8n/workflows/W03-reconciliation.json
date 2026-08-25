@@ -1,5 +1,6 @@
 {
-  "name": "W03 — Reconciliation sweep",
+  "id": "steinheim-w03-reconciliation",
+  "name": "W03 â€” Reconciliation sweep",
   "nodes": [
     {
       "parameters": { "rule": { "interval": [{ "field": "hours", "hoursInterval": 1 }] } },
@@ -58,7 +59,7 @@
     {
       "parameters": {
         "chatId": "__TELEGRAM_CHAT_ID__",
-        "text": "=⚠️ <b>{{ $json.body.count }} post(s) need reconciliation</b>\n\nEach one was sent to a platform that never confirmed. They will NOT be retried automatically.\n\n{{ $json.body.posts.map(p => '• ' + p.platform + ' — ' + p.id).join('\n') }}\n\nCheck the platform, then report back with outcome <code>published</code> (found) or <code>not_found</code> (safe to retry).",
+        "text": "=âš ï¸ <b>{{ $json.body.count }} post(s) need reconciliation</b>\n\nEach one was sent to a platform that never confirmed. They will NOT be retried automatically.\n\n{{ $json.body.posts.map(p => 'â€¢ ' + p.platform + ' â€” ' + p.id).join('\n') }}\n\nCheck the platform, then report back with outcome <code>published</code> (found) or <code>not_found</code> (safe to retry).",
         "additionalFields": { "parse_mode": "HTML" }
       },
       "id": "w03-alert",

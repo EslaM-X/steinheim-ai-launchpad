@@ -1,5 +1,6 @@
 {
-  "name": "W04 — Catalogue sync",
+  "id": "steinheim-w04-catalog-sync",
+  "name": "W04 â€” Catalogue sync",
   "nodes": [
     {
       "parameters": {
@@ -29,11 +30,13 @@
         "headerParameters": {
           "parameters": [
             {
-              "name": "x-automation-timestamp",
+              "id": "steinheim-w04-catalog-sync",
+  "name": "x-automation-timestamp",
               "value": "={{ Date.now() }}"
             },
             {
-              "name": "x-automation-nonce",
+              "id": "steinheim-w04-catalog-sync",
+  "name": "x-automation-nonce",
               "value": "={{ $execution.id }}-{{ Date.now() }}"
             }
           ]
@@ -117,7 +120,7 @@
     {
       "parameters": {
         "chatId": "__TELEGRAM_CHAT_ID__",
-        "text": "=📦 <b>Catalogue updated</b>\n\nScanned: {{ $json.body.scanned }}\nNew: {{ $json.body.created }} · Changed: {{ $json.body.updated }} · Unchanged: {{ $json.body.unchanged }}\nArchived: {{ $json.body.archived }}\n\nClaims written: {{ $json.body.claimsWritten }}\nClaims retired: {{ $json.body.claimsStale }}\n{{ $json.body.failed.length ? '\n⚠️ Failed: ' + $json.body.failed.map(f => f.slug).join(', ') : '' }}",
+        "text": "=ðŸ“¦ <b>Catalogue updated</b>\n\nScanned: {{ $json.body.scanned }}\nNew: {{ $json.body.created }} Â· Changed: {{ $json.body.updated }} Â· Unchanged: {{ $json.body.unchanged }}\nArchived: {{ $json.body.archived }}\n\nClaims written: {{ $json.body.claimsWritten }}\nClaims retired: {{ $json.body.claimsStale }}\n{{ $json.body.failed.length ? '\nâš ï¸ Failed: ' + $json.body.failed.map(f => f.slug).join(', ') : '' }}",
         "additionalFields": {
           "parse_mode": "HTML"
         }
@@ -137,7 +140,7 @@
     {
       "parameters": {
         "chatId": "__TELEGRAM_CHAT_ID__",
-        "text": "={{ $json.statusCode === 409 ? '⏭ <b>Catalogue sync skipped</b>\\n\\nA sync was already running.\\nNothing was lost — the run in progress owns the single-active slot.' : '🔴 <b>Catalogue sync failed</b>\\n\\nHTTP ' + $json.statusCode + '\\n' + JSON.stringify($json.body).slice(0, 500) + '\\n\\nThe Truth Layer still holds the last good snapshot — nothing was deleted.' }}",
+        "text": "={{ $json.statusCode === 409 ? 'â­ <b>Catalogue sync skipped</b>\\n\\nA sync was already running.\\nNothing was lost â€” the run in progress owns the single-active slot.' : 'ðŸ”´ <b>Catalogue sync failed</b>\\n\\nHTTP ' + $json.statusCode + '\\n' + JSON.stringify($json.body).slice(0, 500) + '\\n\\nThe Truth Layer still holds the last good snapshot â€” nothing was deleted.' }}",
         "additionalFields": {
           "parse_mode": "HTML"
         }
