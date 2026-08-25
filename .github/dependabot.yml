@@ -4,7 +4,9 @@ updates:
   - package-ecosystem: npm
     directory: /
     schedule:
-      interval: weekly
+      # Monthly, not weekly: bumps arrive as a short list instead of a
+      # permanent PR pile-up on a repo with a single maintainer.
+      interval: monthly
     open-pull-requests-limit: 5
     ignore:
       - dependency-name: "*"
@@ -15,7 +17,7 @@ updates:
   - package-ecosystem: github-actions
     directory: /
     schedule:
-      interval: weekly
+      interval: monthly
     open-pull-requests-limit: 3
     commit-message:
       prefix: chore(deps)
