@@ -15,6 +15,7 @@ not in *Who calls what* either, nothing consumes it.
 | `/api/public/automation/catalog-sync` | POST | `x-automation-secret`<br/>n8n | Reads the official catalogue and writes it into the Truth Layer. |
 | `/api/public/automation/generate-today` | POST | `x-automation-secret`<br/>n8n | Runs the daily content cycle. |
 | `/api/public/automation/published` | POST | `x-automation-secret`<br/>n8n | Records the outcome of a publish attempt, and is the only way a post leaves the `publishing` state. |
+| `/api/public/automation/render-campaign` | POST | `x-automation-secret`<br/>n8n | Renders a product's campaign assets and stores them. |
 | `/api/public/creative/claim` | POST | `x-worker-secret`<br/>GPU worker | External GPU worker (ComfyUI) claims the next queued generation job. |
 | `/api/public/creative/complete` | POST | `x-worker-secret`<br/>GPU worker | The worker reports the finished asset back into the Truth/Assets plane. |
 | `/api/public/telegram/webhook` | POST | `x-telegram-bot-api-secret-token`<br/>Telegram | Telegram webhook. |

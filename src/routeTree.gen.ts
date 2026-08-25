@@ -27,6 +27,7 @@ import { Route as ApiPublicAutomationApprovedRouteImport } from './routes/api/pu
 import { Route as ApiPublicAutomationCatalogSyncRouteImport } from './routes/api/public/automation/catalog-sync'
 import { Route as ApiPublicAutomationGenerateTodayRouteImport } from './routes/api/public/automation/generate-today'
 import { Route as ApiPublicAutomationPublishedRouteImport } from './routes/api/public/automation/published'
+import { Route as ApiPublicAutomationRenderCampaignRouteImport } from './routes/api/public/automation/render-campaign'
 import { Route as ApiPublicCreativeClaimRouteImport } from './routes/api/public/creative/claim'
 import { Route as ApiPublicCreativeCompleteRouteImport } from './routes/api/public/creative/complete'
 import { Route as ApiPublicTelegramWebhookRouteImport } from './routes/api/public/telegram/webhook'
@@ -126,6 +127,12 @@ const ApiPublicAutomationPublishedRoute =
     path: '/api/public/automation/published',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicAutomationRenderCampaignRoute =
+  ApiPublicAutomationRenderCampaignRouteImport.update({
+    id: '/api/public/automation/render-campaign',
+    path: '/api/public/automation/render-campaign',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicCreativeClaimRoute = ApiPublicCreativeClaimRouteImport.update({
   id: '/api/public/creative/claim',
   path: '/api/public/creative/claim',
@@ -162,6 +169,7 @@ export interface FileRoutesByFullPath {
   '/api/public/automation/catalog-sync': typeof ApiPublicAutomationCatalogSyncRoute
   '/api/public/automation/generate-today': typeof ApiPublicAutomationGenerateTodayRoute
   '/api/public/automation/published': typeof ApiPublicAutomationPublishedRoute
+  '/api/public/automation/render-campaign': typeof ApiPublicAutomationRenderCampaignRoute
   '/api/public/creative/claim': typeof ApiPublicCreativeClaimRoute
   '/api/public/creative/complete': typeof ApiPublicCreativeCompleteRoute
   '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
@@ -184,6 +192,7 @@ export interface FileRoutesByTo {
   '/api/public/automation/catalog-sync': typeof ApiPublicAutomationCatalogSyncRoute
   '/api/public/automation/generate-today': typeof ApiPublicAutomationGenerateTodayRoute
   '/api/public/automation/published': typeof ApiPublicAutomationPublishedRoute
+  '/api/public/automation/render-campaign': typeof ApiPublicAutomationRenderCampaignRoute
   '/api/public/creative/claim': typeof ApiPublicCreativeClaimRoute
   '/api/public/creative/complete': typeof ApiPublicCreativeCompleteRoute
   '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
@@ -208,6 +217,7 @@ export interface FileRoutesById {
   '/api/public/automation/catalog-sync': typeof ApiPublicAutomationCatalogSyncRoute
   '/api/public/automation/generate-today': typeof ApiPublicAutomationGenerateTodayRoute
   '/api/public/automation/published': typeof ApiPublicAutomationPublishedRoute
+  '/api/public/automation/render-campaign': typeof ApiPublicAutomationRenderCampaignRoute
   '/api/public/creative/claim': typeof ApiPublicCreativeClaimRoute
   '/api/public/creative/complete': typeof ApiPublicCreativeCompleteRoute
   '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
@@ -232,6 +242,7 @@ export interface FileRouteTypes {
     | '/api/public/automation/catalog-sync'
     | '/api/public/automation/generate-today'
     | '/api/public/automation/published'
+    | '/api/public/automation/render-campaign'
     | '/api/public/creative/claim'
     | '/api/public/creative/complete'
     | '/api/public/telegram/webhook'
@@ -254,6 +265,7 @@ export interface FileRouteTypes {
     | '/api/public/automation/catalog-sync'
     | '/api/public/automation/generate-today'
     | '/api/public/automation/published'
+    | '/api/public/automation/render-campaign'
     | '/api/public/creative/claim'
     | '/api/public/creative/complete'
     | '/api/public/telegram/webhook'
@@ -277,6 +289,7 @@ export interface FileRouteTypes {
     | '/api/public/automation/catalog-sync'
     | '/api/public/automation/generate-today'
     | '/api/public/automation/published'
+    | '/api/public/automation/render-campaign'
     | '/api/public/creative/claim'
     | '/api/public/creative/complete'
     | '/api/public/telegram/webhook'
@@ -291,6 +304,7 @@ export interface RootRouteChildren {
   ApiPublicAutomationCatalogSyncRoute: typeof ApiPublicAutomationCatalogSyncRoute
   ApiPublicAutomationGenerateTodayRoute: typeof ApiPublicAutomationGenerateTodayRoute
   ApiPublicAutomationPublishedRoute: typeof ApiPublicAutomationPublishedRoute
+  ApiPublicAutomationRenderCampaignRoute: typeof ApiPublicAutomationRenderCampaignRoute
   ApiPublicCreativeClaimRoute: typeof ApiPublicCreativeClaimRoute
   ApiPublicCreativeCompleteRoute: typeof ApiPublicCreativeCompleteRoute
   ApiPublicTelegramWebhookRoute: typeof ApiPublicTelegramWebhookRoute
@@ -424,6 +438,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicAutomationPublishedRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/automation/render-campaign': {
+      id: '/api/public/automation/render-campaign'
+      path: '/api/public/automation/render-campaign'
+      fullPath: '/api/public/automation/render-campaign'
+      preLoaderRoute: typeof ApiPublicAutomationRenderCampaignRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/creative/claim': {
       id: '/api/public/creative/claim'
       path: '/api/public/creative/claim'
@@ -486,6 +507,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicAutomationCatalogSyncRoute: ApiPublicAutomationCatalogSyncRoute,
   ApiPublicAutomationGenerateTodayRoute: ApiPublicAutomationGenerateTodayRoute,
   ApiPublicAutomationPublishedRoute: ApiPublicAutomationPublishedRoute,
+  ApiPublicAutomationRenderCampaignRoute:
+    ApiPublicAutomationRenderCampaignRoute,
   ApiPublicCreativeClaimRoute: ApiPublicCreativeClaimRoute,
   ApiPublicCreativeCompleteRoute: ApiPublicCreativeCompleteRoute,
   ApiPublicTelegramWebhookRoute: ApiPublicTelegramWebhookRoute,

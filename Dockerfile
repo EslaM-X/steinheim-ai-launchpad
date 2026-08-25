@@ -40,7 +40,10 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV PORT=3000
 
-# The build output is self-contained; node_modules is not shipped.
+# The build output is self-contained. Nitro traces sharp's native binary into
+# it during the build stage, which is why that happens here rather than in a
+# runtime npm install: traced inside this image, it is the musl build for this
+# architecture rather than whatever the developer'''s laptop resolved.
 COPY --from=build /app/.output ./.output
 
 EXPOSE 3000
