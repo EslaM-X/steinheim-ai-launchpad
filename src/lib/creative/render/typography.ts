@@ -92,10 +92,12 @@ export async function applyCaption(
       .s { font-family: "SteinheimBody", "Inter", sans-serif; font-size: ${subSize}px; fill: ${ink}; letter-spacing: ${(subSize * 0.16).toFixed(2)}px; opacity: 0.78; }
     </style>
   </defs>
+  <!-- The rule clears the display face's descenders: at 1.0x the subtitle size
+       it cut straight through the tail of a lowercase y. -->
   <text x="${anchor.x}" y="${baseY}" class="t" text-anchor="${anchor.align}">${escape(caption.title)}</text>
   ${
     caption.subtitle
-      ? `<line x1="${anchor.align === "middle" ? width / 2 - 26 : margin}" y1="${baseY + subSize * 1.0}" x2="${anchor.align === "middle" ? width / 2 + 26 : margin + 52}" y2="${baseY + subSize * 1.0}" stroke="${rule}" stroke-width="1"/>
+      ? `<line x1="${anchor.align === "middle" ? width / 2 - 26 : margin}" y1="${baseY + subSize * 1.5}" x2="${anchor.align === "middle" ? width / 2 + 26 : margin + 52}" y2="${baseY + subSize * 1.5}" stroke="${rule}" stroke-width="1"/>
   <text x="${anchor.x}" y="${baseY + subSize * 2.5}" class="s" text-anchor="${anchor.align}">${escape(caption.subtitle.toUpperCase())}</text>`
       : ""
   }
