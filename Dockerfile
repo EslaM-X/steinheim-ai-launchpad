@@ -29,6 +29,12 @@ RUN npm run build
 
 FROM node:24-alpine AS runtime
 
+# ffmpeg turns the finished stills into product video. It is a real dependency
+# rather than a nicety: the alternative is an AI video model, and every one of
+# those would redraw the product frame by frame, which is the one thing this
+# system is built to refuse. ~80MB, and it earns it.
+RUN apk add --no-cache ffmpeg
+
 WORKDIR /app
 
 ENV NODE_ENV=production
