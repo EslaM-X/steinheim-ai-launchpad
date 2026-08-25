@@ -161,16 +161,25 @@ export async function buildPlateLibrary(
 }
 
 /**
- * Picks the photograph to plate from.
+ * Picks the one photograph every finish is plated from.
  *
- * The one already labelled with this finish is preferred — it needs the least
- * moving. Failing that, the neutral finishes come next: chrome and nickel carry
- * the cleanest, most even luminance, which is what the plating curve reads.
- * Plating from a matte black source would be working from an image whose
- * shadows are already crushed, and no curve can recover detail that is not
- * there.
+ * Deliberately not the photograph already labelled with that finish. Those
+ * disagree with each other by a factor of five inside a single finish name, and
+ * plating each finish from its own image carries that disagreement straight
+ * through — which was the original complaint.
+ *
+ * One neutral master, in luminance order. Chrome first: it holds the widest
+ * range, bright specular through deep shadow, and the plating curve reads
+ * luminance. Brushed nickel next for the same reason.
+ *
+ * Matte black is last, and only as a source of final resort. Asked to test it
+ * as the master — the reasoning being that black shows the form most clearly —
+ * the result settled it: gold came out flat olive, chrome came out like painted
+ * plastic, and metal gun stayed black. Black describes the silhouette well and
+ * the surface not at all, because a metal is its reflections and a matte finish
+ * has none to read.
  */
-function bestSourceFor(images: string[], finish: string): string | null {
+function bestSourceFor(images: string[], _finish: string): string | null {
   const nameOf = (url: string) =>
     String(url)
       .split("/")
@@ -178,15 +187,22 @@ function bestSourceFor(images: string[], finish: string): string | null {
       ?.replace(/\.\w+$/, "")
       .replace(/-/g, " ") ?? "";
 
-  const exact = images.find((url) => nameOf(url) === finish.trim().toLowerCase());
-  if (exact) return exact;
-
-  for (const preferred of ["chrome", "brushed nickel", "brushed gold", "coffee gold"]) {
+  for (const preferred of MASTER_ORDER) {
     const match = images.find((url) => nameOf(url) === preferred);
     if (match) return match;
   }
   return images[0] ?? null;
 }
+
+/** Sources in descending order of how much luminance they carry. */
+const MASTER_ORDER = [
+  "chrome",
+  "brushed nickel",
+  "brushed gold",
+  "coffee gold",
+  "metal gun",
+  "matte black",
+];
 
 /**
  * Recovers what the source gives up.
