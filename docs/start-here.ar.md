@@ -34,10 +34,8 @@
 
 ## أول مرة في n8n تحديدًا
 
-1. افتح <http://localhost:5678> واعمل حساب Owner.
-2. اعمل credential اسمه `Steinheim automation secret` (Header Auth:
-   `x-automation-secret` = قيمة AUTOMATION_SECRET من ملف `.env`).
-3. افتح كل workflow مستورد وأعد اختيار الـ credential جواه مرة واحدة.
+مفيش خطوات يدوية خالص. الزر بيعمل الحساب والـ credentials ونشر الـ workflows
+كلهم لوحدهم من قيم `.env`. لو حابب تغير الباسورد بعدين: من n8n → Settings → Personal.
 
 ## نقل كل حاجة لجهاز جديد
 

@@ -160,10 +160,100 @@ $chatId = $selfEnv["TELEGRAM_CHAT_ID"]
 $channelId = "$($selfEnv["TELEGRAM_CHANNEL_ID"])"
 if (-not $channelId) { $channelId = $chatId }
 
-# Hash covers both the templates and the values baked into them.
+# --- n8n session -----------------------------------------------------------
+# The launcher manages n8n itself (owner account + the shared header-auth
+# credential) so a fresh machine never needs a manual click inside the n8n UI.
+# All calls go through curl.exe: n8n marks its auth cookie Secure, and .NET's
+# web-session stack refuses to send Secure cookies over plain-http localhost,
+# while an explicit cookie header works everywhere.
+$n8nRest = "http://localhost:5678/rest"
+$ownerEmail = "$($selfEnv["N8N_OWNER_EMAIL"])"
+$ownerPassword = "$($selfEnv["N8N_OWNER_PASSWORD"])"
+$script:authCookie = ""
+
+function Invoke-N8nJson {
+    # POST/GET JSON against the n8n REST API with the session cookie.
+    param([string]$Method, [string]$Path, [string]$Body = "")
+    $outFile = [System.IO.Path]::GetTempFileName()
+    $args = @("-s", "-X", $Method, "-H", "cookie: n8n-auth=$script:authCookie")
+    if ($Body) {
+        $bodyFile = [System.IO.Path]::GetTempFileName()
+        [System.IO.File]::WriteAllText($bodyFile, $Body)
+        $args += @("-H", "Content-Type: application/json", "--data-binary", "@$bodyFile")
+    }
+    $args += @("-o", $outFile, "$n8nRest$Path")
+    & curl.exe @args | Out-Null
+    $raw = [System.IO.File]::ReadAllText($outFile)
+    Remove-Item $outFile -Force -ErrorAction SilentlyContinue
+    if ($Body) { Remove-Item $bodyFile -Force -ErrorAction SilentlyContinue }
+    if (-not $raw) { throw "empty response from $Path" }
+    return ($raw | ConvertFrom-Json)
+}
+
+if (-not $ownerEmail -or -not $ownerPassword) {
+    Warn "N8N_OWNER_EMAIL / N8N_OWNER_PASSWORD missing from .env — skipping workflow deploy."
+} else {
+    $hdrFile = [System.IO.Path]::GetTempFileName()
+    $loginBodyFile = [System.IO.Path]::GetTempFileName()
+    [System.IO.File]::WriteAllText(
+        $loginBodyFile,
+        (@{ emailOrLdapLoginId = $ownerEmail; password = $ownerPassword } | ConvertTo-Json))
+
+    & curl.exe -s -X POST -H "Content-Type: application/json" `
+        --data-binary "@$loginBodyFile" -D "$hdrFile" -o NUL "$n8nRest/login"
+    $m = [regex]::Match([System.IO.File]::ReadAllText($hdrFile), "n8n-auth=([^;\r\n]+)")
+    if ($m.Success) { $script:authCookie = $m.Groups[1].Value }
+
+    if (-not $script:authCookie) {
+        # First boot has no owner yet — create it from .env, then log in.
+        [System.IO.File]::WriteAllText(
+            $loginBodyFile,
+            (@{ email = $ownerEmail; firstName = "Steinheim"; lastName = "Owner"
+                password = $ownerPassword } | ConvertTo-Json))
+        & curl.exe -s -X POST -H "Content-Type: application/json" `
+            --data-binary "@$loginBodyFile" -o NUL "$n8nRest/owner/setup"
+        & curl.exe -s -X POST -H "Content-Type: application/json" `
+            --data-binary "@$loginBodyFile" -D "$hdrFile" -o NUL "$n8nRest/login" 2>$null
+        $m = [regex]::Match([System.IO.File]::ReadAllText($hdrFile), "n8n-auth=([^;\r\n]+)")
+        if ($m.Success) { $script:authCookie = $m.Groups[1].Value }
+        if ($script:authCookie) {
+            Ok "created the n8n owner account and logged in"
+        } else {
+            Fail "could not create/log into n8n with N8N_OWNER_EMAIL/PASSWORD." `
+                 "مقدرتش أدخل على n8n بالقيم اللي في الملف. راجع N8N_OWNER_EMAIL و N8N_OWNER_PASSWORD في .env ودوس الزر تاني."
+            exit 1
+        }
+    } else {
+        Ok "logged into n8n as $ownerEmail"
+    }
+    Remove-Item $hdrFile, $loginBodyFile -Force -ErrorAction SilentlyContinue
+
+    # Shared credential for app→n8n calls: reuse it when it exists so repeated
+    # runs never duplicate entries.
+    $credName = "Steinheim automation secret"
+    try {
+        $credList = Invoke-N8nJson -Method GET -Path "/credentials"
+        $existing = @($credList.data) | Where-Object { $_.name -eq $credName } | Select-Object -First 1
+    } catch { $existing = $null }
+    if ($existing) {
+        $credId = $existing.id
+        Ok "credential '$credName' already exists"
+    } else {
+        $created = Invoke-N8nJson -Method POST -Path "/credentials" -Body (
+            @{
+                name = $credName; type = "httpHeaderAuth"
+                data = @{ name = "x-automation-secret"; value = "$($selfEnv["AUTOMATION_SECRET"])" }
+            } | ConvertTo-Json -Depth 5)
+        $credId = $created.data.id
+        if ($credId) { Ok "credential '$credName' created" }
+        else { Warn "could not create '$credName' — workflows will need it picked manually." }
+    }
+}
+
+# Hash covers the templates plus every value baked into them.
 $hashInput = Get-ChildItem $workflowsDir -Filter "W*.json" | Sort-Object Name |
     Get-Content -Raw
-$deployState = "$appUrl|$chatId|$channelId|" + (($hashInput -join "`n") -replace '\r', '')
+$deployState = "$appUrl|$chatId|$channelId|$credId|" + (($hashInput -join "`n") -replace '\r', '')
 $bytes = [System.Text.Encoding]::UTF8.GetBytes($deployState)
 $sha = [System.Security.Cryptography.SHA256]::Create()
 $currentHash = ([BitConverter]::ToString($sha.ComputeHash($bytes))).Replace("-", "").ToLower()
@@ -178,6 +268,8 @@ if ($currentHash -eq $previousHash) {
 } elseif (-not $chatId) {
     Warn "TELEGRAM_CHAT_ID not set in .env — skipping workflow deploy."
     Warn "The n8n UI will have no workflows; add the chat id and press the button again."
+} elseif (-not $credId) {
+    Warn "no n8n session (see warnings above) — skipping workflow deploy."
 } else {
     New-Item -ItemType Directory -Force -Path $readyDir | Out-Null
     foreach ($template in Get-ChildItem $workflowsDir -Filter "W*.json" | Sort-Object Name) {
@@ -185,6 +277,7 @@ if ($currentHash -eq $previousHash) {
         $filled = $filled.Replace("__APP_URL__", $appUrl)
         $filled = $filled.Replace("__TELEGRAM_CHAT_ID__", $chatId)
         $filled = $filled.Replace("__TELEGRAM_CHANNEL_ID__", $channelId)
+        $filled = $filled.Replace("REPLACE_WITH_CREDENTIAL_ID", $credId)
         $out = Join-Path $readyDir $template.Name
         [System.IO.File]::WriteAllText($out, $filled)
 
@@ -220,11 +313,10 @@ Start-Process "http://localhost:3000"
 Write-Host ""
 Ok "Dashboard : http://localhost:3000"
 Ok "n8n       : http://localhost:5678"
-Write-Host ""
-Write-Host "    First time on this machine? In n8n create the owner account, then"
-Write-Host "    re-select credentials inside each imported workflow once."
-Write-Host "    أول مرة؟ اعمل حساب في n8n وأعد اختيار الـ credentials جوه كل workflow."
-Write-Host ""
-Write-Host "    To stop everything: double-click STOP.bat"
-Write-Host "    عشان تقفل كله: دوس على STOP.bat"
+    Write-Host ""
+    Write-Host "    n8n owner + credentials were set up automatically from .env."
+    Write-Host "    أول تشغيل؟ كل حاجة في n8n اتعملت لوحدها من قيم الملف."
+    Write-Host ""
+    Write-Host "    To stop everything: double-click STOP.bat"
+    Write-Host "    عشان تقفل كله: دوس على STOP.bat"
 Write-Host "=====================================================" -ForegroundColor White
