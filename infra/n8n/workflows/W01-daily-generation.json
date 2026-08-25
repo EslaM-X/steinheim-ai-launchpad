@@ -1,6 +1,6 @@
 {
   "id": "steinheim-w01-daily",
-  "name": "W01 â€” Daily content generation",
+  "name": "W01 — Daily content generation",
   "nodes": [
     {
       "parameters": {
@@ -66,7 +66,7 @@
     {
       "parameters": {
         "chatId": "__TELEGRAM_CHAT_ID__",
-        "text": "=ðŸ—“ <b>Content generated</b>\n\n<b>{{ $json.body.topic }}</b>\n{{ $json.body.contentType }} Â· {{ $json.body.audience }}\n\nScore: {{ $json.body.score }}/100 ({{ $json.body.band }})\nUnverified claims: {{ $json.body.unverifiedClaims }}\n\n{{ $json.body.aiApproved ? 'ðŸŸ¡ Awaiting your approval â€” send /pending' : 'ðŸ”´ Did not pass AI approval' }}",
+        "text": "=🗓 <b>Content generated</b>\n\n<b>{{ $json.body.topic }}</b>\n{{ $json.body.contentType }} · {{ $json.body.audience }}\n\nScore: {{ $json.body.score }}/100 ({{ $json.body.band }})\nUnverified claims: {{ $json.body.unverifiedClaims }}\n\n{{ $json.body.aiApproved ? '🟡 Awaiting your approval — send /pending' : '🔴 Did not pass AI approval' }}",
         "additionalFields": { "parse_mode": "HTML" }
       },
       "id": "w01-notify",
@@ -81,7 +81,7 @@
     {
       "parameters": {
         "chatId": "__TELEGRAM_CHAT_ID__",
-        "text": "=ðŸ”´ <b>Generation failed</b>\n\nHTTP {{ $json.statusCode }}\n{{ JSON.stringify($json.body).slice(0, 500) }}",
+        "text": "=🔴 <b>Generation failed</b>\n\nHTTP {{ $json.statusCode }}\n{{ JSON.stringify($json.body).slice(0, 500) }}",
         "additionalFields": { "parse_mode": "HTML" }
       },
       "id": "w01-alert",

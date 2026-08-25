@@ -252,7 +252,7 @@ if (-not $ownerEmail -or -not $ownerPassword) {
 
 # Hash covers the templates plus every value baked into them.
 $hashInput = Get-ChildItem $workflowsDir -Filter "W*.json" | Sort-Object Name |
-    Get-Content -Raw
+    Get-Content -Raw -Encoding UTF8
 $deployState = "$appUrl|$chatId|$channelId|$credId|" + (($hashInput -join "`n") -replace '\r', '')
 $bytes = [System.Text.Encoding]::UTF8.GetBytes($deployState)
 $sha = [System.Security.Cryptography.SHA256]::Create()
@@ -273,7 +273,9 @@ if ($currentHash -eq $previousHash) {
 } else {
     New-Item -ItemType Directory -Force -Path $readyDir | Out-Null
     foreach ($template in Get-ChildItem $workflowsDir -Filter "W*.json" | Sort-Object Name) {
-        $filled = (Get-Content $template.FullName -Raw)
+        # -Encoding UTF8 matters: PS 5.1 otherwise assumes ANSI for the BOM-less
+        # templates and turns every em-dash in a workflow name into mojibake.
+        $filled = (Get-Content $template.FullName -Raw -Encoding UTF8)
         $filled = $filled.Replace("__APP_URL__", $appUrl)
         $filled = $filled.Replace("__TELEGRAM_CHAT_ID__", $chatId)
         $filled = $filled.Replace("__TELEGRAM_CHANNEL_ID__", $channelId)
@@ -299,7 +301,7 @@ if ($currentHash -eq $previousHash) {
     # Import lands workflows inactive; switch each one on so its schedule runs.
     foreach ($template in Get-ChildItem $workflowsDir -Filter "W*.json" | Sort-Object Name) {
         try {
-            $wfId = ((Get-Content $template.FullName -Raw | ConvertFrom-Json).id)
+            $wfId = ((Get-Content $template.FullName -Raw -Encoding UTF8 | ConvertFrom-Json).id)
             $wf = Invoke-N8nJson -Method GET -Path "/workflows/$wfId"
             if (-not $wf.data.active) {
                 Invoke-N8nJson -Method POST -Path "/workflows/$wfId/activate" -Body (
