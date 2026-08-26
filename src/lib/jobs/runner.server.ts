@@ -26,7 +26,8 @@ export type JobKind =
   | "daily_generation"
   | "campaign_render"
   | "plate_library"
-  | "post_rewrite";
+  | "post_rewrite"
+  | "post_images";
 
 export interface JobProgress {
   phase?: string;

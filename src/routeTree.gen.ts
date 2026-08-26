@@ -28,6 +28,7 @@ import { Route as ApiPublicAutomationApprovedRouteImport } from './routes/api/pu
 import { Route as ApiPublicAutomationBuildPlatesRouteImport } from './routes/api/public/automation/build-plates'
 import { Route as ApiPublicAutomationCatalogSyncRouteImport } from './routes/api/public/automation/catalog-sync'
 import { Route as ApiPublicAutomationGenerateTodayRouteImport } from './routes/api/public/automation/generate-today'
+import { Route as ApiPublicAutomationPostImagesRouteImport } from './routes/api/public/automation/post-images'
 import { Route as ApiPublicAutomationPublishedRouteImport } from './routes/api/public/automation/published'
 import { Route as ApiPublicAutomationRegenerateRouteImport } from './routes/api/public/automation/regenerate'
 import { Route as ApiPublicAutomationRenderCampaignRouteImport } from './routes/api/public/automation/render-campaign'
@@ -136,6 +137,12 @@ const ApiPublicAutomationGenerateTodayRoute =
     path: '/api/public/automation/generate-today',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicAutomationPostImagesRoute =
+  ApiPublicAutomationPostImagesRouteImport.update({
+    id: '/api/public/automation/post-images',
+    path: '/api/public/automation/post-images',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicAutomationPublishedRoute =
   ApiPublicAutomationPublishedRouteImport.update({
     id: '/api/public/automation/published',
@@ -197,6 +204,7 @@ export interface FileRoutesByFullPath {
   '/api/public/automation/build-plates': typeof ApiPublicAutomationBuildPlatesRoute
   '/api/public/automation/catalog-sync': typeof ApiPublicAutomationCatalogSyncRoute
   '/api/public/automation/generate-today': typeof ApiPublicAutomationGenerateTodayRoute
+  '/api/public/automation/post-images': typeof ApiPublicAutomationPostImagesRoute
   '/api/public/automation/published': typeof ApiPublicAutomationPublishedRoute
   '/api/public/automation/regenerate': typeof ApiPublicAutomationRegenerateRoute
   '/api/public/automation/render-campaign': typeof ApiPublicAutomationRenderCampaignRoute
@@ -224,6 +232,7 @@ export interface FileRoutesByTo {
   '/api/public/automation/build-plates': typeof ApiPublicAutomationBuildPlatesRoute
   '/api/public/automation/catalog-sync': typeof ApiPublicAutomationCatalogSyncRoute
   '/api/public/automation/generate-today': typeof ApiPublicAutomationGenerateTodayRoute
+  '/api/public/automation/post-images': typeof ApiPublicAutomationPostImagesRoute
   '/api/public/automation/published': typeof ApiPublicAutomationPublishedRoute
   '/api/public/automation/regenerate': typeof ApiPublicAutomationRegenerateRoute
   '/api/public/automation/render-campaign': typeof ApiPublicAutomationRenderCampaignRoute
@@ -253,6 +262,7 @@ export interface FileRoutesById {
   '/api/public/automation/build-plates': typeof ApiPublicAutomationBuildPlatesRoute
   '/api/public/automation/catalog-sync': typeof ApiPublicAutomationCatalogSyncRoute
   '/api/public/automation/generate-today': typeof ApiPublicAutomationGenerateTodayRoute
+  '/api/public/automation/post-images': typeof ApiPublicAutomationPostImagesRoute
   '/api/public/automation/published': typeof ApiPublicAutomationPublishedRoute
   '/api/public/automation/regenerate': typeof ApiPublicAutomationRegenerateRoute
   '/api/public/automation/render-campaign': typeof ApiPublicAutomationRenderCampaignRoute
@@ -282,6 +292,7 @@ export interface FileRouteTypes {
     | '/api/public/automation/build-plates'
     | '/api/public/automation/catalog-sync'
     | '/api/public/automation/generate-today'
+    | '/api/public/automation/post-images'
     | '/api/public/automation/published'
     | '/api/public/automation/regenerate'
     | '/api/public/automation/render-campaign'
@@ -309,6 +320,7 @@ export interface FileRouteTypes {
     | '/api/public/automation/build-plates'
     | '/api/public/automation/catalog-sync'
     | '/api/public/automation/generate-today'
+    | '/api/public/automation/post-images'
     | '/api/public/automation/published'
     | '/api/public/automation/regenerate'
     | '/api/public/automation/render-campaign'
@@ -337,6 +349,7 @@ export interface FileRouteTypes {
     | '/api/public/automation/build-plates'
     | '/api/public/automation/catalog-sync'
     | '/api/public/automation/generate-today'
+    | '/api/public/automation/post-images'
     | '/api/public/automation/published'
     | '/api/public/automation/regenerate'
     | '/api/public/automation/render-campaign'
@@ -355,6 +368,7 @@ export interface RootRouteChildren {
   ApiPublicAutomationBuildPlatesRoute: typeof ApiPublicAutomationBuildPlatesRoute
   ApiPublicAutomationCatalogSyncRoute: typeof ApiPublicAutomationCatalogSyncRoute
   ApiPublicAutomationGenerateTodayRoute: typeof ApiPublicAutomationGenerateTodayRoute
+  ApiPublicAutomationPostImagesRoute: typeof ApiPublicAutomationPostImagesRoute
   ApiPublicAutomationPublishedRoute: typeof ApiPublicAutomationPublishedRoute
   ApiPublicAutomationRegenerateRoute: typeof ApiPublicAutomationRegenerateRoute
   ApiPublicAutomationRenderCampaignRoute: typeof ApiPublicAutomationRenderCampaignRoute
@@ -499,6 +513,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicAutomationGenerateTodayRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/automation/post-images': {
+      id: '/api/public/automation/post-images'
+      path: '/api/public/automation/post-images'
+      fullPath: '/api/public/automation/post-images'
+      preLoaderRoute: typeof ApiPublicAutomationPostImagesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/automation/published': {
       id: '/api/public/automation/published'
       path: '/api/public/automation/published'
@@ -591,6 +612,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicAutomationBuildPlatesRoute: ApiPublicAutomationBuildPlatesRoute,
   ApiPublicAutomationCatalogSyncRoute: ApiPublicAutomationCatalogSyncRoute,
   ApiPublicAutomationGenerateTodayRoute: ApiPublicAutomationGenerateTodayRoute,
+  ApiPublicAutomationPostImagesRoute: ApiPublicAutomationPostImagesRoute,
   ApiPublicAutomationPublishedRoute: ApiPublicAutomationPublishedRoute,
   ApiPublicAutomationRegenerateRoute: ApiPublicAutomationRegenerateRoute,
   ApiPublicAutomationRenderCampaignRoute:

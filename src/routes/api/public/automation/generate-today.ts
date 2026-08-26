@@ -16,6 +16,17 @@ interface PipelineResult {
   hardFail: boolean;
   unverifiedClaims: unknown[];
   revisions: number;
+  /** Added by this endpoint after the pipeline returns, never by the pipeline. */
+  images?: ImageSummary;
+}
+
+/** What the photography step did, reported alongside the run rather than instead of it. */
+interface ImageSummary {
+  attempted: number;
+  rendered: number;
+  finishes?: string[];
+  skipped?: Array<{ post: string; reason: string }>;
+  error?: string;
 }
 
 /**
@@ -60,9 +71,47 @@ export const Route = createFileRoute("/api/public/automation/generate-today")({
             },
             async (job) => {
               await job.report({ phase: verification ? "Verification run" : "Generating" });
-              return generateTodayPipeline(supabase as never, userId as string, undefined, {
-                isTest: verification,
-              });
+              const pipeline = await generateTodayPipeline(
+                supabase as never,
+                userId as string,
+                undefined,
+                { isTest: verification },
+              );
+
+              // The pipeline writes an image_prompt and stops, which is why
+              // posts have been going out as text. Rendering here rather than
+              // inside it keeps the pipeline untouched: this reads what it
+              // wrote and fills image_url from the catalogue's own plates.
+              //
+              // Deliberately not fatal. The copy is the valuable output, and
+              // discarding a post that scored 97 because libvips failed on a
+              // frame would be the wrong trade every time.
+              const images: ImageSummary = { attempted: 0, rendered: 0 };
+              if (pipeline?.ideaId) {
+                try {
+                  await job.report({ phase: "Rendering product photography" });
+                  const { attachImagesForIdea } = await import("@/lib/creative/post-image.server");
+                  const rendered = await attachImagesForIdea(
+                    supabase as never,
+                    pipeline.ideaId as string,
+                  );
+                  const ok = rendered.filter((r) => r.ok);
+                  images.attempted = rendered.length;
+                  images.rendered = ok.length;
+                  images.finishes = ok.map((r) => r.finish ?? "?");
+                  const failed = rendered.filter((r) => !r.ok);
+                  if (failed.length) {
+                    images.skipped = failed.map((r) => ({
+                      post: r.postId,
+                      reason: r.reason ?? "unknown",
+                    }));
+                  }
+                } catch (error) {
+                  images.error = error instanceof Error ? error.message : String(error);
+                }
+              }
+
+              return { ...pipeline, images };
             },
           );
 
@@ -121,6 +170,7 @@ export const Route = createFileRoute("/api/public/automation/generate-today")({
             // Posts land as ai_approved at best — a human still has to approve.
             // A verification run is excluded from every publish queue by design.
             awaitingHumanApproval: verification ? false : result.aiApproved,
+            images: result.images ?? null,
             jobId: started.id,
           });
         });

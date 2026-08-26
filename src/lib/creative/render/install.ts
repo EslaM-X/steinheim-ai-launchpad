@@ -80,7 +80,20 @@ export async function installIntoScene(request: InstallRequest): Promise<Install
     height: Math.round(scene.anchor.box.height * scaledHeight),
   };
 
-  const cleared = await eraseFitting(room, width, height, scene, box);
+  // The anchor is the point where the fitting meets what holds it, so for a
+  // deck mount it is also the basin's rim. The eraser is told about it because
+  // its own padding used to reach past that line and repaint wall over the top
+  // of the basin.
+  const anchorX = Math.round(toX(scene.anchor.anchor.x));
+  const anchorY = Math.round(toY(scene.anchor.anchor.y));
+
+  const cleared = await eraseFitting(room, width, height, scene, box, {
+    scaledWidth,
+    scaledHeight,
+    offsetX,
+    offsetY,
+    anchorY,
+  });
 
   // Scaled to the height the original fitting occupied, in output pixels. That
   // keeps it in proportion to the basin at any output size.
@@ -97,8 +110,6 @@ export async function installIntoScene(request: InstallRequest): Promise<Install
 
   // The anchor is the product's own foot or wall plate, not its bounding box,
   // so a tall mixer and a short one both sit on the same rim.
-  const anchorX = Math.round(toX(scene.anchor.anchor.x));
-  const anchorY = Math.round(toY(scene.anchor.anchor.y));
   const left = clamp(
     anchorX - Math.round(productWidth * FOOT_X),
     0,
@@ -152,6 +163,13 @@ async function eraseFitting(
   height: number,
   scene: Scene,
   box: { left: number; top: number; width: number; height: number },
+  frame: {
+    scaledWidth: number;
+    scaledHeight: number;
+    offsetX: number;
+    offsetY: number;
+    anchorY: number;
+  },
 ): Promise<Buffer> {
   // Generous margins: the fitting's own soft shadow extends past its outline,
   // and leaving that behind is as obvious as leaving the tap.
@@ -159,29 +177,88 @@ async function eraseFitting(
   const left = clamp(box.left - pad, 0, width - 2);
   const top = clamp(box.top - pad, 0, height - 2);
   const boxWidth = clamp(box.width + pad * 2, 2, width - left);
-  const boxHeight = clamp(box.height + pad * 2, 2, height - top);
 
-  const direction = scene.anchor.cloneFrom;
-  let src: { left: number; top: number; width: number; height: number };
+  const band0 = Math.max(6, Math.round(box.width * 0.12));
 
-  if (direction === "above") {
-    const sourceHeight = Math.min(boxHeight, top);
-    if (sourceHeight < 4) return room;
-    src = { left, top: top - sourceHeight, width: boxWidth, height: sourceHeight };
-  } else if (direction === "left") {
-    const sourceWidth = Math.min(boxWidth, left);
-    if (sourceWidth < 4) return room;
-    src = { left: left - sourceWidth, top, width: sourceWidth, height: boxHeight };
-  } else {
-    const start = left + boxWidth;
-    const sourceWidth = Math.min(boxWidth, Math.max(0, width - start));
-    if (sourceWidth < 4) return room;
-    src = { left: start, top, width: sourceWidth, height: boxHeight };
+  // Stopping short of the surface, not at it.
+  //
+  // The anchor is the foot, which stands ON the basin — so the basin's back rim
+  // is above it, and a patch of wall taken down to the anchor cuts that rim off
+  // with a ruled horizontal line. Ending a band higher and fading out leaves the
+  // rim as photographed; the replacement's own body covers what is left of the
+  // old stem below that point.
+  const limit = scene.anchor.mount === "deck" ? Math.min(height, frame.anchorY - band0) : height;
+  const boxHeight = clamp(Math.min(box.height + pad * 2, limit - top), 2, height - top);
+
+  let src: { left: number; top: number; width: number; height: number } | null = null;
+
+  // A rectangle the scene's author checked by eye. Preferred over anything
+  // chosen by rule: "the block next to it" is only clean when nothing else is
+  // nearby, and in both of these rooms something is.
+  if (scene.anchor.cloneBox) {
+    const c = scene.anchor.cloneBox;
+    const sx = Math.round(c.left * frame.scaledWidth - frame.offsetX);
+    const sy = Math.round(c.top * frame.scaledHeight - frame.offsetY);
+    const sw = Math.round(c.width * frame.scaledWidth);
+    const sh = Math.round(c.height * frame.scaledHeight);
+    // Only if the crop for this aspect ratio kept it. At 9:16 a rectangle read
+    // off a 5:6 original can fall outside the frame entirely, and extracting
+    // past the edge throws rather than degrading.
+    if (sx >= 0 && sy >= 0 && sw >= 4 && sh >= 4 && sx + sw <= width && sy + sh <= height) {
+      src = { left: sx, top: sy, width: sw, height: sh };
+    }
   }
+
+  if (!src) {
+    const direction = scene.anchor.cloneFrom;
+    if (direction === "above") {
+      const sourceHeight = Math.min(boxHeight, top);
+      if (sourceHeight < 4) return room;
+      src = { left, top: top - sourceHeight, width: boxWidth, height: sourceHeight };
+    } else if (direction === "left") {
+      const sourceWidth = Math.min(boxWidth, left);
+      if (sourceWidth < 4) return room;
+      src = { left: left - sourceWidth, top, width: sourceWidth, height: boxHeight };
+    } else {
+      const start = left + boxWidth;
+      const sourceWidth = Math.min(boxWidth, Math.max(0, width - start));
+      if (sourceWidth < 4) return room;
+      src = { left: start, top, width: sourceWidth, height: boxHeight };
+    }
+  }
+
+  // The fade has to happen on bare wall, outside the fitting, not across it.
+  //
+  // It used to run inward from the patch's own edges over a band of 28% of the
+  // shorter side, which on a 312px box left barely two fifths of it at full
+  // opacity — so the old spout's tip sat under 40% coverage and stayed visible
+  // as a pale smear on the panelling. Growing the patch past the fitting and
+  // ramping only in the margin means the fitting itself is always covered
+  // completely, and the seam still has somewhere soft to land.
+  const band = Math.max(6, Math.round(Math.min(boxWidth, boxHeight) * 0.12));
+  const deck = scene.anchor.mount === "deck";
+
+  const outLeft = clamp(left - band, 0, width - 2);
+  const outTop = clamp(top - band, 0, height - 2);
+  const outRight = Math.min(width, left + boxWidth + band);
+  // On a deck the patch may not grow downward at all — the basin is there — so
+  // its lower edge fades within the box instead of past it.
+  const outBottom = Math.min(height, top + boxHeight + (deck ? 0 : band));
+  const outWidth = Math.max(2, outRight - outLeft);
+  const outHeight = Math.max(2, outBottom - outTop);
+
+  // How much ramp each edge actually got. An edge the frame cut short fades
+  // over what room is left rather than over nothing, which would leave a line.
+  const insets = {
+    left: left - outLeft,
+    top: top - outTop,
+    right: outRight - (left + boxWidth),
+    bottom: deck ? band : outBottom - (top + boxHeight),
+  };
 
   const patch = await sharp(room)
     .extract(src)
-    .resize(boxWidth, boxHeight, { fit: "fill" })
+    .resize(outWidth, outHeight, { fit: "fill" })
     // Light: enough to hide the seam where a stretched clone meets real
     // texture, not so much that the patch reads as a soft rectangle against
     // panelling that has visible grain.
@@ -189,21 +266,34 @@ async function eraseFitting(
     .png()
     .toBuffer();
 
-  const feathered = await feather(patch, boxWidth, boxHeight);
+  const feathered = await feather(patch, outWidth, outHeight, insets);
   return sharp(room)
-    .composite([{ input: feathered, left, top }])
+    .composite([{ input: feathered, left: outLeft, top: outTop }])
     .png()
     .toBuffer();
 }
 
-/** Fades a patch out at its edges so it has no border. */
-async function feather(patch: Buffer, width: number, height: number): Promise<Buffer> {
+/**
+ * Fades a patch out over the margin around the area it has to cover.
+ *
+ * Each edge gets its own ramp width, because the frame can cut one short — and
+ * an edge that ran out of room needs a shorter fade, not a hard line.
+ */
+async function feather(
+  patch: Buffer,
+  width: number,
+  height: number,
+  insets: { left: number; top: number; right: number; bottom: number },
+): Promise<Buffer> {
   const { data, info } = await sharp(patch)
     .ensureAlpha()
     .raw()
     .toBuffer({ resolveWithObject: true });
   const out = Buffer.alloc(width * height * 4);
-  const band = Math.max(3, Math.round(Math.min(width, height) * 0.28));
+
+  /** 0 at the patch's edge, 1 once past that edge's ramp. */
+  const ramp = (distance: number, inset: number) =>
+    inset <= 0 ? 1 : Math.min(1, distance / inset);
 
   for (let y = 0; y < height; y++) {
     for (let x = 0; x < width; x++) {
@@ -212,8 +302,14 @@ async function feather(patch: Buffer, width: number, height: number): Promise<Bu
       out[d] = data[s]!;
       out[d + 1] = data[s + 1]!;
       out[d + 2] = data[s + 2]!;
-      const edge = Math.min(x, y, width - 1 - x, height - 1 - y);
-      out[d + 3] = edge >= band ? 255 : Math.round((edge / band) * 255);
+      // The weakest edge decides, so a corner fades on both of its sides.
+      const a = Math.min(
+        ramp(x, insets.left),
+        ramp(y, insets.top),
+        ramp(width - 1 - x, insets.right),
+        ramp(height - 1 - y, insets.bottom),
+      );
+      out[d + 3] = Math.round(a * 255);
     }
   }
   return sharp(out, { raw: { width, height, channels: 4 } })

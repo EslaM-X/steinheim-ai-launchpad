@@ -385,6 +385,72 @@ export async function opsStop(supabase: DB, target: string): Promise<OpsReply> {
   };
 }
 
+/**
+ * Renders the missing product photograph for approved posts.
+ *
+ * The daily run does this by itself now, so this is for the backlog written
+ * before it did, and for replacing a frame whose finish reads wrong once it is
+ * on a phone screen.
+ *
+ *   /images            every approved post still missing one
+ *   /images all        the same, said out loud
+ *   /images redo       re-render the ones that already have an image
+ *   /images <id>       one post, by the short id shown in /pending
+ */
+export async function opsImages(supabase: DB, target: string): Promise<OpsReply> {
+  const wanted = target.trim().toLowerCase();
+  const force = wanted === "redo" || wanted === "force";
+
+  // A specific post, named by the short id the other commands print.
+  if (wanted && !force && wanted !== "all") {
+    const { data } = await supabase
+      .from("posts")
+      .select("id, platform, image_url")
+      .eq("is_test", false)
+      .order("created_at", { ascending: false })
+      .limit(60);
+
+    const rows = (data ?? []) as Array<{ id: string; platform: string; image_url: string | null }>;
+    const match = rows.filter(
+      (r) => r.id.startsWith(wanted) || r.platform.toLowerCase() === wanted,
+    );
+
+    if (match.length === 0) {
+      return { text: `🔍 No recent post matches "${escape(target)}". Send /images on its own.` };
+    }
+
+    const res = await callAutomation("post-images", {
+      posts: match.map((r) => r.id).join(","),
+      force: "1",
+    });
+    const label = `Photography — ${match.length} post${match.length === 1 ? "" : "s"}`;
+    return res.ok ? started(label, res.body) : refused(label, res.status, res.body);
+  }
+
+  // Nothing named: everything approved that is still text-only. Counting first
+  // means the reply says "nothing to do" instead of starting an empty job.
+  const { data } = await supabase
+    .from("posts")
+    .select("id")
+    .eq("ai_approved", true)
+    .eq("is_test", false)
+    .is("image_url", null);
+
+  const missing = ((data ?? []) as Array<{ id: string }>).length;
+  if (missing === 0 && !force) {
+    return { text: "✅ Every approved post already has its photograph." };
+  }
+
+  const res = await callAutomation(
+    "post-images",
+    force ? { pending: "1", force: "1" } : { pending: "1" },
+  );
+  const label = force
+    ? "Photography — re-render"
+    : `Photography — ${missing} post${missing === 1 ? "" : "s"}`;
+  return res.ok ? started(label, res.body) : refused(label, res.status, res.body);
+}
+
 function escape(value: string): string {
   return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }

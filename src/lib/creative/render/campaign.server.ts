@@ -106,10 +106,21 @@ export async function renderCampaignForProduct(
   // deck-mounted mixer on a wall bracket would be a picture of something that
   // cannot be installed.
   let sceneId: string | null = null;
+  const sceneWarnings: string[] = [];
   if (request.scene) {
-    const { scenesFor } = await import("./scenes");
     if (request.scene === "auto") {
-      sceneId = scenesFor(wallMounted ? "wall" : "deck")[0]?.id ?? null;
+      // "auto" used to mean "wall room if the name says wall, basin room
+      // otherwise", which stood concealed shower valves and free-standing bath
+      // mixers on a basin rim. Both rooms photograph a basin; only a basin
+      // mixer belongs in one, and a named scene is still honoured because that
+      // is somebody deciding rather than a rule guessing.
+      const { sceneForProduct } = await import("./scenes");
+      const placement = sceneForProduct(
+        String(product.name),
+        product.installation_type as string | null,
+      );
+      sceneId = placement.sceneId;
+      if (!sceneId) sceneWarnings.push(`Studio backdrop: ${placement.reason}`);
     } else {
       sceneId = request.scene;
     }
@@ -153,7 +164,7 @@ export async function renderCampaignForProduct(
     sku: product.sku ? String(product.sku) : null,
     stills,
     video,
-    warnings: assets.warnings,
+    warnings: [...sceneWarnings, ...assets.warnings],
   };
 }
 

@@ -62,6 +62,8 @@ const HELP = [
   "/sync — read the official catalogue again",
   "/plates — rebuild every product in every finish",
   "/plates &lt;product&gt; — rebuild just that one",
+  "/images — photograph any approved post still missing one",
+  "/images redo — render them again",
   "/retry all — rewrite the posts the gatekeeper held back",
   "/stop — stop a job that should not be running",
   "/render &lt;product&gt; | &lt;palette&gt; | &lt;format&gt; — campaign images + video",
@@ -494,6 +496,10 @@ async function commandOps(supabase: DB, chatId: string, command: string, rest: s
         }
         break;
       }
+      case "/images":
+      case "/image":
+        reply = await ops.opsImages(supabase as never, rest);
+        break;
       case "/retry":
         reply = await ops.opsRetry(supabase as never, rest);
         break;
@@ -850,6 +856,8 @@ export async function handleTelegramUpdate(
     case "/catalog":
     case "/retry":
     case "/stop":
+    case "/images":
+    case "/image":
       await commandOps(supabase, config.chatId, command, rest);
       break;
     case "/help":
