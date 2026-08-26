@@ -61,6 +61,9 @@ const HELP = [
   "<b>Run it</b>",
   "/sync — read the official catalogue again",
   "/plates — rebuild every product in every finish",
+  "/plates &lt;product&gt; — rebuild just that one",
+  "/retry all — rewrite the posts the gatekeeper held back",
+  "/stop — stop a job that should not be running",
   "/render &lt;product&gt; | &lt;palette&gt; | &lt;format&gt; — campaign images + video",
   "/render &lt;product&gt; | room — fitted into a real bathroom",
   "/generate — write today's content",
@@ -468,8 +471,34 @@ async function commandOps(supabase: DB, chatId: string, command: string, rest: s
       case "/verify":
         reply = await ops.opsGenerate(true);
         break;
-      case "/plates":
-        reply = await ops.opsPlates(rest || undefined);
+      case "/plates": {
+        // A product name resolves to an id, so nobody types a UUID; without
+        // one the whole catalogue is rebuilt, which is the scheduled behaviour.
+        if (!rest) {
+          reply = await ops.opsPlates();
+          break;
+        }
+        const found = await ops.resolveProduct(supabase as never, rest);
+        if (!found) {
+          reply = { text: `🔍 No product matches “${escapeHtml(rest)}”.` };
+        } else if ("candidates" in found) {
+          reply = {
+            text: [
+              `🔍 “${escapeHtml(rest)}” matches ${found.candidates.length} products:`,
+              "",
+              ...found.candidates.map((c) => `• ${escapeHtml(c)}`),
+            ].join("\n"),
+          };
+        } else {
+          reply = await ops.opsPlates(found.id);
+        }
+        break;
+      }
+      case "/retry":
+        reply = await ops.opsRetry(supabase as never, rest);
+        break;
+      case "/stop":
+        reply = await ops.opsStop(supabase as never, rest);
         break;
       case "/jobs":
         reply = await ops.opsJobs(supabase as never);
@@ -819,6 +848,8 @@ export async function handleTelegramUpdate(
     case "/jobs":
     case "/catalogue":
     case "/catalog":
+    case "/retry":
+    case "/stop":
       await commandOps(supabase, config.chatId, command, rest);
       break;
     case "/help":

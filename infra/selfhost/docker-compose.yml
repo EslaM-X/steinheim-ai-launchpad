@@ -235,6 +235,37 @@ services:
 #
 # Therefore do NOT use "down -v" unless you intentionally want
 # to delete n8n's database and n8n's stored credentials/workflows.
+  # ============================================================
+  # Webhook watchdog
+  # ============================================================
+  #
+  # Keeps the Telegram webhook pointing at an address that answers.
+  #
+  # A quick tunnel is issued per run and can drop while its container keeps
+  # running. Telegram then holds a URL returning 530 and every message is lost
+  # in silence: the bot looks broken, the stack looks healthy, and neither says
+  # why. Observed exactly that, which is why this exists.
+  #
+  # The Docker socket is mounted read-only and used for one thing: reading the
+  # tunnel container's log, which is where a quick tunnel announces its
+  # hostname. Set PUBLIC_URL to a named tunnel and no discovery is needed.
+  webhook-watchdog:
+    image: docker:27-cli
+    restart: unless-stopped
+    depends_on:
+      app:
+        condition: service_healthy
+    environment:
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
+      TELEGRAM_WEBHOOK_SECRET: ${TELEGRAM_WEBHOOK_SECRET}
+      PUBLIC_URL: ${PUBLIC_URL:-}
+      WATCHDOG_INTERVAL: ${WATCHDOG_INTERVAL:-120}
+      TUNNEL_CONTAINER: ${TUNNEL_CONTAINER:-steinheim-quick-tunnel}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./webhook-watchdog.sh:/watchdog.sh:ro
+    entrypoint: ["sh", "/watchdog.sh"]
+
 # ================================================================
 volumes:
   n8n_db:

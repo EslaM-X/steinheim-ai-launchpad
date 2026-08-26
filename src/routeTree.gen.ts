@@ -29,6 +29,7 @@ import { Route as ApiPublicAutomationBuildPlatesRouteImport } from './routes/api
 import { Route as ApiPublicAutomationCatalogSyncRouteImport } from './routes/api/public/automation/catalog-sync'
 import { Route as ApiPublicAutomationGenerateTodayRouteImport } from './routes/api/public/automation/generate-today'
 import { Route as ApiPublicAutomationPublishedRouteImport } from './routes/api/public/automation/published'
+import { Route as ApiPublicAutomationRegenerateRouteImport } from './routes/api/public/automation/regenerate'
 import { Route as ApiPublicAutomationRenderCampaignRouteImport } from './routes/api/public/automation/render-campaign'
 import { Route as ApiPublicAutomationRenderSceneRouteImport } from './routes/api/public/automation/render-scene'
 import { Route as ApiPublicCreativeClaimRouteImport } from './routes/api/public/creative/claim'
@@ -141,6 +142,12 @@ const ApiPublicAutomationPublishedRoute =
     path: '/api/public/automation/published',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicAutomationRegenerateRoute =
+  ApiPublicAutomationRegenerateRouteImport.update({
+    id: '/api/public/automation/regenerate',
+    path: '/api/public/automation/regenerate',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicAutomationRenderCampaignRoute =
   ApiPublicAutomationRenderCampaignRouteImport.update({
     id: '/api/public/automation/render-campaign',
@@ -191,6 +198,7 @@ export interface FileRoutesByFullPath {
   '/api/public/automation/catalog-sync': typeof ApiPublicAutomationCatalogSyncRoute
   '/api/public/automation/generate-today': typeof ApiPublicAutomationGenerateTodayRoute
   '/api/public/automation/published': typeof ApiPublicAutomationPublishedRoute
+  '/api/public/automation/regenerate': typeof ApiPublicAutomationRegenerateRoute
   '/api/public/automation/render-campaign': typeof ApiPublicAutomationRenderCampaignRoute
   '/api/public/automation/render-scene': typeof ApiPublicAutomationRenderSceneRoute
   '/api/public/creative/claim': typeof ApiPublicCreativeClaimRoute
@@ -217,6 +225,7 @@ export interface FileRoutesByTo {
   '/api/public/automation/catalog-sync': typeof ApiPublicAutomationCatalogSyncRoute
   '/api/public/automation/generate-today': typeof ApiPublicAutomationGenerateTodayRoute
   '/api/public/automation/published': typeof ApiPublicAutomationPublishedRoute
+  '/api/public/automation/regenerate': typeof ApiPublicAutomationRegenerateRoute
   '/api/public/automation/render-campaign': typeof ApiPublicAutomationRenderCampaignRoute
   '/api/public/automation/render-scene': typeof ApiPublicAutomationRenderSceneRoute
   '/api/public/creative/claim': typeof ApiPublicCreativeClaimRoute
@@ -245,6 +254,7 @@ export interface FileRoutesById {
   '/api/public/automation/catalog-sync': typeof ApiPublicAutomationCatalogSyncRoute
   '/api/public/automation/generate-today': typeof ApiPublicAutomationGenerateTodayRoute
   '/api/public/automation/published': typeof ApiPublicAutomationPublishedRoute
+  '/api/public/automation/regenerate': typeof ApiPublicAutomationRegenerateRoute
   '/api/public/automation/render-campaign': typeof ApiPublicAutomationRenderCampaignRoute
   '/api/public/automation/render-scene': typeof ApiPublicAutomationRenderSceneRoute
   '/api/public/creative/claim': typeof ApiPublicCreativeClaimRoute
@@ -273,6 +283,7 @@ export interface FileRouteTypes {
     | '/api/public/automation/catalog-sync'
     | '/api/public/automation/generate-today'
     | '/api/public/automation/published'
+    | '/api/public/automation/regenerate'
     | '/api/public/automation/render-campaign'
     | '/api/public/automation/render-scene'
     | '/api/public/creative/claim'
@@ -299,6 +310,7 @@ export interface FileRouteTypes {
     | '/api/public/automation/catalog-sync'
     | '/api/public/automation/generate-today'
     | '/api/public/automation/published'
+    | '/api/public/automation/regenerate'
     | '/api/public/automation/render-campaign'
     | '/api/public/automation/render-scene'
     | '/api/public/creative/claim'
@@ -326,6 +338,7 @@ export interface FileRouteTypes {
     | '/api/public/automation/catalog-sync'
     | '/api/public/automation/generate-today'
     | '/api/public/automation/published'
+    | '/api/public/automation/regenerate'
     | '/api/public/automation/render-campaign'
     | '/api/public/automation/render-scene'
     | '/api/public/creative/claim'
@@ -343,6 +356,7 @@ export interface RootRouteChildren {
   ApiPublicAutomationCatalogSyncRoute: typeof ApiPublicAutomationCatalogSyncRoute
   ApiPublicAutomationGenerateTodayRoute: typeof ApiPublicAutomationGenerateTodayRoute
   ApiPublicAutomationPublishedRoute: typeof ApiPublicAutomationPublishedRoute
+  ApiPublicAutomationRegenerateRoute: typeof ApiPublicAutomationRegenerateRoute
   ApiPublicAutomationRenderCampaignRoute: typeof ApiPublicAutomationRenderCampaignRoute
   ApiPublicAutomationRenderSceneRoute: typeof ApiPublicAutomationRenderSceneRoute
   ApiPublicCreativeClaimRoute: typeof ApiPublicCreativeClaimRoute
@@ -492,6 +506,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicAutomationPublishedRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/automation/regenerate': {
+      id: '/api/public/automation/regenerate'
+      path: '/api/public/automation/regenerate'
+      fullPath: '/api/public/automation/regenerate'
+      preLoaderRoute: typeof ApiPublicAutomationRegenerateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/automation/render-campaign': {
       id: '/api/public/automation/render-campaign'
       path: '/api/public/automation/render-campaign'
@@ -571,6 +592,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicAutomationCatalogSyncRoute: ApiPublicAutomationCatalogSyncRoute,
   ApiPublicAutomationGenerateTodayRoute: ApiPublicAutomationGenerateTodayRoute,
   ApiPublicAutomationPublishedRoute: ApiPublicAutomationPublishedRoute,
+  ApiPublicAutomationRegenerateRoute: ApiPublicAutomationRegenerateRoute,
   ApiPublicAutomationRenderCampaignRoute:
     ApiPublicAutomationRenderCampaignRoute,
   ApiPublicAutomationRenderSceneRoute: ApiPublicAutomationRenderSceneRoute,

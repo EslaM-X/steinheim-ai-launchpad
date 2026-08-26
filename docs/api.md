@@ -16,6 +16,7 @@ not in *Who calls what* either, nothing consumes it.
 | `/api/public/automation/catalog-sync` | POST | `x-automation-secret`<br/>n8n | Reads the official catalogue and writes it into the Truth Layer. |
 | `/api/public/automation/generate-today` | POST | `x-automation-secret`<br/>n8n | Runs the daily content cycle. |
 | `/api/public/automation/published` | POST | `x-automation-secret`<br/>n8n | Records the outcome of a publish attempt, and is the only way a post leaves the `publishing` state. |
+| `/api/public/automation/regenerate` | POST | `x-automation-secret`<br/>n8n | Rewrites posts the gatekeeper held back. |
 | `/api/public/automation/render-campaign` | POST | `x-automation-secret`<br/>n8n | Renders a product's campaign assets and stores them. |
 | `/api/public/automation/render-scene` | POST | `x-automation-secret`<br/>n8n | POST /api/public/automation/render-scene Takes a reference image URL and a list of product replacements, then produces a composite image where the original products are replaced with Steinheim products. |
 | `/api/public/creative/claim` | POST | `x-worker-secret`<br/>GPU worker | External GPU worker (ComfyUI) claims the next queued generation job. |
@@ -33,6 +34,7 @@ not in *Who calls what* either, nothing consumes it.
 - **scripts/smoke-automation.sh** → `/api/public/automation`
 - **scripts/smoke-automation.sh** → `/api/public/automation/build-plates`
 - **scripts/smoke-automation.sh** → `/api/public/automation/catalog-sync`
+- **scripts/smoke-automation.sh** → `/api/public/automation/regenerate`
 - **scripts/smoke-automation.sh** → `/api/public/automation/render-campaign`
 - **Telegram webhook configuration** → `/api/public/telegram/webhook`
 - **W01-daily-generation.json (W01 — Daily content generation)** → `/api/public/automation/generate-today`

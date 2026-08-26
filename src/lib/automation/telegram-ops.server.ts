@@ -259,6 +259,132 @@ export async function opsCatalogue(supabase: DB): Promise<OpsReply> {
   };
 }
 
+/**
+ * Sends a rejected post back through the writer.
+ *
+ * The gatekeeper holds anything under its threshold at needs_revision, which is
+ * correct — but until now that was a dead end from a phone: the only way
+ * forward was another full daily run, on a different topic, discarding work
+ * that had already passed the truth layer. This asks for another attempt at the
+ * same idea.
+ */
+export async function opsRetry(supabase: DB, target: string): Promise<OpsReply> {
+  const wanted = target.trim().toLowerCase();
+
+  const { data } = await supabase
+    .from("posts")
+    .select("id, platform, status, review_score, idea_id, is_test")
+    .eq("status", "needs_revision")
+    .order("created_at", { ascending: false })
+    .limit(20);
+
+  const rows = (data ?? []) as Array<{
+    id: string;
+    platform: string;
+    status: string;
+    review_score: number | null;
+    idea_id: string | null;
+    is_test: boolean;
+  }>;
+
+  if (rows.length === 0) {
+    return { text: "Nothing is sitting at needs_revision." };
+  }
+
+  // "all" is the common case: the gatekeeper rejects a whole idea's posts
+  // together, because they share the claims that scored badly.
+  const chosen =
+    wanted === "all" || wanted === ""
+      ? rows
+      : rows.filter((r) => r.id.startsWith(wanted) || r.platform.toLowerCase() === wanted);
+
+  if (chosen.length === 0) {
+    return {
+      text: [
+        `No rejected post matches "${escape(target)}".`,
+        "",
+        ...rows
+          .slice(0, 6)
+          .map(
+            (r) =>
+              `• <code>${r.id.slice(0, 8)}</code> ${escape(r.platform)} — ${r.review_score ?? "?"}/100`,
+          ),
+        "",
+        "Send /retry all, or /retry &lt;platform&gt;, or /retry &lt;id&gt;.",
+      ].join("\n"),
+    };
+  }
+
+  const res = await callAutomation("regenerate", {
+    posts: chosen.map((r) => r.id).join(","),
+  });
+  const label = `Rewrite — ${chosen.length} post${chosen.length === 1 ? "" : "s"}`;
+  return res.ok ? started(label, res.body) : refused(label, res.status, res.body);
+}
+
+/**
+ * Stops a job that should not have been started.
+ *
+ * Marks it cancelled rather than killing the process: the worker checks the row
+ * and stops at its next step. A half-written campaign is worse than one that
+ * finishes and is ignored, so nothing is torn out mid-write.
+ */
+export async function opsStop(supabase: DB, target: string): Promise<OpsReply> {
+  const { data } = await supabase
+    .from("jobs")
+    .select("id, kind, status, phase")
+    .in("status", ["queued", "running"])
+    .order("created_at", { ascending: false });
+
+  const running = (data ?? []) as Array<{
+    id: string;
+    kind: string;
+    status: string;
+    phase: string | null;
+  }>;
+
+  if (running.length === 0) return { text: "Nothing is running." };
+
+  const wanted = target.trim().toLowerCase();
+  const chosen =
+    wanted === "" || wanted === "all"
+      ? running
+      : running.filter((j) => j.id.startsWith(wanted) || j.kind.toLowerCase() === wanted);
+
+  if (chosen.length === 0) {
+    return {
+      text: [
+        `Nothing running matches "${escape(target)}".`,
+        "",
+        ...running.map(
+          (j) => `• <code>${j.id.slice(0, 8)}</code> ${escape(j.kind)} — ${escape(j.phase ?? "")}`,
+        ),
+      ].join("\n"),
+    };
+  }
+
+  for (const job of chosen) {
+    await supabase
+      .from("jobs")
+      .update({
+        status: "interrupted",
+        finished_at: new Date().toISOString(),
+        error: "Stopped from Telegram.",
+      })
+      .eq("id", job.id);
+  }
+
+  return {
+    text: [
+      `🛑 Stopped ${chosen.length} job${chosen.length === 1 ? "" : "s"}.`,
+      "",
+      ...chosen.map((j) => `• ${escape(j.kind)}`),
+      "",
+      "The worker finishes its current step and stops there; nothing is left half-written.",
+    ].join("\n"),
+  };
+}
+
 function escape(value: string): string {
   return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
